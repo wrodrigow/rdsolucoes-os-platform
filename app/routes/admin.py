@@ -455,6 +455,72 @@ def configuracoes():
     return render_template("admin/configuracoes.html", cfg=cfg)
 
 
+# ── Simular Compra ─────────────────────────────────────────────────────────────
+
+@bp.route("/clientes/<string:user_id>/simular-compra", methods=["POST"])
+@admin_required
+def simular_compra(user_id):
+    from ..services.key_service import assign_key
+    from ..services.email_service import enviar_confirmacao_compra
+
+    user = User.query.get_or_404(user_id)
+
+    if user.is_admin:
+        flash("Não é possível simular compra para um administrador.", "warning")
+        return redirect(url_for("admin.clientes"))
+
+    licenca_existente = License.query.filter_by(user_id=user_id, status="ativa").first()
+    if licenca_existente:
+        flash(f"{user.nome} já possui uma licença ativa.", "warning")
+        return redirect(url_for("admin.clientes"))
+
+    if Key.total_disponiveis() == 0:
+        flash("Não há keys disponíveis. Importe keys antes de simular.", "danger")
+        return redirect(url_for("admin.keys"))
+
+    try:
+        now = datetime.now(timezone.utc)
+        order = Order(
+            numero_pedido=Order.gerar_numero(),
+            user_id=user_id,
+            produto_nome="RD Soluções OS — Licença Vitalícia",
+            valor=297.00,
+            status="approved",
+            mp_payment_id="SIMULADO",
+            mp_status="approved",
+            mp_payment_method="SIMULADO",
+            mp_payment_type="TESTE",
+            approved_at=now,
+        )
+        db.session.add(order)
+        db.session.flush()
+
+        license_ = assign_key(order)
+
+        Log.registrar(
+            acao="COMPRA_SIMULADA",
+            detalhes=f"Admin {current_user.email} simulou compra para {user.email} | pedido {order.numero_pedido} | key {license_.key_obj.key}",
+            user_id=user_id,
+            ip=request.remote_addr,
+        )
+
+        enviar_email = request.form.get("enviar_email") == "1"
+        if enviar_email:
+            enviar_confirmacao_compra(order, license_, user)
+
+        flash(
+            f"✅ Compra simulada para {user.nome}! "
+            f"Pedido: {order.numero_pedido} | Key: {license_.key_obj.key}"
+            + (" | E-mail de confirmação enviado." if enviar_email else ""),
+            "success"
+        )
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao simular compra: {e}", "danger")
+
+    return redirect(url_for("admin.pedidos", user_id=user_id))
+
+
 # ── Logs ───────────────────────────────────────────────────────────────────────
 
 @bp.route("/logs")

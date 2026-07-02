@@ -66,6 +66,14 @@
             <a href="{{ url_for('admin.licencas') }}?user_id={{ u.id }}" class="adm-btn adm-btn-info" title="Ver licença" style="font-size:0.75rem;padding:4px 10px;">
               <i class="fa-solid fa-certificate"></i>
             </a>
+            {% else %}
+            <button type="button"
+              class="adm-btn adm-btn-success"
+              title="Simular compra"
+              style="font-size:0.75rem;padding:4px 10px;"
+              onclick="abrirSimular('{{ u.id }}','{{ u.nome }}','{{ u.email }}')">
+              <i class="fa-solid fa-flask"></i>
+            </button>
             {% endif %}
             <a href="{{ url_for('admin.pedidos') }}?user_id={{ u.id }}" class="adm-btn adm-btn-outline" title="Ver pedidos" style="font-size:0.75rem;padding:4px 10px;">
               <i class="fa-solid fa-bag-shopping"></i>
@@ -99,4 +107,57 @@
   </div>
   {% endif %}
 </div>
+
+<!-- Modal: Simular Compra -->
+<div id="modal-simular" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+  <div style="background:#1a2235;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;max-width:460px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:40px;height:40px;background:rgba(16,185,129,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fa-solid fa-flask" style="color:#10b981;"></i>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:1rem;color:#fff;">Simular Compra</div>
+        <div style="font-size:0.8rem;color:var(--adm-muted);">Ambiente de teste — sem cobrança real</div>
+      </div>
+    </div>
+    <p style="font-size:0.88rem;color:var(--adm-muted);margin-bottom:6px;">Cliente:</p>
+    <div id="modal-cliente-info" style="background:rgba(255,255,255,0.05);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:0.9rem;color:#fff;"></div>
+    <form id="form-simular" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:var(--adm-muted);margin-bottom:20px;cursor:pointer;">
+        <input type="checkbox" name="enviar_email" value="1" id="chk-email" style="width:16px;height:16px;accent-color:#10b981;"/>
+        Enviar e-mail de confirmação para o cliente
+      </label>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="adm-btn adm-btn-success" style="flex:1;">
+          <i class="fa-solid fa-bolt"></i> Confirmar Simulação
+        </button>
+        <button type="button" class="adm-btn adm-btn-outline" style="flex:1;" onclick="fecharSimular()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirSimular(userId, nome, email) {
+  document.getElementById('modal-cliente-info').textContent = nome + ' — ' + email;
+  document.getElementById('form-simular').action = '/admin/clientes/' + userId + '/simular-compra';
+  document.getElementById('chk-email').checked = false;
+  const modal = document.getElementById('modal-simular');
+  modal.style.display = 'flex';
+}
+function fecharSimular() {
+  document.getElementById('modal-simular').style.display = 'none';
+}
+document.getElementById('modal-simular').addEventListener('click', function(e) {
+  if (e.target === this) fecharSimular();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') fecharSimular();
+});
+</script>
 {% endblock %}
