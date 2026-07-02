@@ -46,7 +46,7 @@
     </div>
 
     <!-- Ações -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;">
+    <div class="sucesso-actions">
       <a href="{{ url_for('client.downloads') }}" class="btn btn-primary btn-lg" style="justify-content:center;">
         <i class="fa-solid fa-download"></i> Baixar Sistema
       </a>
@@ -92,10 +92,24 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
 @keyframes popIn {
   from { transform: scale(0.5); opacity: 0; }
   to   { transform: scale(1);   opacity: 1; }
 }
+.sucesso-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+@media(max-width:480px){
+  .sucesso-actions { grid-template-columns: 1fr; }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}

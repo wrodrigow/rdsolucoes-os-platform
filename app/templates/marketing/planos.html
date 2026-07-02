@@ -2,6 +2,14 @@
 {% block title %}Planos e Preços — RD OS{% endblock %}
 {% block meta_description %}RD OS: licença vitalícia por apenas R$297. Pagamento único, sem mensalidade, sem renovação. Inclui todas as atualizações futuras.{% endblock %}
 
+{% block extra_css %}
+<style>
+@media(max-width:480px){
+  .planos-compare-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Hero -->
 <section style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:80px 0 60px;text-align:center;">
@@ -17,7 +25,7 @@
     <h2 style="text-align:center;font-size:1.5rem;font-weight:800;color:#1e293b;margin-bottom:8px;">Por que licença vitalícia?</h2>
     <p style="text-align:center;color:#64748b;margin-bottom:36px;font-size:0.95rem;">Compare o custo real ao longo do tempo:</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:48px;">
+    <div class="planos-compare-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:48px;">
       <!-- Assinatura mensal -->
       <div style="border:2px solid #e2e8f0;border-radius:14px;padding:28px;opacity:0.75;">
         <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:12px;">Sistemas com Mensalidade</div>
