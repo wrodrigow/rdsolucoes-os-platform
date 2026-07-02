@@ -223,23 +223,28 @@ def importar_keys():
 
     # Extrai somente tokens no formato XXXX-XXXX-XXXX-XXXX de cada linha
     KEY_RE = re.compile(r'\b([A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})\b')
-    importadas = 0
-    duplicadas = 0
-    for linha in raw.replace(",", "\n").splitlines():
-        linha = linha.strip()
-        if not linha or linha.startswith("#"):
-            continue
-        match = KEY_RE.search(linha.upper())
-        if not match:
-            continue
-        key_str = match.group(1)
-        if Key.query.filter_by(key=key_str).first():
-            duplicadas += 1
-            continue
-        db.session.add(Key(key=key_str, status="disponivel"))
-        importadas += 1
+    candidatas = list(dict.fromkeys(
+        match.group(1)
+        for linha in raw.replace(",", "\n").splitlines()
+        if (linha := linha.strip()) and not linha.startswith("#")
+        for match in [KEY_RE.search(linha.upper())]
+        if match
+    ))
 
+    if not candidatas:
+        flash("Nenhuma key válida encontrada no arquivo.", "warning")
+        return redirect(url_for("admin.keys"))
+
+    # 1 query para buscar todas as já existentes de uma vez
+    existentes = {k.key for k in Key.query.filter(Key.key.in_(candidatas)).all()}
+    novas = [k for k in candidatas if k not in existentes]
+    duplicadas = len(candidatas) - len(novas)
+
+    now = datetime.now(timezone.utc)
+    for k in novas:
+        db.session.add(Key(key=k, status="disponivel", created_at=now))
     db.session.commit()
+    importadas = len(novas)
     flash(f"{importadas} keys importadas. {duplicadas} duplicadas ignoradas.", "success")
     return redirect(url_for("admin.keys"))
 
