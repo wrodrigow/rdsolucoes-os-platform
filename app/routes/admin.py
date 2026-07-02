@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import io
 from datetime import datetime, timezone
@@ -220,12 +221,18 @@ def importar_keys():
     else:
         raw = request.form.get("keys_texto", "")
 
-    linhas = [l.strip() for l in raw.replace(",", "\n").splitlines() if l.strip()]
+    # Extrai somente tokens no formato XXXX-XXXX-XXXX-XXXX de cada linha
+    KEY_RE = re.compile(r'\b([A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})\b')
     importadas = 0
     duplicadas = 0
-    for key_str in linhas:
-        if not key_str or key_str.startswith("#"):
+    for linha in raw.replace(",", "\n").splitlines():
+        linha = linha.strip()
+        if not linha or linha.startswith("#"):
             continue
+        match = KEY_RE.search(linha.upper())
+        if not match:
+            continue
+        key_str = match.group(1)
         if Key.query.filter_by(key=key_str).first():
             duplicadas += 1
             continue
