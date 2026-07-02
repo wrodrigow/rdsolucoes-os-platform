@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>Novo Contato via Site</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:24px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:10px;overflow:hidden;">
+
+      <tr><td style="background:#1a5fa8;padding:20px 32px;">
+        <div style="font-size:16px;font-weight:700;color:#fff;">📬 Novo Contato via Site — RD Soluções OS</div>
+      </td></tr>
+
+      <tr><td style="padding:28px 32px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#6b7280;width:120px;border-bottom:1px solid #f3f4f6;">Nome</td>
+            <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600;border-bottom:1px solid #f3f4f6;">{{ nome }}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#6b7280;border-bottom:1px solid #f3f4f6;">E-mail</td>
+            <td style="padding:8px 0;font-size:13px;border-bottom:1px solid #f3f4f6;">
+              <a href="mailto:{{ email }}" style="color:#1a5fa8;font-weight:600;">{{ email }}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Telefone</td>
+            <td style="padding:8px 0;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;">{{ telefone or '—' }}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:13px;color:#6b7280;">Assunto</td>
+            <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600;">{{ assunto }}</td>
+          </tr>
+        </table>
+
+        <div style="margin-top:20px;background:#f9fafb;border-left:4px solid #1a5fa8;border-radius:0 8px 8px 0;padding:16px 20px;">
+          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Mensagem</div>
+          <div style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-line;">{{ mensagem }}</div>
+        </div>
+
+        <div style="margin-top:20px;text-align:center;">
+          <a href="mailto:{{ email }}?subject=Re: {{ assunto }}"
+            style="display:inline-block;background:#1a5fa8;color:#fff;text-decoration:none;padding:12px 28px;border-radius:7px;font-weight:700;font-size:14px;">
+            Responder via E-mail
+          </a>
+        </div>
+      </td></tr>
+
+      <tr><td style="background:#f4f6f9;padding:16px 32px;text-align:center;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;">Mensagem recebida em {{ data_hora }} via formulário de contato do site.</p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

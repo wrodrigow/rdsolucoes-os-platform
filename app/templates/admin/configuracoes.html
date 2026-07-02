@@ -1,0 +1,123 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Configurações — Admin{% endblock %}
+{% block page_title %}Configurações do Site{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('admin.configuracoes') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <div class="adm-grid-2">
+    <!-- Informações da Empresa -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title"><i class="fa-solid fa-building" style="color:#2563eb;"></i> Informações da Empresa</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Nome do Site / Empresa</label>
+        <input type="text" name="site_name" class="adm-input" value="{{ cfg.site_name or '' }}" placeholder="RD Soluções OS"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Slogan / Tagline</label>
+        <input type="text" name="site_slogan" class="adm-input" value="{{ cfg.site_slogan or '' }}" placeholder="O sistema que transforma seu negócio"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">E-mail de Contato</label>
+        <input type="email" name="site_email_contato" class="adm-input" value="{{ cfg.site_email_contato or '' }}" placeholder="contato@rdsolucoes.eco.br"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">WhatsApp (somente números)</label>
+        <input type="text" name="site_whatsapp" class="adm-input" value="{{ cfg.site_whatsapp or '' }}" placeholder="5511993167183"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">URL do Site</label>
+        <input type="url" name="site_url" class="adm-input" value="{{ cfg.site_url or '' }}" placeholder="https://rdsolucoes.eco.br"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">CNPJ (exibição no rodapé)</label>
+        <input type="text" name="site_cnpj" class="adm-input" value="{{ cfg.site_cnpj or '' }}" placeholder="00.000.000/0001-00"/>
+      </div>
+    </div>
+
+    <!-- SEO & Meta -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title"><i class="fa-solid fa-magnifying-glass" style="color:#7c3aed;"></i> SEO & Meta Tags</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Meta Title (home)</label>
+        <input type="text" name="seo_title" class="adm-input" value="{{ cfg.seo_title or '' }}" maxlength="70"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Máx. 70 caracteres</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Meta Description</label>
+        <textarea name="seo_description" class="adm-input" rows="3" maxlength="160">{{ cfg.seo_description or '' }}</textarea>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Máx. 160 caracteres</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Keywords (separadas por vírgula)</label>
+        <input type="text" name="seo_keywords" class="adm-input" value="{{ cfg.seo_keywords or '' }}"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Google Analytics ID</label>
+        <input type="text" name="ga_id" class="adm-input" value="{{ cfg.ga_id or '' }}" placeholder="G-XXXXXXXXXX"/>
+      </div>
+    </div>
+
+    <!-- Produto & Preço -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title"><i class="fa-solid fa-tag" style="color:#059669;"></i> Produto & Preço</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Nome do Produto</label>
+        <input type="text" name="produto_nome" class="adm-input" value="{{ cfg.produto_nome or '' }}" placeholder="RD Soluções OS"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Preço (R$)</label>
+        <input type="number" name="produto_preco" class="adm-input" value="{{ cfg.produto_preco or '297.00' }}" step="0.01" min="0"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Preço riscado / "De:" (R$) — deixe vazio para não exibir</label>
+        <input type="number" name="produto_preco_de" class="adm-input" value="{{ cfg.produto_preco_de or '' }}" step="0.01" min="0" placeholder="497.00"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Versão atual do produto</label>
+        <input type="text" name="produto_versao" class="adm-input" value="{{ cfg.produto_versao or '' }}" placeholder="1.19"/>
+      </div>
+      <div class="adm-form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="vendas_abertas" id="vendas_abertas" style="width:auto;margin:0;"
+          {{ 'checked' if cfg.vendas_abertas == '1' }}/>
+        <label for="vendas_abertas" style="margin:0;font-weight:500;cursor:pointer;">Vendas abertas (desmarque para exibir "lista de espera")</label>
+      </div>
+    </div>
+
+    <!-- E-mail / SMTP -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title"><i class="fa-solid fa-envelope" style="color:#ca8a04;"></i> E-mail (SMTP via .env)</div>
+      </div>
+      <div style="padding:12px 16px;background:var(--adm-bg-alt);border-radius:8px;font-size:0.82rem;color:var(--adm-muted);margin-bottom:16px;line-height:1.7;">
+        As configurações de SMTP (servidor, porta, usuário e senha) ficam no arquivo <code>.env</code> por segurança e não são editáveis aqui.
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Nome do remetente</label>
+        <input type="text" name="mail_sender_name" class="adm-input" value="{{ cfg.mail_sender_name or '' }}" placeholder="RD Soluções OS"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Texto do rodapé dos e-mails</label>
+        <textarea name="mail_footer" class="adm-input" rows="3" placeholder="© 2025 RD Soluções. Todos os direitos reservados.">{{ cfg.mail_footer or '' }}</textarea>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">E-mail de suporte (exibido nos e-mails)</label>
+        <input type="email" name="mail_suporte" class="adm-input" value="{{ cfg.mail_suporte or '' }}" placeholder="suporte@rdsolucoes.eco.br"/>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;display:flex;gap:12px;">
+    <button type="submit" class="adm-btn adm-btn-primary">
+      <i class="fa-solid fa-floppy-disk"></i> Salvar Todas as Configurações
+    </button>
+  </div>
+</form>
+{% endblock %}

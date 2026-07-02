@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Perguntas Frequentes — RD Soluções OS{% endblock %}
+{% block meta_description %}Tire todas as suas dúvidas sobre o RD Soluções OS: instalação, ativação, licença, pagamento, compatibilidade e muito mais.{% endblock %}
+
+{% block content %}
+<section style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:80px 0 60px;text-align:center;">
+  <div class="container">
+    <h1 style="font-size:2.2rem;font-weight:900;color:#fff;margin-bottom:12px;">Perguntas Frequentes</h1>
+    <p style="font-size:1rem;color:rgba(255,255,255,0.7);max-width:500px;margin:0 auto;">Encontre respostas para as dúvidas mais comuns sobre o RD Soluções OS.</p>
+  </div>
+</section>
+
+<section class="section" style="background:#fff;">
+  <div class="container" style="max-width:760px;">
+    {% set categorias = [
+      ('💳 Compra e Pagamento', [
+        ('Quais formas de pagamento são aceitas?', 'PIX (aprovação imediata), cartão de crédito (1x sem juros) e boleto bancário (aprovado em 1 dia útil após compensação). O pagamento é processado com segurança pelo Mercado Pago.'),
+        ('O pagamento é seguro?', 'Sim. Utilizamos o Mercado Pago, uma das maiores plataformas de pagamento da América Latina, com criptografia SSL e proteção antifraude.'),
+        ('Tem parcelamento?', 'O valor de R$297 é cobrado em pagamento único. Não há parcelamento disponível, pois o valor já é significativamente menor que alternativas com mensalidade.'),
+        ('O que acontece após o pagamento?', 'Para PIX e cartão, a aprovação é imediata. Você recebe um e-mail com sua chave de ativação em segundos. Para boleto, o prazo é de até 1 dia útil após compensação bancária.'),
+        ('Posso pedir reembolso?', 'Por se tratar de software com entrega digital imediata, orientamos avaliar bem antes de comprar. Em caso de problemas técnicos, nosso suporte tenta resolver antes de qualquer reembolso. Entre em contato caso tenha dificuldades.'),
+      ]),
+      ('📥 Download e Instalação', [
+        ('Como faço o download após a compra?', 'Após a confirmação do pagamento, você pode baixar o instalador diretamente na Área do Cliente, em Downloads. O link fica disponível 24 horas por dia, 7 dias por semana.'),
+        ('O sistema funciona no Mac ou Linux?', 'Não. O RD Soluções OS foi desenvolvido exclusivamente para Windows 10 e Windows 11 (64 bits).'),
+        ('Precisa de internet para instalar ou usar?', 'É necessária internet somente para baixar o instalador. Após instalado e ativado, o sistema funciona 100% offline — sem nenhuma dependência de internet.'),
+        ('Como faço a instalação?', 'Baixe o instalador na Área do Cliente, clique com o botão direito e escolha "Executar como administrador". Siga os passos da tela (Next → Next → Finish). O processo leva menos de 2 minutos.'),
+        ('Meu antivírus está bloqueando a instalação. O que fazer?', 'Alguns antivírus podem detectar falsos positivos em softwares menores. Adicione uma exceção para o instalador no seu antivírus ou desative-o temporariamente durante a instalação. O sistema não contém nenhum código malicioso.'),
+      ]),
+      ('🔑 Licença e Ativação', [
+        ('Onde fico com minha chave de ativação?', 'No e-mail de confirmação de compra e na Área do Cliente em "Minha Licença". A chave fica disponível para sempre, mesmo anos depois da compra.'),
+        ('Posso instalar em mais de um computador?', 'Cada licença permite 1 instalação ativa. Para usar em múltiplos computadores, adquira licenças adicionais.'),
+        ('Formatei o computador. Perdi a licença?', 'Não. Sua licença fica vinculada à sua conta. Baixe o sistema novamente na Área do Cliente e ative com a mesma chave. Se tiver dúvidas, o suporte ajuda.'),
+        ('A licença expira?', 'Nunca. A licença é vitalícia. Você paga uma única vez e usa o sistema para sempre, sem renovações.'),
+        ('As atualizações futuras são pagas?', 'Não. Todas as atualizações — novas funcionalidades e melhorias — estão inclusas na licença sem custo adicional.'),
+      ]),
+      ('💾 Dados e Backup', [
+        ('Onde meus dados ficam armazenados?', 'Todos os dados ficam salvos localmente no seu computador. Nada é enviado para servidores externos. Seus dados são 100% seus.'),
+        ('Como faço backup dos dados?', 'Dentro do sistema, acesse Configurações → Backup → Exportar. Salve o arquivo em um pendrive ou Google Drive. Para restaurar, use Configurações → Backup → Importar.'),
+        ('Posso migrar os dados para outro computador?', 'Sim. Exporte o backup no computador antigo, instale o sistema no novo e importe o arquivo de backup. Todos os dados — clientes, orçamentos, histórico — serão restaurados.'),
+      ]),
+    ] %}
+
+    {% for cat, faqs in categorias %}
+    <div style="margin-bottom:36px;">
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e2e8f0;">{{ cat }}</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for q, a in faqs %}
+        <div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+          <details>
+            <summary style="padding:16px 20px;cursor:pointer;font-weight:600;font-size:0.9rem;color:#1e293b;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+              {{ q }} <span style="color:#0d7d8c;font-size:1rem;flex-shrink:0;margin-left:12px;">+</span>
+            </summary>
+            <div style="padding:0 20px 16px;font-size:0.87rem;color:#64748b;line-height:1.75;">{{ a }}</div>
+          </details>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- CTA suporte -->
+    <div style="border:1px solid #e2e8f0;border-radius:14px;padding:28px;text-align:center;background:#f8fafc;">
+      <div style="font-size:1.5rem;margin-bottom:10px;">💬</div>
+      <h3 style="font-size:1.05rem;font-weight:800;color:#1e293b;margin-bottom:6px;">Não encontrou o que procurava?</h3>
+      <p style="font-size:0.88rem;color:#64748b;margin-bottom:20px;">Nossa equipe responde em menos de 2 horas em dias úteis.</p>
+      <a href="{{ url_for('main.contato') }}" class="btn-primary" style="margin-right:12px;">Falar pelo Site</a>
+      <a href="https://wa.me/{{ site_cfg.get('site_whatsapp','') }}" target="_blank" rel="noopener"
+        style="display:inline-block;background:#25d366;color:#fff;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:0.9rem;">
+        WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

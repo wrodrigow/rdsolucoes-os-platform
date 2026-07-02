@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Compra Aprovada! — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 24px 60px;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(16,185,129,0.1) 0%,transparent 60%),var(--dark);">
+  <div style="width:100%;max-width:600px;text-align:center;">
+
+    <!-- Ícone animado de sucesso -->
+    <div style="width:90px;height:90px;background:rgba(16,185,129,0.15);border:2px solid rgba(16,185,129,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;font-size:2.5rem;animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+      ✅
+    </div>
+
+    <div class="hero-eyebrow" style="display:inline-flex;margin-bottom:20px;border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.1);color:#4ade80;">
+      <i class="fa-solid fa-circle-check"></i> Pagamento Aprovado
+    </div>
+    <h1 style="font-size:2.2rem;margin-bottom:12px;">Sua licença está pronta!</h1>
+    <p style="color:var(--text-muted);font-size:1.05rem;margin-bottom:36px;line-height:1.7;">
+      Parabéns pela sua compra! Sua chave de ativação foi gerada e<br>
+      <strong style="color:var(--white);">enviada para o seu e-mail agora mesmo.</strong>
+    </p>
+
+    {% if order and license %}
+    <!-- Card da Licença (prévia) -->
+    <div class="card" style="text-align:left;margin-bottom:24px;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Pedido</div>
+          <div style="font-weight:700;color:var(--white);">{{ order.numero_pedido }}</div>
+        </div>
+        <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> APROVADO</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">🔑 Sua Chave de Ativação</div>
+        <div style="font-size:1.5rem;font-weight:800;font-family:'Courier New',monospace;color:#22d3ee;letter-spacing:0.12em;word-break:break-all;">
+          {{ license.key_obj.key }}
+        </div>
+        <button onclick="copiarKey('{{ license.key_obj.key }}')" class="btn btn-secondary btn-sm" style="margin-top:14px;">
+          <i class="fa-regular fa-copy"></i> <span id="copy-txt">Copiar Chave</span>
+        </button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);">
+        <i class="fa-solid fa-envelope" style="color:var(--accent);margin-right:6px;"></i>
+        Esta chave também foi enviada para o seu e-mail cadastrado.
+      </p>
+    </div>
+
+    <!-- Ações -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;">
+      <a href="{{ url_for('client.downloads') }}" class="btn btn-primary btn-lg" style="justify-content:center;">
+        <i class="fa-solid fa-download"></i> Baixar Sistema
+      </a>
+      <a href="{{ url_for('client.licenca') }}" class="btn btn-secondary btn-lg" style="justify-content:center;">
+        <i class="fa-solid fa-certificate"></i> Minha Licença
+      </a>
+    </div>
+
+    {% else %}
+    <!-- Pagamento pendente ou sem dados -->
+    <div class="card" style="margin-bottom:24px;">
+      <p style="color:var(--text-muted);">Seu pagamento está sendo processado. Você receberá o e-mail com a chave assim que aprovado.</p>
+    </div>
+    {% endif %}
+
+    <!-- Próximos passos -->
+    <div class="card" style="text-align:left;">
+      <div style="font-weight:700;color:var(--white);margin-bottom:16px;"><i class="fa-solid fa-list-check" style="color:var(--accent);margin-right:8px;"></i>Próximos passos</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0;">1</div>
+          <div style="font-size:0.9rem;color:var(--text);">Verifique seu e-mail — a chave e o link de download foram enviados agora.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0;">2</div>
+          <div style="font-size:0.9rem;color:var(--text);">Baixe o instalador e execute como administrador no Windows.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0;">3</div>
+          <div style="font-size:0.9rem;color:var(--text);">Insira a chave de ativação quando solicitado e conclua a instalação.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0;">4</div>
+          <div style="font-size:0.9rem;color:var(--text);">Abra o sistema, configure a logo e dados da empresa e comece a usar!</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:24px;font-size:0.85rem;color:var(--text-muted);">
+      Precisa de ajuda? <a href="{{ url_for('client.suporte') }}">Acesse o suporte</a> ou fale no
+      <a href="https://wa.me/{{ site_cfg.get('site_whatsapp','') }}" target="_blank" rel="noopener">WhatsApp</a>.
+    </p>
+  </div>
+</div>
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarKey(key) {
+  navigator.clipboard.writeText(key).then(() => {
+    const el = document.getElementById('copy-txt');
+    el.textContent = '✓ Copiada!';
+    setTimeout(() => el.textContent = 'Copiar Chave', 2500);
+  });
+}
+</script>
+{% endblock %}

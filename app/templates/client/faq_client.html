@@ -1,0 +1,61 @@
+{% extends "client/base_client.html" %}
+{% block title %}Perguntas Frequentes — RD Soluções OS{% endblock %}
+{% block page_title %}Perguntas Frequentes{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;">
+  <h2 style="font-size:1.3rem;margin-bottom:4px;">Perguntas Frequentes</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;margin-bottom:28px;">Respostas para as dúvidas mais comuns sobre instalação, licença e uso do sistema.</p>
+
+  {% set categorias = [
+    ('🔑 Licença e Ativação', [
+      ('Onde encontro minha chave de ativação?', 'Sua chave está sempre disponível em Minha Licença no menu lateral. Você também pode encontrá-la no e-mail que recebeu após a compra.'),
+      ('Posso instalar em mais de um computador?', 'Cada licença permite 1 instalação ativa. Para usar em outro computador, adquira uma licença adicional. Em caso de troca de máquina, entre em contato com o suporte.'),
+      ('A licença expira?', 'Não. A licença é vitalícia — você paga uma única vez e usa para sempre, sem renovações ou mensalidades.'),
+      ('Posso transferir a licença para outro computador?', 'Em casos de formatação ou troca de computador, entre em contato com o suporte informando seu número de pedido.'),
+    ]),
+    ('💾 Instalação e Sistema', [
+      ('Quais são os requisitos mínimos?', 'Windows 10 ou Windows 11 (64 bits), 4 GB de RAM, 500 MB de espaço em disco. Não requer internet para funcionar.'),
+      ('O sistema não abre após a instalação. O que fazer?', 'Tente executar o instalador como Administrador (clique com botão direito → Executar como administrador). Se o problema persistir, verifique se seu antivírus não está bloqueando e entre em contato com o suporte.'),
+      ('Funciona no Windows 7 ou 8?', 'Não. O sistema foi desenvolvido e testado somente para Windows 10 e Windows 11 de 64 bits.'),
+      ('Precisa de internet para usar?', 'Não. O RD Soluções OS funciona 100% offline. Todos os dados ficam salvos localmente no seu computador.'),
+    ]),
+    ('💾 Backup e Dados', [
+      ('Como faço backup dos meus dados?', 'Abra o sistema, vá em Configurações → Backup de Dados → Exportar. Salve o arquivo .db em um local seguro (pendrive, nuvem, etc.).'),
+      ('Formatei o computador. Perdi tudo?', 'Se você exportou o backup antes de formatar, não. Após reinstalar o sistema, vá em Configurações → Backup → Importar e selecione o arquivo .db que você salvou.'),
+      ('Com que frequência devo fazer backup?', 'Recomendamos exportar o backup semanalmente ou sempre que fizer muitas atualizações de clientes e orçamentos.'),
+    ]),
+    ('🔄 Atualizações', [
+      ('Como atualizo para uma nova versão?', 'Acesse Downloads no menu lateral. Quando uma nova versão estiver disponível, ela aparecerá aqui. Baixe e instale — seus dados são preservados.'),
+      ('As atualizações são pagas?', 'Não. As atualizações futuras estão inclusas na licença vitalícia sem custo adicional.'),
+      ('Preciso desinstalar a versão antiga antes de atualizar?', 'Não é necessário. Basta executar o novo instalador que ele atualiza automaticamente.'),
+    ]),
+    ('💳 Pagamento e Compra', [
+      ('Quais formas de pagamento são aceitas?', 'PIX (aprovação imediata), Cartão de crédito (aprovação imediata) e Boleto bancário (1 dia útil após compensação).'),
+      ('A compra é segura?', 'Sim. O pagamento é processado pelo Mercado Pago, uma das maiores plataformas de pagamento da América Latina, com criptografia e proteção antifraude.'),
+      ('Posso pedir reembolso?', 'Por se tratar de software com entrega digital imediata, avalie bem antes de comprar. Em caso de problemas técnicos, tentamos resolver antes de qualquer reembolso. Entre em contato com o suporte.'),
+    ]),
+  ] %}
+
+  {% for cat, itens in categorias %}
+  <div class="cl-card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+    <div style="padding:16px 20px;background:#f8fafc;border-bottom:1px solid var(--cl-border);font-weight:700;color:var(--cl-text);">{{ cat }}</div>
+    {% for q, a in itens %}
+    <div style="border-bottom:1px solid var(--cl-border);">
+      <details>
+        <summary style="padding:14px 20px;cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--cl-text);list-style:none;display:flex;justify-content:space-between;user-select:none;">
+          {{ q }} <span style="color:var(--cl-primary);flex-shrink:0;margin-left:12px;">+</span>
+        </summary>
+        <div style="padding:0 20px 16px;font-size:0.88rem;color:var(--cl-muted);line-height:1.7;">{{ a }}</div>
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <div class="cl-card" style="text-align:center;margin-top:8px;">
+    <p style="color:var(--cl-muted);margin-bottom:16px;">Não encontrou o que procurava?</p>
+    <a href="{{ url_for('client.suporte') }}" class="cl-btn cl-btn-primary"><i class="fa-solid fa-headset"></i> Falar com Suporte</a>
+  </div>
+</div>
+{% endblock %}

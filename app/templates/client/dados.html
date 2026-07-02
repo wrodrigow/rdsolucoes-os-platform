@@ -1,0 +1,44 @@
+{% extends "client/base_client.html" %}
+{% block title %}Dados Cadastrais — RD Soluções OS{% endblock %}
+{% block page_title %}Dados Cadastrais{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+  <h2 style="font-size:1.3rem;margin-bottom:4px;">Dados Cadastrais</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;margin-bottom:28px;">Mantenha seus dados atualizados para receber comunicações corretamente.</p>
+
+  <div class="cl-card">
+    <form method="POST" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="cl-form-group">
+        <label class="cl-label" for="nome">Nome completo *</label>
+        <input type="text" class="cl-input" id="nome" name="nome" value="{{ current_user.nome }}" required/>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="email">E-mail <span style="color:var(--cl-muted);font-weight:400;">(não editável)</span></label>
+        <input type="email" class="cl-input" value="{{ current_user.email }}" disabled style="opacity:0.6;cursor:not-allowed;"/>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="telefone">Telefone / WhatsApp</label>
+        <input type="tel" class="cl-input" id="telefone" name="telefone" value="{{ current_user.telefone or '' }}" placeholder="(11) 99999-9999"/>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="empresa">Nome da Empresa</label>
+        <input type="text" class="cl-input" id="empresa" name="empresa" value="{{ current_user.empresa or '' }}" placeholder="Opcional"/>
+      </div>
+      <div style="display:flex;gap:12px;padding-top:8px;">
+        <button type="submit" class="cl-btn cl-btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="cl-card" style="margin-top:20px;background:#fef9f0;border-color:#fde68a;">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <i class="fa-solid fa-triangle-exclamation" style="color:#b45309;margin-top:2px;"></i>
+      <div style="font-size:0.88rem;color:#78350f;line-height:1.6;">
+        Para alterar o e-mail cadastrado, entre em contato com o suporte. O e-mail está vinculado à sua licença e não pode ser alterado diretamente por segurança.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

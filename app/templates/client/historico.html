@@ -1,0 +1,56 @@
+{% extends "client/base_client.html" %}
+{% block title %}Histórico de Compras — RD Soluções OS{% endblock %}
+{% block page_title %}Histórico de Compras{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.3rem;margin-bottom:4px;">Histórico de Compras</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;">Todos os seus pedidos e pagamentos.</p>
+</div>
+
+{% if orders %}
+<div class="cl-card" style="padding:0;">
+  <div class="cl-table-wrapper">
+    <table class="cl-table">
+      <thead>
+        <tr>
+          <th>Pedido</th><th>Produto</th><th>Valor</th>
+          <th>Método</th><th>Status</th><th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set lbl = o.status_label() %}
+        <tr>
+          <td><strong style="font-family:monospace;">{{ o.numero_pedido }}</strong></td>
+          <td style="font-size:0.88rem;color:var(--cl-muted);">{{ o.produto_nome }}</td>
+          <td><strong>{{ o.valor_formatado() }}</strong></td>
+          <td style="font-size:0.85rem;color:var(--cl-muted);">
+            {% if o.mp_payment_type == 'pix' %}🔳 PIX
+            {% elif o.mp_payment_type == 'credit_card' %}💳 Cartão
+            {% elif o.mp_payment_type == 'ticket' %}🎫 Boleto
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <span style="padding:3px 12px;border-radius:50px;font-size:0.75rem;font-weight:700;
+              background:{{ 'rgba(16,185,129,0.1)' if lbl[1]=='success' else 'rgba(245,158,11,0.1)' if lbl[1]=='warning' else 'rgba(239,68,68,0.1)' if lbl[1]=='danger' else 'rgba(0,0,0,0.05)' }};
+              color:{{ '#059669' if lbl[1]=='success' else '#b45309' if lbl[1]=='warning' else '#dc2626' if lbl[1]=='danger' else '#64748b' }};">
+              {{ lbl[0] }}
+            </span>
+          </td>
+          <td style="color:var(--cl-muted);font-size:0.85rem;">{{ o.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div style="text-align:center;padding:60px 24px;">
+  <div style="font-size:3rem;margin-bottom:16px;">🧾</div>
+  <h3 style="margin-bottom:8px;">Nenhum pedido encontrado</h3>
+  <p style="color:var(--cl-muted);margin-bottom:24px;">Você ainda não realizou nenhuma compra.</p>
+  <a href="{{ url_for('checkout.index') }}" class="cl-btn cl-btn-primary"><i class="fa-solid fa-bolt"></i> Comprar Licença</a>
+</div>
+{% endif %}
+{% endblock %}

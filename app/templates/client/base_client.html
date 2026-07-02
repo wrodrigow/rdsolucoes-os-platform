@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Área do Cliente — RD Soluções OS{% endblock %}</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/client.css') }}"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="client-area">
+
+<div class="client-layout">
+  <!-- Sidebar -->
+  <aside class="cl-sidebar" id="cl-sidebar" role="navigation" aria-label="Menu da área do cliente">
+    <div class="cl-sidebar-header">
+      <a href="{{ url_for('main.home') }}" class="cl-brand">
+        <div class="cl-brand-icon">RD</div>
+        <div><div class="cl-brand-name">RD Soluções OS</div><div class="cl-brand-sub">Área do Cliente</div></div>
+      </a>
+    </div>
+
+    <div class="cl-user-info">
+      <div class="cl-user-name">{{ current_user.nome }}</div>
+      <div class="cl-user-email">{{ current_user.email }}</div>
+    </div>
+
+    <nav class="cl-nav">
+      <div class="cl-nav-section">
+        <div class="cl-nav-section-title">Principal</div>
+        <a href="{{ url_for('client.dashboard') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.dashboard' }}">
+          <i class="fa-solid fa-gauge-high cl-nav-icon"></i> Dashboard
+        </a>
+        <a href="{{ url_for('client.licenca') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.licenca' }}">
+          <i class="fa-solid fa-certificate cl-nav-icon"></i> Minha Licença
+        </a>
+        <a href="{{ url_for('client.downloads') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.downloads' }}">
+          <i class="fa-solid fa-download cl-nav-icon"></i> Downloads
+        </a>
+        <a href="{{ url_for('client.historico') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.historico' }}">
+          <i class="fa-solid fa-clock-rotate-left cl-nav-icon"></i> Histórico de Compras
+        </a>
+      </div>
+      <div class="cl-nav-section">
+        <div class="cl-nav-section-title">Minha Conta</div>
+        <a href="{{ url_for('client.dados') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.dados' }}">
+          <i class="fa-solid fa-user cl-nav-icon"></i> Dados Cadastrais
+        </a>
+        <a href="{{ url_for('client.senha') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.senha' }}">
+          <i class="fa-solid fa-lock cl-nav-icon"></i> Alterar Senha
+        </a>
+      </div>
+      <div class="cl-nav-section">
+        <div class="cl-nav-section-title">Ajuda</div>
+        <a href="{{ url_for('client.suporte') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.suporte' }}">
+          <i class="fa-solid fa-headset cl-nav-icon"></i> Suporte
+        </a>
+        <a href="{{ url_for('client.faq') }}" class="cl-nav-link {{ 'active' if request.endpoint == 'client.faq' }}">
+          <i class="fa-solid fa-circle-question cl-nav-icon"></i> Perguntas Frequentes
+        </a>
+      </div>
+    </nav>
+
+    <div class="cl-sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="cl-nav-link" style="color:rgba(239,68,68,0.7);">
+        <i class="fa-solid fa-right-from-bracket cl-nav-icon"></i> Sair
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="cl-main">
+    <header class="cl-topbar">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <button class="cl-mobile-menu-btn" id="cl-menu-btn" aria-label="Abrir menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="cl-page-title">{% block page_title %}Dashboard{% endblock %}</div>
+      </div>
+      <div class="cl-topbar-actions">
+        {% block topbar_actions %}{% endblock %}
+        <a href="{{ url_for('checkout.index') }}" style="font-size:0.82rem;color:var(--cl-primary);font-weight:600;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-bolt"></i> Comprar Licença
+        </a>
+      </div>
+    </header>
+
+    <main class="cl-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="cl-alert cl-alert-{{ 'danger' if cat == 'error' else cat }}">
+            <i class="fa-solid {{ 'fa-check-circle' if cat=='success' else 'fa-triangle-exclamation' if cat=='warning' else 'fa-circle-info' }}"></i> {{ msg }}
+          </div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Overlay mobile -->
+<div id="cl-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="closeSidebar()"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+<script>
+const menuBtn = document.getElementById('cl-menu-btn');
+const sidebar = document.getElementById('cl-sidebar');
+const overlay = document.getElementById('cl-overlay');
+function closeSidebar() { sidebar.classList.remove('open'); overlay.style.display='none'; }
+if (menuBtn) menuBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

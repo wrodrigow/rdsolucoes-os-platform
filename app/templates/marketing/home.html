@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}RD Soluções OS — Organize sua Empresa com Profissionalismo | Licença Vitalícia R$297{% endblock %}
+{% block meta_desc %}Chega de caderno e planilha. Crie orçamentos profissionais, emita Ordens de Serviço e controle suas finanças em um único sistema desktop. 100% offline. Sem mensalidade. R$297 vitalício.{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════ -->
+<section class="hero" id="inicio" aria-label="Seção principal">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-text animate-fade-in-up">
+      <div class="hero-eyebrow">
+        <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i>
+        Sistema Profissional para Prestadores de Serviço
+      </div>
+      <h1>Chega de Bagunça.<br><span class="text-gradient">Gerencie sua Empresa</span> com Profissionalismo.</h1>
+      <p class="hero-sub">
+        Crie orçamentos em minutos, emita Ordens de Serviço com sua logo, controle receitas e despesas — tudo em um único sistema que funciona <strong>sem internet</strong> e <strong>sem mensalidade</strong>.
+      </p>
+      <div class="hero-cta">
+        <a href="{{ url_for('checkout.index') }}" class="btn btn-primary btn-lg btn-pulse" aria-label="Comprar licença vitalícia por R$297">
+          <i class="fa-solid fa-bolt"></i> Quero o Sistema Agora — R$297
+        </a>
+        <a href="{{ url_for('main.como_funciona') }}" class="btn btn-secondary btn-lg">
+          <i class="fa-solid fa-play"></i> Ver Como Funciona
+        </a>
+      </div>
+      <div class="hero-social-proof">
+        <div class="hero-stat">
+          <span class="hero-stat-num" data-count="500">0</span>
+          <span class="hero-stat-label">Empresas Atendidas</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-num" data-count="98">0</span><span class="hero-stat-num">%</span>
+          <span class="hero-stat-label">de Satisfação</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">R$297</span>
+          <span class="hero-stat-label">Licença Vitalícia</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot simulado do sistema -->
+    <div class="hero-visual animate-fade-in-up delay-200">
+      <div class="hero-glow"></div>
+      <div class="hero-screenshot" role="img" aria-label="Interface do sistema RD Soluções OS">
+        <div class="hero-screenshot-inner">
+          <div class="screenshot-bar">
+            <div class="screenshot-dot d-red"></div>
+            <div class="screenshot-dot d-yellow"></div>
+            <div class="screenshot-dot d-green"></div>
+            <span class="screenshot-title">RD Soluções OS — v1.19</span>
+          </div>
+          <div class="screenshot-content">
+            <div class="screenshot-sidebar">
+              <div class="ss-nav-item active"><span class="ss-icon">📋</span>Orçamentos</div>
+              <div class="ss-nav-item"><span class="ss-icon">👥</span>Clientes</div>
+              <div class="ss-nav-item"><span class="ss-icon">🔧</span>Ordens de Serviço</div>
+              <div class="ss-nav-item"><span class="ss-icon">📦</span>Itens</div>
+              <div class="ss-nav-item"><span class="ss-icon">💰</span>Financeiro</div>
+              <div class="ss-nav-item"><span class="ss-icon">⚙️</span>Configurações</div>
+            </div>
+            <div class="screenshot-main">
+              <div class="ss-card">
+                <div class="ss-card-title">Orçamento #192 — Aprovado ✅</div>
+                Cliente: Condomínio Solar das Flores
+              </div>
+              <div class="ss-row">
+                <div class="ss-card"><div class="ss-card-title">R$ 4.850,00</div>Total do Mês</div>
+                <div class="ss-card"><div class="ss-card-title">12</div>Orçamentos</div>
+              </div>
+              <div class="ss-card">
+                <div class="ss-card-title">OS #047 — Em Andamento 🔧</div>
+                Reparo em Contentor — Entrada: 08h00
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     INDICADORES
+══════════════════════════════════════════════════════════════ -->
+<div class="stats-bar" aria-label="Estatísticas do produto">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-num" data-count="500">0</span>
+        <span class="stat-label">Empresas usando o sistema</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="15000">0</span>
+        <span class="stat-label">Orçamentos gerados</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="98">0</span><span class="stat-num">%</span>
+        <span class="stat-label">Taxa de satisfação</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">1</span>
+        <span class="stat-label">Pagamento único — sem mensalidade</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DOR E SOLUÇÃO (PAS)
+══════════════════════════════════════════════════════════════ -->
+<section class="section pain-section" aria-label="Problemas e solução">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Reconhece essa situação?</span>
+      <h2>Quantos orçamentos você já perdeu por falta de organização?</h2>
+      <p>A maioria das pequenas empresas ainda usa caderno, WhatsApp ou planilha Excel para controlar o negócio. O resultado é sempre o mesmo.</p>
+    </div>
+
+    <div class="pain-grid" style="margin-top:60px;">
+      <div class="pain-list">
+        <div class="pain-item">
+          <span class="pain-icon">😤</span>
+          <div class="pain-text"><strong>Orçamentos perdidos no WhatsApp</strong> — cliente some, você não tem registro, não consegue cobrar.</div>
+        </div>
+        <div class="pain-item">
+          <span class="pain-icon">📋</span>
+          <div class="pain-text"><strong>Ordens de Serviço escritas à mão</strong> — letra ilegível, sem profissionalismo, sem histórico do cliente.</div>
+        </div>
+        <div class="pain-item">
+          <span class="pain-icon">💸</span>
+          <div class="pain-text"><strong>Não sabe quanto ganhou no mês</strong> — sem controle financeiro, sem visão do negócio.</div>
+        </div>
+        <div class="pain-item">
+          <span class="pain-icon">🕐</span>
+          <div class="pain-text"><strong>Horas perdidas montando proposta</strong> — o concorrente entrega o orçamento antes de você.</div>
+        </div>
+        <div class="pain-item">
+          <span class="pain-icon">😰</span>
+          <div class="pain-text"><strong>Clientes sem histórico</strong> — precisa perguntar tudo de novo a cada visita, passando falta de profissionalismo.</div>
+        </div>
+      </div>
+
+      <div class="solution-card">
+        <span class="section-tag" style="color:#22d3ee;">A solução está aqui</span>
+        <h3 style="margin-top:12px;margin-bottom:8px;">Com o RD Soluções OS você resolve tudo em um clique</h3>
+        <p style="color:rgba(255,255,255,0.55);font-size:0.93rem;">Um sistema completo, profissional e que funciona sem internet — instalado uma vez, usa para sempre.</p>
+        <div class="solution-list">
+          <div class="solution-item"><div class="check-icon">✓</div><span>Orçamento profissional em PDF em menos de 2 minutos</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>Ordem de Serviço com sua logo e dados da empresa</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>Histórico completo de todos os clientes</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>Controle de receitas e despesas</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>Relatórios financeiros instantâneos</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>100% offline — funciona sem internet</span></div>
+          <div class="solution-item"><div class="check-icon">✓</div><span>Pague uma vez e use para sempre</span></div>
+        </div>
+        <a href="{{ url_for('checkout.index') }}" class="btn btn-primary" style="margin-top:28px;width:100%;justify-content:center;">
+          <i class="fa-solid fa-bolt"></i> Quero Resolver Isso Agora
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RECURSOS
+══════════════════════════════════════════════════════════════ -->
+<section class="section" id="recursos" aria-label="Recursos do sistema">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Tudo que você precisa</span>
+      <h2>Recursos completos para <span class="text-gradient">profissionalizar seu negócio</span></h2>
+      <p>Desenvolvido especificamente para prestadores de serviço brasileiros. Sem complicação.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Orçamentos Profissionais</div>
+        <div class="feature-desc">Crie orçamentos completos com logo, dados da empresa, itens, valores e condições. Gere PDF com um clique e envie pelo WhatsApp.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <div class="feature-title">Ordens de Serviço</div>
+        <div class="feature-desc">Emita OS profissionais com número sequencial, dados do cliente, serviços executados, data e assinaturas. Igual a grandes empresas.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div class="feature-title">Cadastro de Clientes</div>
+        <div class="feature-desc">Mantenha o histórico completo de cada cliente — contato, endereço, todos os orçamentos e OS anteriores. Nunca mais pergunte o mesmo dado duas vezes.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <div class="feature-title">Controle Financeiro</div>
+        <div class="feature-desc">Registre receitas e despesas, acompanhe o fluxo de caixa e veja quanto seu negócio gerou no mês, semana ou período desejado.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <div class="feature-title">PDFs Profissionais</div>
+        <div class="feature-desc">Todos os documentos gerados incluem sua logo, CNPJ e dados da empresa. Visual limpo e profissional que transmite credibilidade ao cliente.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title">Catálogo de Itens</div>
+        <div class="feature-desc">Cadastre produtos e serviços com preços. Na hora de criar um orçamento, basta selecionar — sem redigitar os mesmos itens toda vez.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📶</div>
+        <div class="feature-title">100% Offline</div>
+        <div class="feature-desc">Funciona sem internet em qualquer computador Windows. Não depende de servidor, nuvem ou conexão. Seus dados ficam no seu computador.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <div class="feature-title">Backup de Dados</div>
+        <div class="feature-desc">Exporte e importe o banco de dados com um clique. Formatou o computador? Sem problema — restaure tudo em segundos.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚙️</div>
+        <div class="feature-title">Configuração da Empresa</div>
+        <div class="feature-desc">Personalize com logo, nome, CNPJ, telefone, e-mail e site. Todos os documentos usam suas informações automaticamente.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     ANTES x DEPOIS
+══════════════════════════════════════════════════════════════ -->
+<section class="section" style="background:var(--dark-2);" aria-label="Comparação antes e depois">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Transformação real</span>
+      <h2>Como sua empresa fica <span class="text-gradient">antes e depois</span></h2>
+    </div>
+    <div class="comparison-grid">
+      <div class="comparison-card comparison-before">
+        <div class="comparison-title">
+          <span style="font-size:1.5rem;">😓</span>
+          <span style="color:#f87171;">Sem o Sistema</span>
+        </div>
+        <div class="comparison-items">
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Orçamento no caderno ou WhatsApp</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> OS escrita à mão, sem padrão</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Cliente sem histórico cadastrado</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Sem ideia de quanto ganhou no mês</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Horas montando proposta manualmente</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Imagem amadora com o cliente</div>
+          <div class="comparison-item"><span style="color:#f87171;">✕</span> Dinheiro sumindo sem controle</div>
+        </div>
+      </div>
+      <div class="comparison-card comparison-after">
+        <div class="comparison-title">
+          <span style="font-size:1.5rem;">🚀</span>
+          <span style="color:#4ade80;">Com o RD Soluções OS</span>
+        </div>
+        <div class="comparison-items">
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Orçamento em PDF profissional em 2 minutos</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> OS numerada com logo da empresa</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Histórico completo de cada cliente</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Relatório financeiro com um clique</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Itens cadastrados, orçamento em segundos</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Visual profissional que conquista clientes</div>
+          <div class="comparison-item"><span style="color:#4ade80;">✓</span> Controle total do dinheiro que entra e sai</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     COMO FUNCIONA
+══════════════════════════════════════════════════════════════ -->
+<section class="section steps-bg" id="como-funciona" aria-label="Como funciona">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Simples assim</span>
+      <h2>Compre hoje e já está <span class="text-gradient">funcionando em minutos</span></h2>
+      <p>Sem configuração complexa, sem técnico, sem treinamento. Você instala e começa a usar.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-title">Compre a Licença</div>
+        <div class="step-desc">Clique em Comprar, pague via PIX, cartão ou boleto — aprovação instantânea.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-title">Receba por E-mail</div>
+        <div class="step-desc">Sua chave de ativação e o link de download chegam imediatamente no seu e-mail.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-title">Instale em Minutos</div>
+        <div class="step-desc">Execute o instalador, insira a chave e pronto. Funciona em qualquer Windows.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-title">Comece a Usar!</div>
+        <div class="step-desc">Configure logo e dados da empresa, cadastre clientes e crie seu primeiro orçamento hoje mesmo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PREÇO
+══════════════════════════════════════════════════════════════ -->
+<section class="section" id="preco" aria-label="Preço e planos">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Investimento único</span>
+      <h2>Sem mensalidade. <span class="text-gradient">Para sempre.</span></h2>
+      <p>Enquanto sistemas SaaS cobram R$99 a R$299 por mês, você paga uma única vez e usa sem limite de tempo.</p>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-badge">🏆 Licença Vitalícia</div>
+      {% if keys_disponiveis is defined and keys_disponiveis < 50 %}
+      <div class="keys-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Restam apenas <strong>{{ keys_disponiveis }}</strong> licenças disponíveis!
+      </div>
+      {% endif %}
+      <h3 style="color:#fff;margin-bottom:8px;">RD Soluções OS</h3>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:16px;">Pagamento único — use em 1 computador</p>
+      <div class="pricing-price">
+        <div class="price-from">De R$497 por apenas</div>
+        <div>
+          <span class="price-currency">R$</span><span class="price-value">297</span><span class="price-cents">,00</span>
+        </div>
+      </div>
+      <p class="pricing-desc">Uma única vez. Sem renovação. Sem cobrança mensal.</p>
+      <div class="pricing-features">
+        <div class="pricing-feature"><span class="p-check">✅</span> Orçamentos ilimitados</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Ordens de Serviço ilimitadas</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Cadastro de clientes ilimitado</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Controle financeiro completo</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Geração de PDFs profissionais</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> 100% offline — sem internet</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Backup e restauração de dados</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Atualizações futuras incluídas</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Suporte por e-mail e WhatsApp</div>
+        <div class="pricing-feature"><span class="p-check">✅</span> Funciona em Windows 10 e 11</div>
+      </div>
+      <a href="{{ url_for('checkout.index') }}" class="btn btn-primary btn-xl btn-block btn-pulse" aria-label="Comprar RD Soluções OS por R$297">
+        <i class="fa-solid fa-bolt"></i> Quero o Sistema Agora — R$297
+      </a>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:rgba(255,255,255,0.45);">
+          <i class="fa-solid fa-shield-halved" style="color:#22d3ee;"></i> Pagamento seguro
+        </span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:rgba(255,255,255,0.45);">
+          <i class="fa-brands fa-pix" style="color:#22d3ee;"></i> PIX · Cartão · Boleto
+        </span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:rgba(255,255,255,0.45);">
+          <i class="fa-solid fa-download" style="color:#22d3ee;"></i> Download imediato
+        </span>
+      </div>
+      <p class="pricing-note">* Uso pessoal/empresarial em 1 computador. Para mais máquinas, adquira licenças adicionais.</p>
+    </div>
+
+    <!-- Comparativo de custo -->
+    <div style="max-width:600px;margin:40px auto 0;padding:24px;background:var(--dark-3);border:1px solid var(--border);border-radius:var(--radius);">
+      <div class="section-tag" style="margin-bottom:16px;display:block;">Economize com uma licença vitalícia</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:0.92rem;">
+        <div style="padding:16px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.15);border-radius:8px;">
+          <div style="color:#f87171;font-weight:700;margin-bottom:8px;">Sistema SaaS típico</div>
+          <div style="color:rgba(255,255,255,0.6);">R$99/mês × 12 = <strong style="color:#f87171;">R$1.188/ano</strong></div>
+          <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:4px;">e todo ano você paga de novo…</div>
+        </div>
+        <div style="padding:16px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
+          <div style="color:#4ade80;font-weight:700;margin-bottom:8px;">RD Soluções OS</div>
+          <div style="color:rgba(255,255,255,0.6);">R$297 <strong style="color:#4ade80;">uma vez só</strong></div>
+          <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:4px;">usa para sempre, sem pagar mais</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DEPOIMENTOS
+══════════════════════════════════════════════════════════════ -->
+<section class="section testimonials-bg" aria-label="Depoimentos de clientes">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Quem já usa</span>
+      <h2>Empresas que <span class="text-gradient">transformaram</span> sua gestão</h2>
+      <p>Veja o que nossos clientes dizem sobre o sistema.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <span class="testimonial-label">Depoimento ilustrativo — substituir por real</span>
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Antes eu anotava tudo no caderno e perdia clientes porque demorava para enviar o orçamento. Agora faço em 2 minutos e mando no WhatsApp. Nunca perdi um cliente por isso de novo."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">RC</div>
+          <div>
+            <div class="testimonial-name">Roberto C.</div>
+            <div class="testimonial-role">Assistência Técnica, São Paulo</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <span class="testimonial-label">Depoimento ilustrativo — substituir por real</span>
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"O sistema é muito fácil de usar. Em menos de uma hora já estava configurado com o logo da minha empresa e fazendo orçamento profissional. Vale cada centavo dos R$297."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">MS</div>
+          <div>
+            <div class="testimonial-name">Mariana S.</div>
+            <div class="testimonial-role">Empresa de Limpeza, Campinas</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <span class="testimonial-label">Depoimento ilustrativo — substituir por real</span>
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Trabalho com manutenção predial e a OS saindo com meu logo impressionou muito os síndicos. Parece que sou uma empresa grande. Meus contratos aumentaram depois que comecei a usar."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">JL</div>
+          <div>
+            <div class="testimonial-name">José L.</div>
+            <div class="testimonial-role">Manutenção Predial, Rio de Janeiro</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:20px;font-size:0.8rem;color:var(--text-muted);">
+      <i class="fa-solid fa-circle-info"></i> Depoimentos são exemplos ilustrativos. Substitua por depoimentos reais dos seus clientes.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FAQ RÁPIDO
+══════════════════════════════════════════════════════════════ -->
+<section class="section faq-bg" id="faq" aria-label="Perguntas frequentes">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Dúvidas frequentes</span>
+      <h2>Perguntas que todo cliente faz <span class="text-gradient">antes de comprar</span></h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          Precisa de internet para funcionar?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Não. O RD Soluções OS é 100% offline. Funciona sem internet, sem servidor na nuvem e sem nenhuma conexão externa. Seus dados ficam no seu computador, com total segurança e privacidade.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          Posso instalar em mais de um computador?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Cada licença permite instalação em 1 computador. Para usar em mais máquinas, basta adquirir licenças adicionais pelo mesmo preço. Caso precise trocar de computador, entre em contato com o suporte.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          E se eu formatar o computador? Perco os dados?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Não! O sistema possui backup integrado. Antes de formatar, exporte o banco de dados em Configurações → Backup. Depois de reinstalar, importe o backup e todos os dados voltam exatamente como estavam.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          Funciona no Windows 10 e 11?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Sim. O sistema foi desenvolvido e testado no Windows 10 e Windows 11 (64 bits). Não é compatível com macOS ou Linux.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          O pagamento é realmente único? Não tem mensalidade?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Sim, com certeza. Você paga R$297 uma única vez e usa o sistema para sempre. Não existe cobrança mensal, renovação anual ou nenhuma taxa recorrente. Inclui atualizações futuras.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" role="button" tabindex="0" aria-expanded="false">
+          Recebo a chave imediatamente após o pagamento?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer">Sim. Após aprovação do pagamento (instantâneo no PIX e cartão), você recebe um e-mail com a chave de ativação e o link de download. Para boleto, em até 1 dia útil após a compensação.</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:32px;">
+      <a href="{{ url_for('main.faq') }}" class="btn btn-secondary">Ver todas as perguntas <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CTA FINAL
+══════════════════════════════════════════════════════════════ -->
+<section class="cta-final" aria-label="Chamada para ação final">
+  <div class="container" style="position:relative;z-index:2;">
+    <div class="hero-eyebrow" style="margin-bottom:24px;display:inline-flex;">
+      <i class="fa-solid fa-bolt"></i> Oferta por tempo limitado
+    </div>
+    <h2 style="max-width:700px;margin:0 auto 20px;">
+      Sua empresa mais organizada,<br><span class="text-gradient">mais profissional</span> e mais lucrativa.
+    </h2>
+    <p style="color:var(--text-muted);font-size:1.05rem;max-width:560px;margin:0 auto 40px;line-height:1.7;">
+      Cada dia sem o sistema é mais um cliente perdido, mais um orçamento desorganizado, mais dinheiro escapando pelo descuido.
+      <strong style="color:var(--white);">Comece hoje por R$297.</strong>
+    </p>
+    <a href="{{ url_for('checkout.index') }}" class="btn btn-primary btn-xl btn-pulse" aria-label="Comprar agora">
+      <i class="fa-solid fa-bolt"></i> Comprar Agora — R$297 Vitalício
+    </a>
+    <div style="display:flex;justify-content:center;gap:32px;margin-top:28px;flex-wrap:wrap;">
+      <span style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-muted);">
+        <i class="fa-solid fa-shield-halved" style="color:var(--success);"></i> Pagamento 100% seguro
+      </span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-muted);">
+        <i class="fa-solid fa-download" style="color:var(--accent);"></i> Download imediato
+      </span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-muted);">
+        <i class="fa-solid fa-infinity" style="color:var(--warning);"></i> Licença vitalícia
+      </span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-muted);">
+        <i class="fa-solid fa-headset" style="color:var(--primary-light);"></i> Suporte incluído
+      </span>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

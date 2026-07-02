@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Pagamento Pendente — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 24px 60px;background:var(--dark);">
+  <div style="max-width:520px;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:20px;">⏳</div>
+    <h1 style="font-size:2rem;margin-bottom:12px;">Pagamento em processamento</h1>
+    <p style="color:var(--text-muted);margin-bottom:32px;line-height:1.7;">Seu pagamento foi recebido e está sendo processado. Para boleto, o prazo é de até 1 dia útil após a compensação.<br><br>Assim que aprovado, você receberá a chave de ativação no seu e-mail.</p>
+    {% if order %}<div class="card" style="margin-bottom:24px;"><span style="color:var(--text-muted);font-size:0.85rem;">Pedido</span><div style="font-weight:700;color:var(--white);margin-top:4px;">{{ order.numero_pedido }}</div></div>{% endif %}
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-primary">Ir para Minha Conta</a>
+      <a href="{{ url_for('main.home') }}" class="btn btn-secondary">Voltar ao Site</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

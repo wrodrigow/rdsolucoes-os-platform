@@ -1,0 +1,31 @@
+{% extends "client/base_client.html" %}
+{% block title %}Alterar Senha — RD Soluções OS{% endblock %}
+{% block page_title %}Alterar Senha{% endblock %}
+
+{% block content %}
+<div style="max-width:500px;">
+  <h2 style="font-size:1.3rem;margin-bottom:4px;">Alterar Senha</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;margin-bottom:28px;">Por segurança, use uma senha forte com letras, números e símbolos.</p>
+
+  <div class="cl-card">
+    <form method="POST" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="cl-form-group">
+        <label class="cl-label" for="senha_atual">Senha atual</label>
+        <input type="password" class="cl-input" id="senha_atual" name="senha_atual" required autocomplete="current-password"/>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="nova">Nova senha <span style="color:var(--cl-muted);font-weight:400;">(mínimo 8 caracteres)</span></label>
+        <input type="password" class="cl-input" id="nova" name="nova" required minlength="8" autocomplete="new-password"/>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="nova2">Confirmar nova senha</label>
+        <input type="password" class="cl-input" id="nova2" name="nova2" required autocomplete="new-password"/>
+      </div>
+      <button type="submit" class="cl-btn cl-btn-primary" style="margin-top:8px;">
+        <i class="fa-solid fa-lock"></i> Alterar Senha
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

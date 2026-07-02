@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Política de Privacidade — RD Soluções OS{% endblock %}
+
+{% block content %}
+<section style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:60px 0 40px;text-align:center;">
+  <div class="container">
+    <h1 style="font-size:2rem;font-weight:900;color:#fff;margin-bottom:8px;">Política de Privacidade</h1>
+    <p style="color:rgba(255,255,255,0.6);font-size:0.88rem;">Última atualização: Janeiro de 2025</p>
+  </div>
+</section>
+
+<section class="section" style="background:#fff;">
+  <div class="container" style="max-width:760px;">
+    <div style="font-size:0.92rem;color:#374151;line-height:1.9;">
+
+      <p>A <strong>RD Soluções</strong> ("nós", "nosso") está comprometida com a proteção dos seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">1. Dados que Coletamos</h2>
+      <p>Ao adquirir o RD Soluções OS ou se cadastrar em nossa plataforma, coletamos:</p>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li><strong>Nome completo</strong> — para identificação da conta e emissão de licença</li>
+        <li><strong>E-mail</strong> — para entrega da licença, comunicações e recuperação de senha</li>
+        <li><strong>Telefone</strong> — opcional, para suporte via WhatsApp</li>
+        <li><strong>Dados de pagamento</strong> — processados exclusivamente pelo Mercado Pago (não armazenamos dados de cartão)</li>
+        <li><strong>Endereço IP e User Agent</strong> — para segurança, detecção de fraudes e logs de acesso</li>
+      </ul>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">2. Como Usamos seus Dados</h2>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li>Criar e gerenciar sua conta de cliente</li>
+        <li>Processar o pagamento e entregar a chave de ativação</li>
+        <li>Enviar atualizações importantes sobre o software</li>
+        <li>Prestar suporte técnico quando solicitado</li>
+        <li>Cumprir obrigações legais e prevenir fraudes</li>
+      </ul>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">3. Dados do Software (Uso Offline)</h2>
+      <p>O RD Soluções OS armazena todos os dados que você insere no sistema (clientes, orçamentos, financeiro) <strong>exclusivamente no seu computador</strong>. Esses dados nunca são transmitidos para nossos servidores ou terceiros.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">4. Compartilhamento de Dados</h2>
+      <p>Compartilhamos dados somente com:</p>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li><strong>Mercado Pago</strong> — para processamento de pagamentos</li>
+        <li><strong>Provedores de e-mail (SMTP)</strong> — para envio de confirmações e comunicações</li>
+      </ul>
+      <p>Não vendemos, alugamos ou compartilhamos seus dados com terceiros para fins de marketing.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">5. Segurança</h2>
+      <p>Adotamos medidas técnicas e organizacionais para proteger seus dados: senhas com hash bcrypt, tokens CSRF em formulários, HTTPS obrigatório, limitação de tentativas de login e logs de auditoria.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">6. Seus Direitos (LGPD)</h2>
+      <p>Você tem direito a: acessar seus dados, corrigir informações incorretas, solicitar exclusão da conta, portabilidade dos dados e revogar consentimento. Para exercer esses direitos, entre em contato pelo e-mail <a href="mailto:{{ site_cfg.get('site_email_contato','') }}" style="color:#1a5fa8;">{{ site_cfg.get('site_email_contato','') }}</a>.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">7. Retenção de Dados</h2>
+      <p>Mantemos seus dados enquanto sua conta estiver ativa ou pelo prazo exigido por lei. Dados de transações financeiras são mantidos por 5 anos conforme exigência fiscal.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">8. Contato</h2>
+      <p>Dúvidas sobre esta política: <a href="mailto:{{ site_cfg.get('site_email_contato','') }}" style="color:#1a5fa8;">{{ site_cfg.get('site_email_contato','') }}</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

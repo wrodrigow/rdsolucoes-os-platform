@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Criar Conta — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 24px 40px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(26,95,168,0.12) 0%,transparent 70%),var(--dark);">
+  <div style="width:100%;max-width:460px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <a href="{{ url_for('main.home') }}" class="navbar-brand" style="justify-content:center;margin-bottom:20px;">
+        <div class="navbar-logo">RD</div>
+        <span style="font-size:1.2rem;">RD Soluções <span>OS</span></span>
+      </a>
+      <h1 style="font-size:1.7rem;margin-bottom:8px;">Criar sua conta</h1>
+      <p style="color:var(--text-muted);">Crie sua conta para acessar a licença após a compra.</p>
+    </div>
+
+    <div class="card card-glass" style="padding:36px;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ 'danger' if cat == 'error' else cat }}"><i class="fa-solid fa-circle-info"></i> {{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="form-group">
+          <label class="form-label" for="nome">Nome completo *</label>
+          <input type="text" class="form-control" id="nome" name="nome" value="{{ nome or '' }}" placeholder="Seu nome completo" required autocomplete="name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">E-mail *</label>
+          <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}" placeholder="seu@email.com.br" required autocomplete="email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="telefone">Telefone / WhatsApp</label>
+          <input type="tel" class="form-control" id="telefone" name="telefone" value="{{ telefone or '' }}" placeholder="(11) 99999-9999" autocomplete="tel"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="senha">Senha * <span style="font-size:0.75rem;color:var(--text-muted);">(mínimo 8 caracteres)</span></label>
+          <div style="position:relative;">
+            <input type="password" class="form-control" id="senha" name="senha" placeholder="••••••••" required autocomplete="new-password" minlength="8"/>
+            <button type="button" onclick="toggleSenha('senha',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="senha2">Confirmar senha *</label>
+          <input type="password" class="form-control" id="senha2" name="senha2" placeholder="••••••••" required autocomplete="new-password"/>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:20px;">
+          Ao criar conta, você concorda com nossa <a href="{{ url_for('main.privacidade') }}">Política de Privacidade</a> e <a href="{{ url_for('main.termos') }}">Termos de Uso</a>.
+        </p>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-user-plus"></i> Criar Conta Grátis
+        </button>
+      </form>
+    </div>
+
+    <p style="text-align:center;margin-top:24px;font-size:0.9rem;color:var(--text-muted);">
+      Já tem conta? <a href="{{ url_for('auth.login') }}" style="color:var(--accent);font-weight:600;">Entrar</a>
+    </p>
+    <p style="text-align:center;margin-top:8px;">
+      <a href="{{ url_for('main.home') }}" style="font-size:0.85rem;color:var(--text-muted);">← Voltar ao site</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSenha(id, btn) {
+  const inp = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (inp.type === 'password') { inp.type = 'text'; icon.classList.replace('fa-eye','fa-eye-slash'); }
+  else { inp.type = 'password'; icon.classList.replace('fa-eye-slash','fa-eye'); }
+}
+</script>
+{% endblock %}

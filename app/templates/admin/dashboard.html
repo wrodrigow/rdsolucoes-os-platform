@@ -1,0 +1,166 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard — Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:0.78rem;color:var(--adm-muted);background:var(--adm-bg-alt);padding:4px 10px;border-radius:6px;">
+  Atualizado agora
+</span>
+{% endblock %}
+
+{% block content %}
+<!-- Stats grid -->
+<div class="adm-stats-grid">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;">
+      <i class="fa-solid fa-bag-shopping"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.total_pedidos }}</div>
+      <div class="adm-stat-label">Total de Pedidos</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;">
+      <i class="fa-solid fa-check-circle"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.pedidos_aprovados }}</div>
+      <div class="adm-stat-label">Pedidos Aprovados</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(124,58,237,0.12);color:#7c3aed;">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.total_clientes }}</div>
+      <div class="adm-stat-label">Clientes Cadastrados</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(234,179,8,0.12);color:#ca8a04;">
+      <i class="fa-solid fa-key"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.keys_disponiveis }}</div>
+      <div class="adm-stat-label">Keys Disponíveis</div>
+    </div>
+  </div>
+</div>
+
+<!-- Receita + Gráfico -->
+<div class="adm-grid-2" style="margin-bottom:24px;">
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-circle-dollar-to-slot" style="color:#059669;"></i> Receita Total</div>
+    </div>
+    <div style="font-size:2rem;font-weight:800;color:#059669;margin-bottom:4px;">
+      R$ {{ '%.2f'|format(stats.receita_total) | replace('.', ',') }}
+    </div>
+    <div style="font-size:0.82rem;color:var(--adm-muted);">Pagamentos aprovados acumulados</div>
+    <hr style="border:none;border-top:1px solid var(--adm-border);margin:16px 0;"/>
+    <div style="font-size:0.85rem;color:var(--adm-text);margin-bottom:4px;">
+      Receita este mês: <strong style="color:#059669;">R$ {{ '%.2f'|format(stats.receita_mes) | replace('.', ',') }}</strong>
+    </div>
+    <div style="font-size:0.85rem;color:var(--adm-text);">
+      Ticket médio: <strong>R$ {{ '%.2f'|format(stats.ticket_medio) | replace('.', ',') }}</strong>
+    </div>
+    {% if stats.keys_disponiveis < 50 %}
+    <div style="margin-top:16px;padding:10px 14px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:8px;font-size:0.82rem;color:#92400e;">
+      <i class="fa-solid fa-triangle-exclamation"></i> Atenção: apenas <strong>{{ stats.keys_disponiveis }}</strong> keys disponíveis. <a href="{{ url_for('admin.keys') }}" style="color:#92400e;font-weight:600;">Importar mais →</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-chart-bar" style="color:#2563eb;"></i> Vendas por Mês</div>
+    </div>
+    {% if grafico_labels %}
+    <div class="adm-bar-chart" id="sales-chart" data-labels='{{ grafico_labels | tojson }}' data-values='{{ grafico_values | tojson }}'></div>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--adm-muted);font-size:0.88rem;">
+      Sem dados suficientes para exibir o gráfico.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Pedidos recentes + Logs recentes -->
+<div class="adm-grid-2">
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Pedidos Recentes</div>
+      <a href="{{ url_for('admin.pedidos') }}" class="adm-btn adm-btn-outline" style="font-size:0.78rem;padding:5px 12px;">Ver todos</a>
+    </div>
+    {% if pedidos_recentes %}
+    <div class="adm-table-wrapper">
+      <table class="adm-table">
+        <thead><tr><th>Pedido</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for p in pedidos_recentes %}
+          <tr>
+            <td><code style="font-size:0.78rem;">{{ p.numero_pedido }}</code></td>
+            <td style="font-size:0.85rem;">{{ p.user.nome[:20] }}{% if p.user.nome|length > 20 %}...{% endif %}</td>
+            <td style="font-size:0.85rem;font-weight:600;">{{ p.valor_formatado() }}</td>
+            <td>
+              {% if p.status == 'approved' %}
+                <span class="adm-badge adm-badge-success">Aprovado</span>
+              {% elif p.status == 'pending' %}
+                <span class="adm-badge adm-badge-warning">Pendente</span>
+              {% elif p.status == 'cancelled' %}
+                <span class="adm-badge adm-badge-danger">Cancelado</span>
+              {% else %}
+                <span class="adm-badge adm-badge-info">{{ p.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px;color:var(--adm-muted);font-size:0.88rem;">Nenhum pedido ainda.</div>
+    {% endif %}
+  </div>
+
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Atividade Recente (Logs)</div>
+      <a href="{{ url_for('admin.logs') }}" class="adm-btn adm-btn-outline" style="font-size:0.78rem;padding:5px 12px;">Ver todos</a>
+    </div>
+    {% if logs_recentes %}
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for log in logs_recentes %}
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--adm-border);">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(37,99,235,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;color:#2563eb;">
+          <i class="fa-solid fa-{% if 'compra' in log.acao %}cart-shopping{% elif 'login' in log.acao %}arrow-right-to-bracket{% elif 'admin' in log.acao %}gear{% else %}circle-dot{% endif %}"></i>
+        </div>
+        <div>
+          <div style="font-size:0.83rem;font-weight:600;color:var(--adm-text);">{{ log.acao | replace('_',' ') | title }}</div>
+          <div style="font-size:0.78rem;color:var(--adm-muted);">
+            {{ log.detalhes[:60] if log.detalhes else '—' }}{% if log.detalhes and log.detalhes|length > 60 %}...{% endif %}
+          </div>
+          <div style="font-size:0.73rem;color:var(--adm-muted);margin-top:2px;">{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px;color:var(--adm-muted);font-size:0.88rem;">Nenhum log ainda.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('sales-chart');
+  if (el) {
+    renderBarChart(el, JSON.parse(el.dataset.labels), JSON.parse(el.dataset.values));
+  }
+});
+</script>
+{% endblock %}

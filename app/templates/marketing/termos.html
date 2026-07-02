@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Termos de Uso — RD Soluções OS{% endblock %}
+
+{% block content %}
+<section style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:60px 0 40px;text-align:center;">
+  <div class="container">
+    <h1 style="font-size:2rem;font-weight:900;color:#fff;margin-bottom:8px;">Termos de Uso</h1>
+    <p style="color:rgba(255,255,255,0.6);font-size:0.88rem;">Última atualização: Janeiro de 2025</p>
+  </div>
+</section>
+
+<section class="section" style="background:#fff;">
+  <div class="container" style="max-width:760px;">
+    <div style="font-size:0.92rem;color:#374151;line-height:1.9;">
+
+      <p>Ao adquirir ou utilizar o <strong>RD Soluções OS</strong>, você concorda com os termos abaixo. Leia com atenção antes de efetuar a compra.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">1. Licença de Uso</h2>
+      <p>Ao adquirir o RD Soluções OS, você recebe uma <strong>licença de uso pessoal e intransferível</strong> para instalar e utilizar o software em <strong>1 (um) computador</strong>. A licença é:</p>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li><strong>Vitalícia</strong> — válida por tempo indeterminado sem renovação</li>
+        <li><strong>Não exclusiva</strong> — outros usuários podem adquirir licenças separadas</li>
+        <li><strong>Intransferível</strong> — não pode ser vendida, cedida ou transferida a terceiros</li>
+      </ul>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">2. O que Está Incluído</h2>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li>Acesso a todas as funcionalidades da versão adquirida</li>
+        <li>Atualizações gratuitas de versões futuras</li>
+        <li>Suporte técnico via WhatsApp e e-mail</li>
+        <li>Download do instalador na Área do Cliente por tempo indeterminado</li>
+      </ul>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">3. Restrições</h2>
+      <p>É expressamente proibido:</p>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li>Copiar, distribuir ou compartilhar o software com terceiros</li>
+        <li>Realizar engenharia reversa, descompilar ou modificar o código</li>
+        <li>Usar o software para fins ilegais ou prejudiciais a terceiros</li>
+        <li>Remover avisos de copyright ou marcas registradas</li>
+        <li>Sublicenciar, vender ou alugar o software</li>
+      </ul>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">4. Pagamento e Entrega</h2>
+      <p>O produto é entregue digitalmente. Após a confirmação do pagamento, a chave de ativação é enviada automaticamente por e-mail e disponibilizada na Área do Cliente. Por se tratar de entrega digital imediata, <strong>não há política de arrependimento após a ativação da chave</strong>.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">5. Limitação de Responsabilidade</h2>
+      <p>O software é fornecido "como está". A RD Soluções não se responsabiliza por:</p>
+      <ul style="padding-left:20px;margin:8px 0 16px;">
+        <li>Perda de dados por falha de hardware ou ausência de backup por parte do usuário</li>
+        <li>Incompatibilidade com sistemas operacionais não suportados</li>
+        <li>Danos indiretos, lucros cessantes ou perda de negócios</li>
+      </ul>
+      <p>Nossa responsabilidade máxima limita-se ao valor pago pela licença.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">6. Cancelamento da Licença</h2>
+      <p>A licença pode ser cancelada sem aviso prévio em caso de violação destes termos. O cancelamento não gera direito a reembolso.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">7. Alterações nos Termos</h2>
+      <p>Reservamo-nos o direito de modificar estes termos a qualquer momento. Alterações significativas serão comunicadas por e-mail. O uso contínuo do software após a comunicação implica aceite dos novos termos.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">8. Legislação Aplicável</h2>
+      <p>Estes termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de São Paulo/SP para dirimir eventuais controvérsias.</p>
+
+      <h2 style="font-size:1.1rem;font-weight:800;color:#1e293b;margin:28px 0 10px;">9. Contato</h2>
+      <p>Dúvidas sobre estes termos: <a href="mailto:{{ site_cfg.get('site_email_contato','') }}" style="color:#1a5fa8;">{{ site_cfg.get('site_email_contato','') }}</a></p>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

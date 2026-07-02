@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Como Funciona — RD Soluções OS{% endblock %}
+{% block meta_description %}Veja como é simples começar a usar o RD Soluções OS: compre, baixe, instale e ative em menos de 10 minutos. Sistema 100% offline para Windows.{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:80px 0 60px;text-align:center;">
+  <div class="container">
+    <h1 style="font-size:2.4rem;font-weight:900;color:#fff;margin-bottom:16px;">Do zero ao sistema funcionando<br>em menos de 10 minutos</h1>
+    <p style="font-size:1.05rem;color:rgba(255,255,255,0.7);max-width:520px;margin:0 auto;">Sem técnico, sem configuração complicada. Você mesmo instala e já começa a usar.</p>
+  </div>
+</section>
+
+<!-- Passo a passo -->
+<section class="section" style="background:#fff;">
+  <div class="container" style="max-width:760px;">
+    {% set passos = [
+      ('1', '#2563eb', 'fa-credit-card', 'Realize o Pagamento',
+       'Acesse a página de compra e escolha sua forma de pagamento preferida: PIX (aprovação em segundos), cartão de crédito ou boleto bancário.',
+       ['PIX aprovado imediatamente', 'Cartão de crédito em 1x', 'Boleto em até 1 dia útil', 'Pagamento 100% seguro via Mercado Pago']),
+      ('2', '#0d7d8c', 'fa-envelope-open-text', 'Receba sua Chave por E-mail',
+       'Assim que o pagamento é confirmado, você recebe um e-mail com sua chave de ativação exclusiva. A chave também fica disponível na sua Área do Cliente 24h por dia.',
+       ['E-mail automático imediato', 'Chave sempre na Área do Cliente', 'Licença vitalícia vinculada ao seu e-mail', 'Suporte incluso']),
+      ('3', '#7c3aed', 'fa-download', 'Baixe e Instale o Sistema',
+       'Na Área do Cliente, acesse Downloads e baixe o instalador. Execute como Administrador e siga os passos — leva menos de 2 minutos.',
+       ['Instalador simples (Next → Next → Finish)', 'Não requer internet após instalar', 'Compatível com Windows 10 e 11 (64 bits)', 'Atalho criado automaticamente na área de trabalho']),
+      ('4', '#059669', 'fa-rocket', 'Ative e Comece a Usar',
+       'Na primeira abertura, o sistema pede a chave de ativação. Cole a chave que recebeu e pronto — você tem acesso completo a todas as funcionalidades.',
+       ['Ativação em segundos', 'Configurar logo e dados da empresa', 'Importar clientes existentes (opcional)', 'Suporte no WhatsApp para tirar dúvidas']),
+    ] %}
+
+    {% for num, cor, icon, titulo, desc, items in passos %}
+    <div style="display:flex;gap:24px;margin-bottom:40px;align-items:flex-start;">
+      <div style="flex-shrink:0;width:56px;height:56px;background:{{ cor }};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;font-weight:900;box-shadow:0 4px 12px {{ cor }}44;">{{ num }}</div>
+      <div style="flex:1;">
+        <h3 style="font-size:1.15rem;font-weight:800;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+          <i class="fa-solid {{ icon }}" style="color:{{ cor }};font-size:1rem;"></i> {{ titulo }}
+        </h3>
+        <p style="font-size:0.9rem;color:#64748b;line-height:1.7;margin-bottom:12px;">{{ desc }}</p>
+        <ul style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          {% for item in items %}
+          <li style="font-size:0.83rem;color:#374151;display:flex;gap:6px;align-items:flex-start;">
+            <span style="color:{{ cor }};margin-top:2px;">✓</span> {{ item }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% if not loop.last %}
+    <div style="margin-left:28px;border-left:2px dashed #e2e8f0;height:24px;margin-bottom:16px;"></div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Requisitos do sistema -->
+<section class="section" style="background:#f8fafc;">
+  <div class="container" style="max-width:720px;">
+    <h2 style="text-align:center;font-size:1.5rem;font-weight:800;color:#1e293b;margin-bottom:32px;">Requisitos do Sistema</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      {% set requisitos = [
+        ('fa-windows', '#2563eb', 'Sistema Operacional', 'Windows 10 ou Windows 11 (64 bits)'),
+        ('fa-memory', '#7c3aed', 'Memória RAM', 'Mínimo 4 GB (recomendado 8 GB)'),
+        ('fa-hard-drive', '#059669', 'Espaço em Disco', '500 MB livres para instalação'),
+        ('fa-wifi', '#ef4444', 'Internet', 'Não necessária para uso do sistema'),
+      ] %}
+      {% for icon, cor, label, valor in requisitos %}
+      <div class="card" style="padding:20px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:40px;height:40px;background:{{ cor }}18;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid {{ icon }}" style="color:{{ cor }};font-size:1rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:2px;">{{ label }}</div>
+          <div style="font-size:0.9rem;font-weight:700;color:#1e293b;">{{ valor }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="background:linear-gradient(135deg,#1a5fa8,#0d7d8c);padding:60px 0;text-align:center;">
+  <div class="container">
+    <h2 style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:12px;">Simples assim. Comece agora.</h2>
+    <p style="color:rgba(255,255,255,0.8);margin-bottom:28px;">Pagamento único. Licença vitalícia. Sem mensalidade.</p>
+    <a href="{{ url_for('checkout.index') }}" style="display:inline-block;background:#fff;color:#1a5fa8;font-weight:800;font-size:1rem;padding:14px 40px;border-radius:8px;text-decoration:none;">Adquirir RD Soluções OS — R$297</a>
+  </div>
+</section>
+{% endblock %}

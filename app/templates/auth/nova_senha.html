@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Nova Senha — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 24px 40px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(26,95,168,0.12) 0%,transparent 70%),var(--dark);">
+  <div style="width:100%;max-width:420px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <a href="{{ url_for('main.home') }}" class="navbar-brand" style="justify-content:center;margin-bottom:20px;">
+        <div class="navbar-logo">RD</div>
+        <span style="font-size:1.2rem;">RD Soluções <span>OS</span></span>
+      </a>
+      <h1 style="font-size:1.7rem;margin-bottom:8px;">Definir Nova Senha</h1>
+      <p style="color:var(--text-muted);">Escolha uma senha segura com pelo menos 8 caracteres.</p>
+    </div>
+    <div class="card card-glass" style="padding:36px;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}"><i class="fa-solid fa-circle-info"></i> {{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="form-group">
+          <label class="form-label" for="senha">Nova senha</label>
+          <input type="password" class="form-control" id="senha" name="senha" placeholder="••••••••" required minlength="8" autocomplete="new-password"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="senha2">Confirmar nova senha</label>
+          <input type="password" class="form-control" id="senha2" name="senha2" placeholder="••••••••" required autocomplete="new-password"/>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-lock"></i> Salvar Nova Senha
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Financeiro — Admin{% endblock %}
+{% block page_title %}Financeiro{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;"><i class="fa-solid fa-dollar-sign"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.4rem;">R$ {{ '%.2f'|format(receita_total) | replace('.', ',') }}</div>
+      <div class="adm-stat-label">Receita Total</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;"><i class="fa-solid fa-calendar-check"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.4rem;">R$ {{ '%.2f'|format(receita_mes_atual) | replace('.', ',') }}</div>
+      <div class="adm-stat-label">Receita este Mês</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(124,58,237,0.12);color:#7c3aed;"><i class="fa-solid fa-receipt"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ total_vendas }}</div>
+      <div class="adm-stat-label">Total de Vendas</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(234,179,8,0.12);color:#ca8a04;"><i class="fa-solid fa-tag"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.4rem;">R$ {{ '%.2f'|format(ticket_medio) | replace('.', ',') }}</div>
+      <div class="adm-stat-label">Ticket Médio</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico mensal -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-chart-bar" style="color:#2563eb;"></i> Receita por Mês (últimos 12 meses)</div>
+  </div>
+  {% if grafico_labels %}
+  <div class="adm-bar-chart" id="fin-chart"
+    data-labels='{{ grafico_labels | tojson }}'
+    data-values='{{ grafico_values | tojson }}'
+    style="height:260px;">
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px;color:var(--adm-muted);">Sem dados suficientes.</div>
+  {% endif %}
+</div>
+
+<!-- Detalhamento mensal -->
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Detalhamento Mensal</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Mês / Ano</th>
+          <th>Nº Vendas</th>
+          <th>Receita</th>
+          <th>Ticket Médio</th>
+          <th>% do Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in detalhamento %}
+        <tr>
+          <td style="font-weight:600;">{{ row.mes_label }}</td>
+          <td>{{ row.qtd }}</td>
+          <td style="font-weight:700;color:#059669;">R$ {{ '%.2f'|format(row.receita) | replace('.', ',') }}</td>
+          <td>R$ {{ '%.2f'|format(row.ticket) | replace('.', ',') }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="background:var(--adm-bg-alt);border-radius:4px;height:8px;flex:1;overflow:hidden;">
+                <div style="height:100%;background:#2563eb;border-radius:4px;width:{{ row.pct }}%;"></div>
+              </div>
+              <span style="font-size:0.8rem;color:var(--adm-muted);min-width:36px;">{{ '%.1f'|format(row.pct) }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--adm-muted);">Sem vendas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('fin-chart');
+  if (el) renderBarChart(el, JSON.parse(el.dataset.labels), JSON.parse(el.dataset.values));
+});
+</script>
+{% endblock %}

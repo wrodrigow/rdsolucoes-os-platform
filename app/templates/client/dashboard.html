@@ -1,0 +1,102 @@
+{% extends "client/base_client.html" %}
+{% block title %}Dashboard — RD Soluções OS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:8px;">
+  <h2 style="font-size:1.3rem;color:var(--cl-text);margin-bottom:4px;">Olá, {{ current_user.nome.split()[0] }}! 👋</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;">Bem-vindo à sua área do cliente. Gerencie sua licença e downloads aqui.</p>
+</div>
+
+<!-- Stats -->
+<div class="cl-stats-row" style="margin-top:24px;">
+  <div class="cl-stat-card">
+    <div class="cl-stat-icon {{ 'green' if license else 'orange' }}">
+      <i class="fa-solid fa-certificate"></i>
+    </div>
+    <div>
+      <div class="cl-stat-value">{{ 'Ativa' if license else 'Nenhuma' }}</div>
+      <div class="cl-stat-label">Licença</div>
+    </div>
+  </div>
+  <div class="cl-stat-card">
+    <div class="cl-stat-icon blue">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+    </div>
+    <div>
+      <div class="cl-stat-value">{{ orders|length }}</div>
+      <div class="cl-stat-label">Pedido(s)</div>
+    </div>
+  </div>
+  <div class="cl-stat-card">
+    <div class="cl-stat-icon teal">
+      <i class="fa-solid fa-download"></i>
+    </div>
+    <div>
+      <div class="cl-stat-value">{{ 'Disponível' if license else '—' }}</div>
+      <div class="cl-stat-label">Download</div>
+    </div>
+  </div>
+</div>
+
+<!-- Licença rápida -->
+{% if license %}
+<div class="cl-card" style="margin-top:24px;background:linear-gradient(135deg,#0f1623,#1a2234);border:1px solid rgba(26,95,168,0.35);">
+  <div class="cl-card-header">
+    <div>
+      <div class="cl-card-title" style="color:#fff;"><i class="fa-solid fa-certificate" style="color:#22d3ee;margin-right:8px;"></i>Sua Licença</div>
+      <div class="cl-card-subtitle" style="color:rgba(255,255,255,0.45);">Licença Vitalícia — RD Soluções OS</div>
+    </div>
+    <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#4ade80;padding:5px 14px;border-radius:50px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;">● ATIVA</span>
+  </div>
+  <div style="padding:0 0 4px;">
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Chave de Ativação</div>
+    <div style="font-size:1.2rem;font-weight:800;font-family:'Courier New',monospace;color:#22d3ee;letter-spacing:0.1em;margin-bottom:16px;">{{ license.key_obj.key }}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="{{ url_for('client.licenca') }}" class="btn-cl-primary" style="font-size:0.85rem;padding:10px 20px;">
+        <i class="fa-solid fa-certificate"></i> Ver Licença Completa
+      </a>
+      <a href="{{ url_for('client.downloads') }}" class="btn-cl-outline" style="font-size:0.85rem;padding:10px 20px;">
+        <i class="fa-solid fa-download"></i> Download
+      </a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="cl-card" style="margin-top:24px;text-align:center;padding:40px;">
+  <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+  <h3 style="margin-bottom:8px;color:var(--cl-text);">Nenhuma licença ativa</h3>
+  <p style="color:var(--cl-muted);margin-bottom:24px;font-size:0.9rem;">Adquira o RD Soluções OS e organize sua empresa de vez.</p>
+  <a href="{{ url_for('checkout.index') }}" class="cl-btn cl-btn-primary">
+    <i class="fa-solid fa-bolt"></i> Comprar Licença — R$297
+  </a>
+</div>
+{% endif %}
+
+<!-- Pedidos recentes -->
+{% if orders %}
+<div class="cl-card" style="margin-top:24px;">
+  <div class="cl-card-header">
+    <div class="cl-card-title">Pedidos Recentes</div>
+    <a href="{{ url_for('client.historico') }}" style="font-size:0.83rem;color:var(--cl-primary);">Ver todos →</a>
+  </div>
+  <div class="cl-table-wrapper">
+    <table class="cl-table">
+      <thead><tr><th>Pedido</th><th>Produto</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        {% set lbl = o.status_label() %}
+        <tr>
+          <td><strong>{{ o.numero_pedido }}</strong></td>
+          <td style="color:var(--cl-muted);font-size:0.85rem;">{{ o.produto_nome }}</td>
+          <td><strong>{{ o.valor_formatado() }}</strong></td>
+          <td><span style="background:{{ 'rgba(16,185,129,0.1)' if lbl[1]=='success' else 'rgba(245,158,11,0.1)' if lbl[1]=='warning' else 'rgba(239,68,68,0.1)' }};color:{{ '#059669' if lbl[1]=='success' else '#b45309' if lbl[1]=='warning' else '#dc2626' }};padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">{{ lbl[0] }}</span></td>
+          <td style="color:var(--cl-muted);font-size:0.85rem;">{{ o.created_at.strftime('%d/%m/%Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

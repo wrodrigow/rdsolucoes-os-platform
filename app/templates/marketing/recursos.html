@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Recursos — RD Soluções OS{% endblock %}
+{% block meta_description %}Conheça todos os recursos do RD Soluções OS: gestão de clientes, orçamentos, financeiro, agenda e muito mais. Tudo offline, sem mensalidade.{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:80px 0 60px;text-align:center;">
+  <div class="container">
+    <span style="display:inline-block;background:rgba(13,125,140,0.2);border:1px solid rgba(13,125,140,0.4);color:#67e8f9;font-size:0.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:20px;">Funcionalidades Completas</span>
+    <h1 style="font-size:2.4rem;font-weight:900;color:#fff;margin-bottom:16px;line-height:1.2;">Tudo que seu negócio precisa<br>em um único sistema</h1>
+    <p style="font-size:1.05rem;color:rgba(255,255,255,0.7);max-width:560px;margin:0 auto 32px;">Sem internet. Sem mensalidade. Sem limite de uso. RD Soluções OS é um sistema completo que roda no seu computador.</p>
+    <a href="{{ url_for('checkout.index') }}" class="btn-primary">Quero o Sistema — R$297 único</a>
+  </div>
+</section>
+
+<!-- Grid de recursos detalhados -->
+<section class="section" style="background:#fff;">
+  <div class="container">
+    {% set modulos = [
+      ('👥', 'Gestão de Clientes', 'Cadastre clientes com nome, telefone, endereço, CPF/CNPJ e histórico completo. Busca rápida, filtros por status e exportação de relatórios.', ['Cadastro completo', 'Histórico de atendimentos', 'Busca e filtros avançados', 'Exportar para Excel/PDF']),
+      ('📄', 'Orçamentos Profissionais', 'Gere orçamentos com sua logo, itens, quantidades, descontos e condições de pagamento. PDF pronto para enviar ao cliente em segundos.', ['PDF com sua logo', 'Múltiplos itens e serviços', 'Desconto por item ou total', 'Envio por WhatsApp/e-mail']),
+      ('💰', 'Controle Financeiro', 'Registre entradas e saídas, acompanhe o fluxo de caixa, veja relatórios mensais e anuais. Saiba exatamente quanto está entrando no seu negócio.', ['Fluxo de caixa', 'Categorias personalizadas', 'Relatórios mensais', 'Gráficos de desempenho']),
+      ('📅', 'Agenda de Atendimentos', 'Organize seus atendimentos com data, hora e cliente vinculado. Receba alertas de compromissos e nunca perca um agendamento.', ['Calendário visual', 'Alertas de compromissos', 'Vincular ao cliente', 'Visão semanal/mensal']),
+      ('🔧', 'Ordens de Serviço', 'Crie ordens de serviço detalhadas com status, técnico responsável e histórico de atualizações. Do recebimento à entrega, tudo documentado.', ['Status personalizáveis', 'Histórico de atualizações', 'Impressão rápida', 'Foto do equipamento']),
+      ('📊', 'Relatórios e Dashboard', 'Veja em tempo real como seu negócio está performando. Clientes ativos, receita do mês, orçamentos aprovados e muito mais no painel inicial.', ['Dashboard em tempo real', 'Relatório de vendas', 'Clientes por período', 'Exportar em PDF']),
+      ('💾', 'Backup Automático', 'Seus dados nunca se perdem. Faça backup com um clique, salve em pendrive ou nuvem e restaure quando precisar — mesmo após formatar o computador.', ['Backup com um clique', 'Exportar para arquivo', 'Restauração fácil', 'Suporte a nuvem (Google Drive)']),
+      ('🎨', 'Personalização da Empresa', 'Configure sua logo, dados da empresa, cores padrão e informações que aparecem em todos os documentos gerados pelo sistema.', ['Logo personalizado', 'Dados da empresa', 'Campos customizados', 'Cabeçalho e rodapé']),
+      ('⚡', '100% Offline', 'Não depende de internet para nada. Funciona em apagões, em campo, em locais sem sinal. Seus dados ficam no seu computador, não em servidores de terceiros.', ['Sem internet', 'Dados locais e seguros', 'Funciona em qualquer lugar', 'Sem assinatura de nuvem']),
+    ] %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;">
+      {% for icon, title, desc, items in modulos %}
+      <div class="card" style="padding:28px;">
+        <div style="font-size:2rem;margin-bottom:12px;">{{ icon }}</div>
+        <h3 style="font-size:1.05rem;font-weight:800;color:#1e293b;margin-bottom:8px;">{{ title }}</h3>
+        <p style="font-size:0.88rem;color:#64748b;line-height:1.7;margin-bottom:16px;">{{ desc }}</p>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
+          {% for item in items %}
+          <li style="font-size:0.83rem;color:#374151;display:flex;gap:8px;align-items:center;">
+            <span style="color:#0d7d8c;font-size:0.7rem;">✓</span> {{ item }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="background:linear-gradient(135deg,#1a5fa8,#0d7d8c);padding:60px 0;text-align:center;">
+  <div class="container">
+    <h2 style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:12px;">Pronto para transformar seu negócio?</h2>
+    <p style="color:rgba(255,255,255,0.8);margin-bottom:28px;font-size:1rem;">Licença vitalícia, pagamento único. Sem mensalidade, sem surpresas.</p>
+    <a href="{{ url_for('checkout.index') }}" style="display:inline-block;background:#fff;color:#1a5fa8;font-weight:800;font-size:1rem;padding:14px 40px;border-radius:8px;text-decoration:none;">Adquirir Agora por R$297</a>
+  </div>
+</section>
+{% endblock %}

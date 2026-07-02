@@ -1,0 +1,148 @@
+{% extends "client/base_client.html" %}
+{% block title %}Minha Licença — RD Soluções OS{% endblock %}
+{% block page_title %}Minha Licença{% endblock %}
+
+{% block content %}
+
+{% if license %}
+<!-- Certificado Digital -->
+<div class="license-certificate" role="region" aria-label="Certificado de licença">
+  <div class="license-header">
+    <div class="license-logo-area">
+      <div class="license-logo-icon">RD</div>
+      <div>
+        <div class="license-product-name">RD Soluções OS</div>
+        <div class="license-product-type">Licença de Software Comercial</div>
+      </div>
+    </div>
+    {% set sl = license.status_label() %}
+    <div class="license-status-badge">
+      <div class="license-status-dot"></div>
+      {{ sl[0] }}
+    </div>
+  </div>
+
+  <div class="license-info-grid">
+    <div class="license-info-item">
+      <div class="license-info-label">Titular da Licença</div>
+      <div class="license-info-value">{{ current_user.nome }}</div>
+    </div>
+    <div class="license-info-item">
+      <div class="license-info-label">Número do Pedido</div>
+      <div class="license-info-value">{{ license.order.numero_pedido }}</div>
+    </div>
+    <div class="license-info-item">
+      <div class="license-info-label">Data de Aquisição</div>
+      <div class="license-info-value">{{ license.created_at.strftime('%d/%m/%Y') }}</div>
+    </div>
+    <div class="license-info-item">
+      <div class="license-info-label">Tipo de Licença</div>
+      <div class="license-info-value">🏆 Vitalícia</div>
+    </div>
+    <div class="license-info-item">
+      <div class="license-info-label">Versão Liberada</div>
+      <div class="license-info-value">{{ license.versao_liberada }}</div>
+    </div>
+    <div class="license-info-item">
+      <div class="license-info-label">Versão Atual</div>
+      <div class="license-info-value">
+        {% if download %}{{ download.versao }}{% else %}{{ license.versao_liberada }}{% endif %}
+        {% if download and download.versao == license.versao_liberada %}
+          <span style="font-size:0.72rem;background:rgba(16,185,129,0.15);color:#4ade80;padding:2px 8px;border-radius:4px;margin-left:6px;">✓ Atualizado</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chave de Ativação -->
+  <div class="license-key-box">
+    <div>
+      <div class="license-key-label">🔑 Chave de Ativação</div>
+      <div class="license-key-value" id="license-key">{{ license.key_obj.key }}</div>
+    </div>
+    <button onclick="copiarKey()" class="btn-cl-outline" style="flex-shrink:0;">
+      <i class="fa-regular fa-copy"></i> <span id="copy-txt">Copiar</span>
+    </button>
+  </div>
+
+  <div class="license-actions">
+    {% if download %}
+    <a href="{{ url_for('client.fazer_download', download_id=download.id) }}" class="btn-cl-primary">
+      <i class="fa-solid fa-download"></i> Baixar Sistema ({{ download.versao }})
+    </a>
+    {% endif %}
+    <button onclick="window.print()" class="btn-cl-outline">
+      <i class="fa-solid fa-print"></i> Imprimir Licença
+    </button>
+    <a href="{{ url_for('client.downloads') }}" class="btn-cl-outline">
+      <i class="fa-solid fa-folder-open"></i> Todos os Downloads
+    </a>
+  </div>
+</div>
+
+<!-- Instruções de ativação -->
+<div class="cl-card" style="margin-top:24px;">
+  <div class="cl-card-header">
+    <div>
+      <div class="cl-card-title"><i class="fa-solid fa-circle-info" style="color:#1a5fa8;margin-right:8px;"></i>Como ativar o sistema</div>
+      <div class="cl-card-subtitle">Siga estes passos para instalar e ativar o RD Soluções OS</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:4px 0;">
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">1</div>
+      <div><div style="font-weight:600;font-size:0.9rem;margin-bottom:3px;">Baixe o instalador</div><div style="font-size:0.83rem;color:var(--cl-muted);">Clique em "Baixar Sistema" acima</div></div>
+    </div>
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">2</div>
+      <div><div style="font-weight:600;font-size:0.9rem;margin-bottom:3px;">Execute o instalador</div><div style="font-size:0.83rem;color:var(--cl-muted);">Clique com botão direito → Executar como administrador</div></div>
+    </div>
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">3</div>
+      <div><div style="font-weight:600;font-size:0.9rem;margin-bottom:3px;">Insira a chave</div><div style="font-size:0.83rem;color:var(--cl-muted);">Cole a chave de ativação quando solicitado</div></div>
+    </div>
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;">4</div>
+      <div><div style="font-weight:600;font-size:0.9rem;margin-bottom:3px;">Pronto!</div><div style="font-size:0.83rem;color:var(--cl-muted);">Configure logo e dados da empresa e comece a usar</div></div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Sem licença -->
+<div style="text-align:center;padding:80px 24px;">
+  <div style="font-size:4rem;margin-bottom:20px;">🔒</div>
+  <h2 style="margin-bottom:12px;">Nenhuma licença encontrada</h2>
+  <p style="color:var(--cl-muted);margin-bottom:32px;">Você ainda não possui uma licença ativa. Adquira o RD Soluções OS por apenas R$297 e comece a usar hoje.</p>
+  <a href="{{ url_for('checkout.index') }}" class="cl-btn cl-btn-primary">
+    <i class="fa-solid fa-bolt"></i> Comprar Licença — R$297
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  .cl-sidebar, .cl-topbar, .license-actions, .cl-card { display: none !important; }
+  .cl-main { margin-left: 0 !important; }
+  .license-certificate { border: 2px solid #1a5fa8 !important; color: #000 !important; background: #fff !important; }
+  .license-key-value { color: #1a5fa8 !important; }
+  .license-status-badge { border: 1px solid #10b981 !important; color: #059669 !important; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarKey() {
+  const key = document.getElementById('license-key').textContent.trim();
+  navigator.clipboard.writeText(key).then(() => {
+    const el = document.getElementById('copy-txt');
+    el.textContent = '✓ Copiada!';
+    setTimeout(() => el.textContent = 'Copiar', 2500);
+  });
+}
+</script>
+{% endblock %}

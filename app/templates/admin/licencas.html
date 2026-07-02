@@ -1,0 +1,118 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Licenças — Admin{% endblock %}
+{% block page_title %}Licenças{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="Buscar por nome, e-mail ou key..."
+      class="adm-input" style="flex:1;min-width:220px;"/>
+    <select name="status_filter" class="adm-input" style="width:160px;">
+      <option value="">Todos os status</option>
+      <option value="ativa" {{ 'selected' if status_filter == 'ativa' }}>Ativa</option>
+      <option value="suspensa" {{ 'selected' if status_filter == 'suspensa' }}>Suspensa</option>
+      <option value="cancelada" {{ 'selected' if status_filter == 'cancelada' }}>Cancelada</option>
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q or status_filter %}
+    <a href="{{ url_for('admin.licencas') }}" class="adm-btn adm-btn-outline">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} licença(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Titular</th>
+          <th>Key</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th>Versão Liberada</th>
+          <th>Data Emissão</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lic in licencas %}
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:0.86rem;">{{ lic.user.nome }}</div>
+            <div style="font-size:0.78rem;color:var(--adm-muted);">{{ lic.user.email }}</div>
+          </td>
+          <td>
+            <code style="font-size:0.78rem;background:var(--adm-bg-alt);padding:2px 6px;border-radius:4px;letter-spacing:0.5px;">
+              {{ lic.key_obj.key[:12] if lic.key_obj else '—' }}…
+            </code>
+          </td>
+          <td>
+            <span class="adm-badge adm-badge-primary">{{ lic.tipo | capitalize }}</span>
+          </td>
+          <td>
+            {% if lic.status == 'ativa' %}
+              <span class="adm-badge adm-badge-success">Ativa</span>
+            {% elif lic.status == 'suspensa' %}
+              <span class="adm-badge adm-badge-warning">Suspensa</span>
+            {% else %}
+              <span class="adm-badge adm-badge-danger">Cancelada</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.85rem;">{{ lic.versao_liberada or '—' }}</td>
+          <td style="font-size:0.82rem;color:var(--adm-muted);">{{ lic.created_at.strftime('%d/%m/%Y') }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.alterar_status_licenca', lic_id=lic.id) }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              {% if lic.status == 'ativa' %}
+                <button type="submit" name="novo_status" value="suspensa"
+                  class="adm-btn adm-btn-warning" style="font-size:0.75rem;padding:4px 10px;"
+                  data-confirm="Suspender esta licença?">
+                  <i class="fa-solid fa-pause"></i> Suspender
+                </button>
+              {% elif lic.status == 'suspensa' %}
+                <button type="submit" name="novo_status" value="ativa"
+                  class="adm-btn adm-btn-success" style="font-size:0.75rem;padding:4px 10px;"
+                  data-confirm="Reativar esta licença?">
+                  <i class="fa-solid fa-play"></i> Reativar
+                </button>
+              {% endif %}
+              {% if lic.status != 'cancelada' %}
+              <button type="submit" name="novo_status" value="cancelada"
+                class="adm-btn adm-btn-danger" style="font-size:0.75rem;padding:4px 10px;"
+                data-confirm="Cancelar permanentemente esta licença?">
+                <i class="fa-solid fa-ban"></i>
+              </button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--adm-muted);">Nenhuma licença encontrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}" class="adm-page-btn">‹ Anterior</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+        <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}"
+           class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}
+        <span class="adm-page-btn" style="cursor:default;">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}" class="adm-page-btn">Próximo ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

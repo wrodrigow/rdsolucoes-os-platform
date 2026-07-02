@@ -1,0 +1,53 @@
+{% extends "client/base_client.html" %}
+{% block title %}Downloads — RD Soluções OS{% endblock %}
+{% block page_title %}Downloads{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.3rem;margin-bottom:4px;">Downloads Disponíveis</h2>
+  <p style="color:var(--cl-muted);font-size:0.9rem;">Baixe a versão mais recente do RD Soluções OS. Suas atualizações estão inclusas na licença.</p>
+</div>
+
+{% if versions %}
+  {% for v in versions %}
+  <div class="download-card">
+    <div class="download-icon">💿</div>
+    <div class="download-info">
+      <div class="download-name">
+        {{ v.nome }}
+        {% if loop.first %}<span class="download-badge-new">MAIS RECENTE</span>{% endif %}
+      </div>
+      <div class="download-meta">
+        <span><i class="fa-solid fa-tag" style="margin-right:4px;"></i>{{ v.versao }}</span>
+        <span><i class="fa-solid fa-hard-drive" style="margin-right:4px;"></i>{{ v.tamanho }}</span>
+        <span><i class="fa-solid fa-calendar" style="margin-right:4px;"></i>{{ v.created_at.strftime('%d/%m/%Y') }}</span>
+        <span><i class="fa-solid fa-download" style="margin-right:4px;"></i>{{ v.downloads_count }} downloads</span>
+      </div>
+      {% if v.changelog %}
+      <div class="download-changelog">
+        <strong style="color:var(--cl-text);">Novidades:</strong> {{ v.changelog }}
+      </div>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('client.fazer_download', download_id=v.id) }}" class="cl-btn cl-btn-primary" style="flex-shrink:0;white-space:nowrap;">
+      <i class="fa-solid fa-download"></i> Baixar
+    </a>
+  </div>
+  {% endfor %}
+
+  <div class="cl-card" style="margin-top:16px;background:#f8fafc;">
+    <div style="display:flex;align-items:flex-start;gap:14px;">
+      <i class="fa-solid fa-circle-info" style="color:#1a5fa8;font-size:1.2rem;margin-top:2px;flex-shrink:0;"></i>
+      <div style="font-size:0.88rem;color:var(--cl-muted);line-height:1.6;">
+        <strong style="color:var(--cl-text);">Instruções de instalação:</strong> Baixe o arquivo, clique com o botão direito e selecione "Executar como administrador". Quando solicitado, insira sua chave de ativação disponível em <a href="{{ url_for('client.licenca') }}">Minha Licença</a>.
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div style="text-align:center;padding:60px 24px;">
+    <div style="font-size:3rem;margin-bottom:16px;">📦</div>
+    <h3 style="margin-bottom:8px;">Nenhum download disponível</h3>
+    <p style="color:var(--cl-muted);">Em breve a versão mais recente estará disponível aqui.</p>
+  </div>
+{% endif %}
+{% endblock %}

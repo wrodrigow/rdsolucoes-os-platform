@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Pagamento Não Aprovado — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:100px 24px 60px;background:var(--dark);">
+  <div style="max-width:520px;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:20px;">❌</div>
+    <h1 style="font-size:2rem;margin-bottom:12px;">Pagamento não aprovado</h1>
+    <p style="color:var(--text-muted);margin-bottom:32px;line-height:1.7;">Infelizmente seu pagamento não foi aprovado. Isso pode acontecer por saldo insuficiente, dados incorretos ou bloqueio do banco. Por favor, tente novamente com outro método de pagamento.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('checkout.index') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Tentar Novamente</a>
+      <a href="{{ url_for('main.contato') }}" class="btn btn-secondary">Falar com Suporte</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

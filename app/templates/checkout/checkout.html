@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Checkout — RD Soluções OS{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;padding:90px 24px 60px;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(26,95,168,0.1) 0%,transparent 60%),var(--dark);">
+  <div style="max-width:960px;margin:0 auto;">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--text-muted);margin-bottom:32px;">
+      <a href="{{ url_for('main.home') }}" style="color:var(--text-muted);">Início</a>
+      <span>›</span><span style="color:var(--white);">Checkout</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 400px;gap:32px;align-items:start;">
+
+      <!-- Coluna Esquerda: Resumo + Pagamento -->
+      <div>
+        <h1 style="font-size:1.8rem;margin-bottom:6px;">Finalizar Compra</h1>
+        <p style="color:var(--text-muted);margin-bottom:32px;">Você está a um passo de organizar sua empresa de vez.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }}"><i class="fa-solid fa-circle-info"></i> {{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <!-- Card Produto -->
+        <div class="card" style="margin-bottom:20px;border-color:rgba(26,95,168,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="width:52px;height:52px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:white;flex-shrink:0;">RD</div>
+              <div>
+                <div style="font-weight:700;color:var(--white);">{{ nome }}</div>
+                <div style="font-size:0.82rem;color:var(--text-muted);">Licença vitalícia • 1 computador • Sem mensalidade</div>
+                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <span class="badge badge-success"><i class="fa-solid fa-check"></i> 100% Offline</span>
+                  <span class="badge badge-info"><i class="fa-solid fa-infinity"></i> Vitalícia</span>
+                  <span class="badge badge-success"><i class="fa-solid fa-download"></i> Download Imediato</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:0.8rem;color:var(--text-muted);text-decoration:line-through;">R$ 497,00</div>
+              <div style="font-size:1.6rem;font-weight:900;color:var(--white);">R$ {{ "%.2f"|format(preco) | replace('.', ',') }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- O que está incluído -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="font-weight:700;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-box-open" style="color:var(--accent);"></i> O que você recebe
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.88rem;">
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Orçamentos em PDF</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Ordens de Serviço</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Cadastro de Clientes</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Controle Financeiro</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Backup de dados</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Atualizações futuras</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Suporte por e-mail</div>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Windows 10 e 11</div>
+          </div>
+        </div>
+
+        <!-- Segurança -->
+        <div style="display:flex;align-items:center;gap:20px;padding:16px 20px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm);font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:12px;">
+          <span><i class="fa-solid fa-shield-halved" style="color:var(--success);margin-right:6px;"></i>Pagamento seguro via Mercado Pago</span>
+          <span><i class="fa-solid fa-lock" style="color:var(--success);margin-right:6px;"></i>Dados criptografados</span>
+          <span><i class="fa-brands fa-pix" style="color:var(--success);margin-right:6px;"></i>PIX · Cartão · Boleto</span>
+        </div>
+      </div>
+
+      <!-- Coluna Direita: Ação -->
+      <div>
+        <div class="card" style="position:sticky;top:90px;border-color:rgba(26,95,168,0.35);background:rgba(10,15,28,0.9);">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:0.82rem;color:var(--text-muted);text-decoration:line-through;margin-bottom:4px;">De R$ 497,00</div>
+            <div style="font-size:2.8rem;font-weight:900;color:var(--white);line-height:1;">
+              <span style="font-size:1.3rem;vertical-align:top;line-height:2.2;">R$</span>{{ "%.2f"|format(preco)|replace('.00','') }}<span style="font-size:1rem;vertical-align:top;line-height:3.5;">,00</span>
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;">Pagamento único — sem mensalidade</div>
+          </div>
+
+          {% if current_user.is_authenticated %}
+            <form method="POST" action="{{ url_for('checkout.iniciar') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="btn btn-primary btn-xl btn-block btn-pulse" style="margin-bottom:12px;">
+                <i class="fa-solid fa-bolt"></i> Comprar com Mercado Pago
+              </button>
+            </form>
+            <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);">
+              Comprando como <strong style="color:var(--white);">{{ current_user.email }}</strong><br>
+              <a href="{{ url_for('auth.logout') }}" style="font-size:0.78rem;">Não é você?</a>
+            </p>
+          {% else %}
+            <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-xl btn-block" style="margin-bottom:12px;">
+              <i class="fa-solid fa-user-plus"></i> Criar Conta e Comprar
+            </a>
+            <a href="{{ url_for('auth.login', next=url_for('checkout.index')) }}" class="btn btn-secondary btn-block" style="margin-bottom:16px;">
+              <i class="fa-solid fa-right-to-bracket"></i> Já tenho conta — Entrar
+            </a>
+            <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);">Crie sua conta grátis para concluir a compra.</p>
+          {% endif %}
+
+          <div style="border-top:1px solid var(--border);margin-top:20px;padding-top:20px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--text-muted);">
+              <i class="fa-solid fa-bolt" style="color:var(--accent);width:16px;"></i> Acesso imediato após pagamento
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--text-muted);">
+              <i class="fa-solid fa-envelope" style="color:var(--accent);width:16px;"></i> Chave enviada por e-mail
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--text-muted);">
+              <i class="fa-solid fa-headset" style="color:var(--accent);width:16px;"></i> Suporte incluído
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--text-muted);">
+              <i class="fa-solid fa-infinity" style="color:var(--accent);width:16px;"></i> Licença vitalícia
+            </div>
+          </div>
+
+          {% if keys_disponiveis is defined and keys_disponiveis < 50 %}
+          <div style="margin-top:16px;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:0.82rem;color:var(--warning);display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Restam <strong>{{ keys_disponiveis }}</strong> licenças disponíveis
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media(max-width:768px){
+  div[style*="grid-template-columns:1fr 400px"]{display:block!important;}
+  div[style*="position:sticky"]{position:static!important;margin-top:24px;}
+}
+</style>
+{% endblock %}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recuperação de Senha — RD Soluções OS</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+      <!-- Header -->
+      <tr><td style="background:linear-gradient(135deg,#1a5fa8 0%,#0d7d8c 100%);border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
+        <div style="font-size:26px;font-weight:900;color:#fff;">RD Soluções OS</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px;">Sistema de Gestão Profissional</div>
+      </td></tr>
+
+      <!-- Corpo -->
+      <tr><td style="background:#fff;padding:40px;border-radius:0 0 12px 12px;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+          <h1 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#111827;">Redefinição de Senha</h1>
+          <p style="margin:0;font-size:14px;color:#6b7280;">Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+        </div>
+
+        <p style="font-size:14px;color:#374151;margin-bottom:24px;">
+          Olá, <strong>{{ user.nome }}</strong>! Clique no botão abaixo para criar uma nova senha. O link é válido por <strong>1 hora</strong>.
+        </p>
+
+        <div style="text-align:center;margin-bottom:28px;">
+          <a href="{{ reset_url }}" style="display:inline-block;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:15px;">
+            Redefinir Minha Senha →
+          </a>
+        </div>
+
+        <div style="background:#fef9f0;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:24px;">
+          <p style="margin:0;font-size:13px;color:#78350f;">
+            <strong>⚠️ Não solicitou isso?</strong> Ignore este e-mail. Sua senha permanece a mesma e nenhuma alteração foi feita na sua conta.
+          </p>
+        </div>
+
+        <p style="font-size:12px;color:#9ca3af;margin-bottom:4px;">Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+        <p style="font-size:12px;color:#1a5fa8;word-break:break-all;margin:0;">{{ reset_url }}</p>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;"/>
+        <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">{{ mail_footer }}</p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

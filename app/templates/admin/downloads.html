@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Downloads / Versões — Admin{% endblock %}
+{% block page_title %}Downloads / Versões{% endblock %}
+
+{% block content %}
+<div class="adm-grid-2">
+  <!-- Nova versão -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-upload" style="color:#2563eb;"></i> Publicar Nova Versão</div>
+    </div>
+    <form method="POST" action="{{ url_for('admin.nova_versao') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="adm-form-group">
+        <label class="adm-label">Versão <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="versao" class="adm-input" placeholder="ex: 1.20" required/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Nome de exibição <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="nome" class="adm-input" placeholder="ex: RD Soluções OS v1.20" required/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Arquivo do instalador <span style="color:#ef4444;">*</span></label>
+        <input type="file" name="arquivo" class="adm-input" id="file-upload" accept=".exe,.zip,.msi" required/>
+        <div id="file-name-preview" style="font-size:0.78rem;color:var(--adm-muted);margin-top:4px;"></div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Changelog / Novidades</label>
+        <textarea name="changelog" class="adm-input" rows="5"
+          placeholder="• Nova funcionalidade X&#10;• Corrigido bug Y&#10;• Melhorias de desempenho"
+          style="resize:vertical;"></textarea>
+      </div>
+      <div class="adm-form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="ativo" id="ativo" checked style="width:auto;margin:0;"/>
+        <label for="ativo" style="margin:0;font-weight:500;cursor:pointer;">Tornar esta versão ativa imediatamente</label>
+      </div>
+      <button type="submit" class="adm-btn adm-btn-primary" style="margin-top:8px;">
+        <i class="fa-solid fa-rocket"></i> Publicar Versão
+      </button>
+    </form>
+  </div>
+
+  <!-- Versões existentes -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Versões Publicadas</div>
+    </div>
+    {% if versoes %}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for v in versoes %}
+      <div style="border:1px solid var(--adm-border);border-radius:10px;padding:16px;{% if v.ativo %}border-color:rgba(37,99,235,0.4);background:rgba(37,99,235,0.03);{% endif %}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:700;font-size:0.95rem;color:var(--adm-text);">
+              {{ v.nome }}
+              {% if v.ativo %}<span class="adm-badge adm-badge-success" style="margin-left:6px;">Ativo</span>{% endif %}
+            </div>
+            <div style="font-size:0.78rem;color:var(--adm-muted);margin-top:2px;">
+              {{ v.nome_arquivo }} &bull; {{ v.tamanho or '—' }} &bull; {{ v.downloads_count }} downloads
+            </div>
+            <div style="font-size:0.75rem;color:var(--adm-muted);">Publicado em {{ v.created_at.strftime('%d/%m/%Y') }}</div>
+          </div>
+          {% if not v.ativo %}
+          <form method="POST" action="{{ url_for('admin.ativar_versao', versao_id=v.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="adm-btn adm-btn-outline" style="font-size:0.78rem;"
+              data-confirm="Tornar v{{ v.versao }} a versão ativa para download?">
+              Tornar ativa
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% if v.changelog %}
+        <div style="margin-top:10px;font-size:0.8rem;color:var(--adm-muted);line-height:1.6;white-space:pre-line;">{{ v.changelog[:200] }}{% if v.changelog|length > 200 %}…{% endif %}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px;color:var(--adm-muted);">Nenhuma versão publicada ainda.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

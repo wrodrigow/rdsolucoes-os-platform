@@ -1,0 +1,103 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Logs — Admin{% endblock %}
+{% block page_title %}Logs de Atividade{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="Buscar por ação ou detalhes..."
+      class="adm-input" style="flex:1;min-width:220px;"/>
+    <select name="acao_filter" class="adm-input" style="width:180px;">
+      <option value="">Todas as ações</option>
+      <option value="compra_aprovada" {{ 'selected' if acao_filter == 'compra_aprovada' }}>Compra aprovada</option>
+      <option value="login" {{ 'selected' if acao_filter == 'login' }}>Login</option>
+      <option value="login_falhou" {{ 'selected' if acao_filter == 'login_falhou' }}>Login falhou</option>
+      <option value="registro" {{ 'selected' if acao_filter == 'registro' }}>Registro</option>
+      <option value="senha_alterada" {{ 'selected' if acao_filter == 'senha_alterada' }}>Senha alterada</option>
+      <option value="admin_" {{ 'selected' if acao_filter == 'admin_' }}>Ações admin</option>
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q or acao_filter %}
+    <a href="{{ url_for('admin.logs') }}" class="adm-btn adm-btn-outline">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} registro(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Data / Hora</th>
+          <th>Usuário</th>
+          <th>Ação</th>
+          <th>Detalhes</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.82rem;color:var(--adm-muted);">
+            {{ log.created_at.strftime('%d/%m/%Y') }}<br>
+            <span style="font-size:0.75rem;">{{ log.created_at.strftime('%H:%M:%S') }}</span>
+          </td>
+          <td style="font-size:0.84rem;">
+            {% if log.user %}
+              <div style="font-weight:600;">{{ log.user.nome }}</div>
+              <div style="font-size:0.75rem;color:var(--adm-muted);">{{ log.user.email }}</div>
+            {% else %}
+              <span style="color:var(--adm-muted);">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set acao = log.acao %}
+            {% if 'compra' in acao %}
+              <span class="adm-badge adm-badge-success">{{ acao | replace('_',' ') }}</span>
+            {% elif 'falhou' in acao or 'erro' in acao %}
+              <span class="adm-badge adm-badge-danger">{{ acao | replace('_',' ') }}</span>
+            {% elif 'admin' in acao %}
+              <span class="adm-badge adm-badge-warning">{{ acao | replace('_',' ') }}</span>
+            {% else %}
+              <span class="adm-badge adm-badge-info">{{ acao | replace('_',' ') }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.82rem;max-width:300px;">
+            {% if log.detalhes %}
+              <span title="{{ log.detalhes }}">
+                {{ log.detalhes[:80] }}{% if log.detalhes|length > 80 %}…{% endif %}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">{{ log.ip or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--adm-muted);">Nenhum log encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}{% if q %}&q={{ q }}{% endif %}{% if acao_filter %}&acao_filter={{ acao_filter }}{% endif %}" class="adm-page-btn">‹ Anterior</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+        <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if acao_filter %}&acao_filter={{ acao_filter }}{% endif %}"
+           class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}
+        <span class="adm-page-btn" style="cursor:default;">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}{% if q %}&q={{ q }}{% endif %}{% if acao_filter %}&acao_filter={{ acao_filter }}{% endif %}" class="adm-page-btn">Próximo ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Keys — Admin{% endblock %}
+{% block page_title %}Gerenciamento de Keys{% endblock %}
+
+{% block content %}
+<!-- Stats rápidas -->
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;"><i class="fa-solid fa-key"></i></div>
+    <div class="adm-stat-info"><div class="adm-stat-value">{{ total_disponiveis }}</div><div class="adm-stat-label">Disponíveis</div></div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;"><i class="fa-solid fa-check-double"></i></div>
+    <div class="adm-stat-info"><div class="adm-stat-value">{{ total_vendidas }}</div><div class="adm-stat-label">Vendidas</div></div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(234,179,8,0.12);color:#ca8a04;"><i class="fa-solid fa-clock"></i></div>
+    <div class="adm-stat-info"><div class="adm-stat-value">{{ total_reservadas }}</div><div class="adm-stat-label">Reservadas</div></div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(124,58,237,0.12);color:#7c3aed;"><i class="fa-solid fa-layer-group"></i></div>
+    <div class="adm-stat-info"><div class="adm-stat-value">{{ total_geral }}</div><div class="adm-stat-label">Total no banco</div></div>
+  </div>
+</div>
+
+<div class="adm-grid-2">
+  <!-- Importar novas keys -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-file-import" style="color:#2563eb;"></i> Importar Keys</div>
+    </div>
+    <form method="POST" action="{{ url_for('admin.importar_keys') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <p style="font-size:0.85rem;color:var(--adm-muted);margin-bottom:16px;">
+        Cole as keys abaixo (uma por linha) ou envie um arquivo <code>.txt</code> / <code>.csv</code>.
+        Duplicatas serão ignoradas automaticamente.
+      </p>
+
+      <div class="adm-form-group">
+        <label class="adm-label">Colar keys (uma por linha)</label>
+        <textarea name="keys_texto" id="keys-textarea" class="adm-input" rows="8"
+          placeholder="XXXX-XXXX-XXXX-XXXX&#10;YYYY-YYYY-YYYY-YYYY&#10;..."
+          style="font-family:monospace;font-size:0.82rem;resize:vertical;"></textarea>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:4px;">
+          <span id="keys-count">0 keys detectadas</span>
+        </div>
+      </div>
+
+      <div class="adm-form-group" style="margin-bottom:20px;">
+        <label class="adm-label">Ou carregar arquivo</label>
+        <input type="file" name="keys_file" accept=".txt,.csv" class="adm-input" id="keys-file-input"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:4px;" id="file-name-preview"></div>
+      </div>
+
+      <button type="submit" class="adm-btn adm-btn-primary">
+        <i class="fa-solid fa-upload"></i> Importar Keys
+      </button>
+    </form>
+  </div>
+
+  <!-- Lista de keys recentes -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Keys no Banco</div>
+      <form method="GET" style="display:flex;gap:8px;">
+        <select name="status_filter" class="adm-input" style="width:150px;font-size:0.82rem;" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <option value="disponivel" {{ 'selected' if status_filter == 'disponivel' }}>Disponíveis</option>
+          <option value="vendida" {{ 'selected' if status_filter == 'vendida' }}>Vendidas</option>
+          <option value="reservada" {{ 'selected' if status_filter == 'reservada' }}>Reservadas</option>
+        </select>
+      </form>
+    </div>
+    <div class="adm-table-wrapper" style="max-height:360px;overflow-y:auto;">
+      <table class="adm-table">
+        <thead><tr><th>Key</th><th>Status</th><th>Atribuída em</th></tr></thead>
+        <tbody>
+          {% for k in keys %}
+          <tr>
+            <td><code style="font-size:0.78rem;">{{ k.key[:8] }}…{{ k.key[-4:] }}</code></td>
+            <td>
+              {% if k.status == 'disponivel' %}
+                <span class="adm-badge adm-badge-success">Disponível</span>
+              {% elif k.status == 'vendida' %}
+                <span class="adm-badge adm-badge-primary">Vendida</span>
+              {% else %}
+                <span class="adm-badge adm-badge-warning">Reservada</span>
+              {% endif %}
+            </td>
+            <td style="font-size:0.78rem;color:var(--adm-muted);">
+              {{ k.data_venda.strftime('%d/%m/%Y') if k.data_venda else '—' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhuma key.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="adm-pagination" style="padding-top:12px;">
+      {% if pagination.has_prev %}
+      <a href="?page={{ pagination.prev_num }}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}" class="adm-page-btn">‹</a>
+      {% endif %}
+      <span class="adm-page-btn active">{{ pagination.page }}/{{ pagination.pages }}</span>
+      {% if pagination.has_next %}
+      <a href="?page={{ pagination.next_num }}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}" class="adm-page-btn">›</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
