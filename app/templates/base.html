@@ -113,12 +113,21 @@
 
 <!-- Mobile Menu -->
 <div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Menu mobile">
-  <a href="{{ url_for('main.recursos') }}">Recursos</a>
-  <a href="{{ url_for('main.como_funciona') }}">Como Funciona</a>
-  <a href="{{ url_for('main.planos') }}">Planos</a>
-  <a href="{{ url_for('main.faq') }}">FAQ</a>
-  <a href="{{ url_for('main.contato') }}">Contato</a>
-  <a href="{{ url_for('checkout.index') }}" class="btn btn-primary btn-block" style="margin-top:16px;">
+  <a href="{{ url_for('main.recursos') }}"><i class="fa-solid fa-star" style="width:18px;opacity:.6;"></i> Recursos</a>
+  <a href="{{ url_for('main.como_funciona') }}"><i class="fa-solid fa-play" style="width:18px;opacity:.6;"></i> Como Funciona</a>
+  <a href="{{ url_for('main.planos') }}"><i class="fa-solid fa-tag" style="width:18px;opacity:.6;"></i> Planos</a>
+  <a href="{{ url_for('main.faq') }}"><i class="fa-solid fa-circle-question" style="width:18px;opacity:.6;"></i> FAQ</a>
+  <a href="{{ url_for('main.contato') }}"><i class="fa-solid fa-envelope" style="width:18px;opacity:.6;"></i> Contato</a>
+  {% if current_user.is_authenticated %}
+    {% if current_user.is_admin %}
+      <a href="{{ url_for('admin.dashboard') }}" style="color:#22d3ee;"><i class="fa-solid fa-gauge-high" style="width:18px;"></i> Painel Admin</a>
+    {% else %}
+      <a href="{{ url_for('client.dashboard') }}" style="color:#22d3ee;"><i class="fa-solid fa-user" style="width:18px;"></i> Minha Conta</a>
+    {% endif %}
+  {% else %}
+    <a href="{{ url_for('auth.login') }}" style="color:#22d3ee;"><i class="fa-solid fa-right-to-bracket" style="width:18px;"></i> Entrar</a>
+  {% endif %}
+  <a href="{{ url_for('checkout.index') }}" class="btn btn-primary btn-block" style="margin-top:8px;">
     <i class="fa-solid fa-bolt"></i> Comprar Agora — R$297
   </a>
 </div>
@@ -126,7 +135,7 @@
 <!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div style="position:fixed;top:84px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:380px;">
+    <div class="flash-container">
       {% for cat, msg in messages %}
         <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} flash-msg" style="box-shadow:0 4px 20px rgba(0,0,0,0.3);">
           <i class="fa-solid {{ 'fa-check-circle' if cat == 'success' else 'fa-triangle-exclamation' if cat == 'warning' else 'fa-circle-info' if cat == 'info' else 'fa-circle-xmark' }}"></i>

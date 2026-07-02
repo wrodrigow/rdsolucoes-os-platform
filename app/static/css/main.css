@@ -38,7 +38,7 @@
 
 /* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; overflow-x: hidden; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--dark);
@@ -195,6 +195,20 @@ p { color: var(--text); }
 .alert-warning { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
 .alert-info    { background: rgba(34,211,238,0.10); border: 1px solid rgba(34,211,238,0.25); color: var(--accent); }
 
+/* ── Flash messages container ────────────────────────────────── */
+.flash-container {
+  position: fixed;
+  top: 84px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 380px;
+  pointer-events: none;
+}
+.flash-container .alert { pointer-events: auto; }
+
 /* ── Navbar ──────────────────────────────────────────────────── */
 .navbar {
   position: fixed;
@@ -273,16 +287,19 @@ p { color: var(--text); }
   padding: 32px 24px;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
 }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 16px 20px;
   color: var(--text);
   font-size: 1.05rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
   border-bottom: 1px solid var(--border);
+  min-height: 52px;
 }
 .mobile-menu a:hover { background: var(--dark-3); color: #fff; }
 
@@ -753,6 +770,7 @@ p { color: var(--text); }
   color: var(--white);
   background: var(--card-bg);
   transition: background var(--transition);
+  min-height: 60px;
 }
 .faq-question:hover { background: rgba(255,255,255,0.06); }
 .faq-icon { font-size: 1.2rem; color: var(--accent); transition: transform var(--transition); flex-shrink: 0; }
@@ -884,12 +902,18 @@ p { color: var(--text); }
 .delay-400 { animation-delay: 0.4s; opacity: 0; }
 .btn-pulse { animation: pulse-glow 2.5s infinite; }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════════ */
+
+/* ── Large tablets / small laptops (≤ 1024px) ───────────────── */
 @media (max-width: 1024px) {
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .steps-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Tablets (≤ 768px) ───────────────────────────────────────── */
 @media (max-width: 768px) {
   .hero-content { grid-template-columns: 1fr; gap: 40px; padding: 56px 20px 60px; }
   .hero-visual { display: none; }
@@ -899,17 +923,15 @@ p { color: var(--text); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
   .stat-item { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
   .stat-item:nth-child(odd) { border-right: 1px solid var(--border); }
-  .stat-item:last-child { border-bottom: none; }
-  .features-grid { grid-template-columns: 1fr; }
-  .steps-grid { grid-template-columns: 1fr; }
+  .stat-item:nth-last-child(-n+2) { border-bottom: none; padding-bottom: 0; }
+  /* features-grid stays 2 cols from 1024px breakpoint */
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
   .step-card::after { display: none; }
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }
   .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
   .navbar-nav { display: none; }
   .navbar-cta { display: none; }
   .navbar-toggle { display: block; }
-
-  /* Reduzir padding de seções no tablet */
   .section { padding: 72px 0; }
   .section-sm { padding: 44px 0; }
   .cta-final { padding: 80px 0; }
@@ -919,80 +941,147 @@ p { color: var(--text); }
   .solution-card { padding: 28px 24px; }
   .comparison-card { padding: 24px 20px; }
   .feature-card { padding: 24px; }
-
-  /* Botões CTA menores no tablet */
   .btn-xl { padding: 18px 36px; font-size: 1.05rem; }
 }
 
-/* ── Mobile pequeno (≤ 480px) ────────────────────────────────── */
+/* ── Mobile phones (≤ 480px) ────────────────────────────────── */
 @media (max-width: 480px) {
-  /* Layout geral */
+  /* Sections */
   .section { padding: 52px 0; }
   .section-sm { padding: 36px 0; }
-  .container { padding: 0 16px; }
-  .container-sm { padding: 0 16px; }
+  .container, .container-sm { padding: 0 16px; }
+
+  /* Typography */
+  h1 { font-size: clamp(1.75rem, 7.5vw, 2.2rem); overflow-wrap: break-word; line-height: 1.22; }
+  h2 { font-size: clamp(1.3rem, 6vw, 1.7rem); overflow-wrap: break-word; }
+  h3 { font-size: clamp(1rem, 4.5vw, 1.3rem); overflow-wrap: break-word; }
+  p  { overflow-wrap: break-word; }
 
   /* Navbar */
   .navbar { padding: 0 16px; }
   .navbar-inner { height: 64px; }
+  .navbar-brand { gap: 8px; }
+  .navbar-toggle { padding: 10px; min-width: 44px; min-height: 44px; }
+
+  /* Mobile menu — flush with 64px navbar */
+  .mobile-menu { top: 64px; padding: 20px 16px; gap: 4px; }
+  .mobile-menu a { padding: 14px 16px; font-size: 0.97rem; min-height: 48px; }
+  .mobile-menu .btn-block { margin-top: 12px; padding: 16px; font-size: 0.97rem; min-height: 52px; }
+
+  /* Flash messages */
+  .flash-container { top: 72px; left: 12px; right: 12px; max-width: calc(100vw - 24px); }
 
   /* Hero */
   .hero { padding-top: 64px; }
-  .hero-content { padding: 44px 16px 52px; gap: 32px; }
-  .hero-eyebrow { font-size: 0.72rem; padding: 5px 12px; }
-  .hero-sub { font-size: 1rem; margin-bottom: 28px; }
-  .hero-cta { flex-direction: column; gap: 12px; margin-bottom: 36px; }
-  .hero-cta .btn { width: 100%; justify-content: center; }
-  .btn-lg { padding: 15px 24px; font-size: 0.92rem; }
-  .btn-xl { padding: 16px 24px; font-size: 1rem; }
-  .hero-social-proof { gap: 12px; }
-  .hero-stat-num { font-size: 1.25rem; }
-  .hero-divider { height: 28px; }
+  .hero-content { padding: 40px 16px 48px; gap: 28px; }
+  .hero-eyebrow { font-size: 0.7rem; padding: 5px 12px; letter-spacing: 0.05em; }
+  .hero-sub { font-size: 0.95rem; margin-bottom: 28px; line-height: 1.65; }
+  .hero-cta { flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .hero-cta .btn { width: 100%; justify-content: center; white-space: normal; text-align: center; }
+  .hero-social-proof { gap: 0; justify-content: space-around; flex-wrap: nowrap; }
+  .hero-stat-num { font-size: 1.2rem; }
+  .hero-stat-label { font-size: 0.7rem; }
+  .hero-divider { display: none; }
 
-  /* Estatísticas */
+  /* Buttons */
+  .btn { min-height: 44px; }
+  .btn-lg { padding: 14px 20px; font-size: 0.9rem; }
+  .btn-xl { padding: 15px 20px; font-size: 0.92rem; white-space: normal; text-align: center; min-height: 52px; }
+  .btn-sm { min-height: 40px; }
+
+  /* Stats */
   .stats-bar { padding: 24px 0; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-num { font-size: 1.9rem; }
-  .stat-label { font-size: 0.82rem; }
+  .stat-label { font-size: 0.78rem; }
+  .stat-item { padding: 0 12px 20px; }
+
+  /* Pain section */
+  .pain-item { padding: 14px 12px; gap: 12px; }
+  .pain-icon { font-size: 1.2rem; }
+  .pain-text { font-size: 0.88rem; }
+  .solution-card { padding: 20px 16px; }
+  .solution-item { font-size: 0.88rem; gap: 10px; }
+
+  /* Features */
+  .features-grid { grid-template-columns: 1fr; gap: 14px; }
+  .feature-card { padding: 20px 16px; }
+  .feature-icon { width: 44px; height: 44px; font-size: 1.3rem; margin-bottom: 14px; border-radius: 11px; }
+  .feature-title { font-size: 1rem; }
+  .feature-desc { font-size: 0.85rem; }
+
+  /* Steps */
+  .steps-grid { grid-template-columns: 1fr; gap: 16px; }
+  .step-title { font-size: 0.95rem; }
+  .step-desc { font-size: 0.85rem; }
 
   /* Cards */
   .card { padding: 20px 16px; }
-  .feature-card { padding: 20px 16px; }
-  .pricing-card { padding: 24px 16px; margin-top: 40px; }
-  .solution-card { padding: 20px 16px; }
-  .comparison-card { padding: 18px 14px; }
-  .pain-item { padding: 14px; }
+  .comparison-card { padding: 16px 14px; }
+  .comparison-item { font-size: 0.88rem; }
+  .comparison-title { font-size: 1rem; }
   .testimonial-card { padding: 20px 16px; }
+  .testimonial-text { font-size: 0.88rem; }
 
-  /* Preço */
+  /* Pricing */
+  .pricing-card { padding: 24px 16px; margin-top: 40px; }
+  .pricing-badge { font-size: 0.75rem; padding: 5px 14px; }
   .price-value { font-size: 3rem; }
-  .pricing-features { margin-bottom: 28px; }
+  .pricing-features { margin-bottom: 24px; }
+  .pricing-feature { font-size: 0.9rem; padding: 8px 0; gap: 8px; }
+  .pricing-note { font-size: 0.78rem; }
 
-  /* Seção CTA final */
+  /* Pricing comparison grid (class added to home.html) */
+  .pricing-compare-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* Trust badge rows (class added to home.html) */
+  .trust-badges { gap: 10px !important; flex-direction: column !important; align-items: flex-start !important; }
+  .trust-badges > span { font-size: 0.82rem !important; }
+
+  /* CTA Final */
   .cta-final { padding: 60px 0; }
 
   /* FAQ */
-  .faq-question { padding: 14px 18px; font-size: 0.9rem; }
-  .faq-answer { padding: 0 18px; }
-  .faq-item.open .faq-answer { padding: 14px 18px 18px; }
+  .faq-list { margin-top: 40px; }
+  .faq-question { padding: 14px 16px; font-size: 0.88rem; min-height: 52px; }
+  .faq-answer { font-size: 0.88rem; line-height: 1.65; }
+  .faq-item.open .faq-answer { padding: 12px 16px 16px; }
 
   /* Footer */
   .footer { padding: 36px 0 20px; }
-  .footer-grid { gap: 24px; }
+  .footer-grid { gap: 20px; }
   .footer-brand-desc { font-size: 0.85rem; }
+  .footer-title { margin-bottom: 12px; font-size: 0.8rem; }
+  .footer-links { gap: 8px; }
+  .footer-links a { font-size: 0.88rem; }
+  .footer-social { gap: 10px; }
+  .footer-social a { width: 40px; height: 40px; }
+  .footer-bottom { font-size: 0.8rem; gap: 12px; }
 
-  /* Flash messages: evitar que vazem para fora */
-  div.flash-msg-container,
-  div[style*="position:fixed"][style*="top:84px"] {
-    left: 16px !important;
-    right: 16px !important;
-    max-width: calc(100vw - 32px) !important;
-  }
+  /* Section header */
+  .section-tag { font-size: 0.7rem; }
 
-  /* Botão flutuante WhatsApp: mais compacto */
+  /* iOS: prevent input zoom (must be >= 16px) */
+  .form-control { font-size: 16px; }
+
+  /* WhatsApp float */
   a[href*="wa.me"] {
-    width: 48px !important;
-    height: 48px !important;
-    bottom: 16px !important;
-    right: 16px !important;
+    width: 50px !important;
+    height: 50px !important;
+    bottom: 14px !important;
+    right: 14px !important;
   }
+}
+
+/* ── Very small phones (≤ 360px) ─────────────────────────────── */
+@media (max-width: 360px) {
+  .container, .container-sm { padding: 0 12px; }
+  .hero-content { padding: 36px 12px 44px; }
+  .hero-social-proof { justify-content: space-between; gap: 4px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .stat-item { border-right: none !important; border-bottom: 1px solid var(--border) !important; padding-bottom: 16px !important; }
+  .stat-item:last-child { border-bottom: none !important; }
+  .pricing-card { padding: 20px 12px; }
+  .mobile-menu { padding: 16px 12px; }
+  .comparison-card { padding: 14px 12px; }
 }

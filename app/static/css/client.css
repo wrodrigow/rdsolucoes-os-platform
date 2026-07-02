@@ -467,3 +467,41 @@ a:hover { color: var(--cl-secondary); }
   .license-info-grid { grid-template-columns: 1fr 1fr; }
   .license-certificate { padding: 28px; }
 }
+
+/* ── Mobile (≤ 480px) ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cl-topbar { padding: 0 16px; }
+  .cl-topbar .cl-page-title { font-size: 0.92rem; }
+  .cl-topbar-actions { gap: 10px; }
+  .cl-content { padding: 16px; }
+  .cl-card { padding: 20px 16px; }
+  .cl-card-title { font-size: 0.95rem; }
+  .cl-stats-row { gap: 12px; }
+  .cl-stat-card { padding: 16px 14px; gap: 12px; }
+  .cl-stat-icon { width: 40px; height: 40px; font-size: 1.1rem; }
+  .cl-stat-value { font-size: 1.25rem; }
+
+  /* License certificate */
+  .license-certificate { padding: 20px 16px; }
+  .license-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .license-status-badge { font-size: 0.75rem; padding: 6px 14px; }
+  .license-key-box { padding: 16px; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .license-key-value { font-size: 1.05rem; letter-spacing: 0.06em; word-break: break-all; }
+  .license-info-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
+  .license-actions { flex-direction: column; gap: 8px; }
+  .license-actions .btn-cl-primary,
+  .license-actions .btn-cl-outline { width: 100%; justify-content: center; }
+
+  /* Download cards */
+  .download-card { padding: 16px; gap: 12px; flex-wrap: wrap; }
+  .download-icon { width: 44px; height: 44px; font-size: 1.3rem; flex-shrink: 0; }
+  .download-meta { flex-wrap: wrap; gap: 4px; }
+
+  /* Tables */
+  .cl-table th, .cl-table td { padding: 10px 12px; font-size: 0.82rem; }
+
+  /* Forms — iOS zoom fix */
+  .cl-input { font-size: 16px; }
+  .cl-btn { min-height: 44px; }
+  .cl-btn-primary, .cl-btn-danger { padding: 12px 20px; }
+}
