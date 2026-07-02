@@ -223,10 +223,11 @@ def importar_keys():
 
     # Extrai somente tokens no formato XXXX-XXXX-XXXX-XXXX de cada linha
     KEY_RE = re.compile(r'\b([A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})\b')
+    linhas = [l.strip() for l in raw.replace(",", "\n").splitlines()]
     candidatas = list(dict.fromkeys(
         match.group(1)
-        for linha in raw.replace(",", "\n").splitlines()
-        if (linha := linha.strip()) and not linha.startswith("#")
+        for linha in linhas
+        if linha and not linha.startswith("#")
         for match in [KEY_RE.search(linha.upper())]
         if match
     ))
