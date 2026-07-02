@@ -13,6 +13,7 @@ class Download(db.Model):
     changelog = db.Column(db.Text, nullable=True)
     ativo = db.Column(db.Boolean, default=True, nullable=False)
     downloads_count = db.Column(db.Integer, default=0, nullable=False)
+    url_externa = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     @classmethod

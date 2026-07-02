@@ -66,6 +66,12 @@ def termos():
     return render_template("marketing/termos.html")
 
 
+@bp.route("/health")
+def health():
+    from flask import jsonify
+    return jsonify({"status": "ok"}), 200
+
+
 @bp.route("/robots.txt")
 def robots():
     from flask import Response

@@ -303,10 +303,11 @@ def nova_versao():
     nome = request.form.get("nome", "").strip()
     changelog = request.form.get("changelog", "").strip()
     ativo = bool(request.form.get("ativo"))
+    url_externa = request.form.get("url_externa", "").strip()
 
     arquivo = request.files.get("arquivo")
     nome_arquivo = ""
-    tamanho = ""
+    tamanho = "—"
     if arquivo and arquivo.filename:
         nome_arquivo = arquivo.filename
         folder = os.path.join(current_app.root_path, "static", "uploads", "versoes")
@@ -315,16 +316,19 @@ def nova_versao():
         arquivo.save(dest)
         size_bytes = os.path.getsize(dest)
         tamanho = f"{size_bytes / 1024 / 1024:.1f} MB"
+    elif url_externa:
+        nome_arquivo = url_externa.split("/")[-1].split("?")[0] or f"instalador_{versao}.exe"
 
-    if not versao or not nome_arquivo:
-        flash("Versão e arquivo são obrigatórios.", "danger")
+    if not versao or (not nome_arquivo and not url_externa):
+        flash("Versão e URL de download (ou arquivo) são obrigatórios.", "danger")
         return redirect(url_for("admin.downloads"))
 
     if ativo:
         Download.query.update({"ativo": False})
 
     d = Download(versao=versao, nome=nome or f"RD Soluções OS {versao}",
-                 nome_arquivo=nome_arquivo, tamanho=tamanho, changelog=changelog, ativo=ativo)
+                 nome_arquivo=nome_arquivo, tamanho=tamanho, changelog=changelog,
+                 ativo=ativo, url_externa=url_externa or None)
     db.session.add(d)
     db.session.commit()
 
@@ -434,7 +438,7 @@ def configuracoes():
         chaves_editaveis = [
             "site_name", "site_slogan", "site_email_contato", "site_whatsapp",
             "site_url", "site_cnpj", "seo_title", "seo_description", "seo_keywords",
-            "ga_id", "produto_nome", "produto_preco", "produto_preco_de",
+            "ga_id", "meta_pixel_id", "produto_nome", "produto_preco", "produto_preco_de",
             "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
         ]
         for chave in chaves_editaveis:

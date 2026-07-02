@@ -65,7 +65,14 @@ def fazer_download(download_id):
     dl.downloads_count = (dl.downloads_count or 0) + 1
     db.session.commit()
 
+    if dl.url_externa:
+        return redirect(dl.url_externa)
+
     folder = current_app.config["UPLOAD_FOLDER"]
+    file_path = os.path.join(folder, dl.nome_arquivo)
+    if not os.path.exists(file_path):
+        flash("Arquivo temporariamente indisponível. Entre em contato com o suporte.", "warning")
+        return redirect(url_for("client.downloads"))
     return send_from_directory(folder, dl.nome_arquivo, as_attachment=True)
 
 

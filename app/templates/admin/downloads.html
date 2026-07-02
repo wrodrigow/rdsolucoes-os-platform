@@ -20,9 +20,17 @@
         <input type="text" name="nome" class="adm-input" placeholder="ex: RD Soluções OS v1.20" required/>
       </div>
       <div class="adm-form-group">
-        <label class="adm-label">Arquivo do instalador <span style="color:#ef4444;">*</span></label>
-        <input type="file" name="arquivo" class="adm-input" id="file-upload" accept=".exe,.zip,.msi" required/>
+        <label class="adm-label">URL de Download Externa <span style="color:#ef4444;">*</span></label>
+        <input type="url" name="url_externa" class="adm-input" placeholder="https://drive.google.com/uc?export=download&id=..."/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">
+          Use Google Drive, OneDrive ou GitHub Releases. Recomendado: GitHub Releases (permanente e rápido).
+        </div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">— ou — Arquivo do instalador (upload direto)</label>
+        <input type="file" name="arquivo" class="adm-input" id="file-upload" accept=".exe,.zip,.msi"/>
         <div id="file-name-preview" style="font-size:0.78rem;color:var(--adm-muted);margin-top:4px;"></div>
+        <div style="font-size:0.75rem;color:#f59e0b;margin-top:3px;">⚠ Upload direto não persiste no Render free tier. Use URL externa.</div>
       </div>
       <div class="adm-form-group">
         <label class="adm-label">Changelog / Novidades</label>

@@ -107,5 +107,18 @@ function copiarKey(key) {
     setTimeout(() => el.textContent = 'Copiar Chave', 2500);
   });
 }
+{% if site_cfg and site_cfg.get('meta_pixel_id') %}
+{% if order %}
+if (typeof fbq !== 'undefined') {
+  fbq('track', 'Purchase', {
+    value: {{ order.valor | default(297) }},
+    currency: 'BRL',
+    content_type: 'product',
+    content_ids: ['rdsolucoes-os-licenca'],
+    content_name: 'RD Soluções OS — Licença Vitalícia'
+  });
+}
+{% endif %}
+{% endif %}
 </script>
 {% endblock %}

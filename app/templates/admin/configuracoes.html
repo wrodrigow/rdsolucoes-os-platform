@@ -61,6 +61,11 @@
         <label class="adm-label">Google Analytics ID</label>
         <input type="text" name="ga_id" class="adm-input" value="{{ cfg.ga_id or '' }}" placeholder="G-XXXXXXXXXX"/>
       </div>
+      <div class="adm-form-group">
+        <label class="adm-label">META Pixel ID</label>
+        <input type="text" name="meta_pixel_id" class="adm-input" value="{{ cfg.meta_pixel_id or '' }}" placeholder="123456789012345"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID numérico do Pixel do Facebook/Instagram Ads</div>
+      </div>
     </div>
 
     <!-- Produto & Preço -->
