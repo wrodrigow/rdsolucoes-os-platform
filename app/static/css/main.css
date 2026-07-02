@@ -891,7 +891,7 @@ p { color: var(--text); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 768px) {
-  .hero-content { grid-template-columns: 1fr; gap: 40px; }
+  .hero-content { grid-template-columns: 1fr; gap: 40px; padding: 56px 20px 60px; }
   .hero-visual { display: none; }
   .pain-grid { grid-template-columns: 1fr; }
   .comparison-grid { grid-template-columns: 1fr; }
@@ -908,4 +908,91 @@ p { color: var(--text); }
   .navbar-nav { display: none; }
   .navbar-cta { display: none; }
   .navbar-toggle { display: block; }
+
+  /* Reduzir padding de seções no tablet */
+  .section { padding: 72px 0; }
+  .section-sm { padding: 44px 0; }
+  .cta-final { padding: 80px 0; }
+  .stats-bar { padding: 28px 0; }
+  .footer { padding: 48px 0 24px; }
+  .pricing-card { padding: 32px 24px; }
+  .solution-card { padding: 28px 24px; }
+  .comparison-card { padding: 24px 20px; }
+  .feature-card { padding: 24px; }
+
+  /* Botões CTA menores no tablet */
+  .btn-xl { padding: 18px 36px; font-size: 1.05rem; }
+}
+
+/* ── Mobile pequeno (≤ 480px) ────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Layout geral */
+  .section { padding: 52px 0; }
+  .section-sm { padding: 36px 0; }
+  .container { padding: 0 16px; }
+  .container-sm { padding: 0 16px; }
+
+  /* Navbar */
+  .navbar { padding: 0 16px; }
+  .navbar-inner { height: 64px; }
+
+  /* Hero */
+  .hero { padding-top: 64px; }
+  .hero-content { padding: 44px 16px 52px; gap: 32px; }
+  .hero-eyebrow { font-size: 0.72rem; padding: 5px 12px; }
+  .hero-sub { font-size: 1rem; margin-bottom: 28px; }
+  .hero-cta { flex-direction: column; gap: 12px; margin-bottom: 36px; }
+  .hero-cta .btn { width: 100%; justify-content: center; }
+  .btn-lg { padding: 15px 24px; font-size: 0.92rem; }
+  .btn-xl { padding: 16px 24px; font-size: 1rem; }
+  .hero-social-proof { gap: 12px; }
+  .hero-stat-num { font-size: 1.25rem; }
+  .hero-divider { height: 28px; }
+
+  /* Estatísticas */
+  .stats-bar { padding: 24px 0; }
+  .stat-num { font-size: 1.9rem; }
+  .stat-label { font-size: 0.82rem; }
+
+  /* Cards */
+  .card { padding: 20px 16px; }
+  .feature-card { padding: 20px 16px; }
+  .pricing-card { padding: 24px 16px; margin-top: 40px; }
+  .solution-card { padding: 20px 16px; }
+  .comparison-card { padding: 18px 14px; }
+  .pain-item { padding: 14px; }
+  .testimonial-card { padding: 20px 16px; }
+
+  /* Preço */
+  .price-value { font-size: 3rem; }
+  .pricing-features { margin-bottom: 28px; }
+
+  /* Seção CTA final */
+  .cta-final { padding: 60px 0; }
+
+  /* FAQ */
+  .faq-question { padding: 14px 18px; font-size: 0.9rem; }
+  .faq-answer { padding: 0 18px; }
+  .faq-item.open .faq-answer { padding: 14px 18px 18px; }
+
+  /* Footer */
+  .footer { padding: 36px 0 20px; }
+  .footer-grid { gap: 24px; }
+  .footer-brand-desc { font-size: 0.85rem; }
+
+  /* Flash messages: evitar que vazem para fora */
+  div.flash-msg-container,
+  div[style*="position:fixed"][style*="top:84px"] {
+    left: 16px !important;
+    right: 16px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  /* Botão flutuante WhatsApp: mais compacto */
+  a[href*="wa.me"] {
+    width: 48px !important;
+    height: 48px !important;
+    bottom: 16px !important;
+    right: 16px !important;
+  }
 }

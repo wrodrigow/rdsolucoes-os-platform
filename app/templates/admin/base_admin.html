@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Admin — RD Soluções OS{% endblock %}</title>
+  <title>{% block title %}Admin — RD OS{% endblock %}</title>
   <meta name="robots" content="noindex, nofollow"/>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -18,8 +18,8 @@
   <!-- Sidebar -->
   <aside class="adm-sidebar" id="adm-sidebar">
     <div class="adm-sidebar-header">
-      <div class="adm-brand-icon">RD</div>
-      <div><div class="adm-brand-name">RD Soluções OS</div><div class="adm-brand-sub">Painel Admin</div></div>
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="RD OS" style="height:36px;width:36px;object-fit:contain;mix-blend-mode:screen;flex-shrink:0;">
+      <div><div class="adm-brand-name">RD OS</div><div class="adm-brand-sub">Painel Admin</div></div>
     </div>
     <nav class="adm-nav">
       <div class="adm-nav-section">

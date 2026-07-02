@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Área do Cliente — RD Soluções OS{% endblock %}</title>
+  <title>{% block title %}Área do Cliente — RD OS{% endblock %}</title>
   <meta name="robots" content="noindex, nofollow"/>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -19,8 +19,8 @@
   <aside class="cl-sidebar" id="cl-sidebar" role="navigation" aria-label="Menu da área do cliente">
     <div class="cl-sidebar-header">
       <a href="{{ url_for('main.home') }}" class="cl-brand">
-        <div class="cl-brand-icon">RD</div>
-        <div><div class="cl-brand-name">RD Soluções OS</div><div class="cl-brand-sub">Área do Cliente</div></div>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="RD OS" style="height:36px;width:36px;object-fit:contain;mix-blend-mode:screen;flex-shrink:0;">
+        <div><div class="cl-brand-name">RD OS</div><div class="cl-brand-sub">Área do Cliente</div></div>
       </a>
     </div>
 
