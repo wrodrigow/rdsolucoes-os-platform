@@ -22,25 +22,30 @@ def send_email(to, subject, template, **kwargs):
 
 def enviar_confirmacao_compra(order, license_, user):
     """Dispara o e-mail de confirmação de compra com a KEY."""
-    from ..models.download import Download
-    from ..models.site_config import SiteConfig
-    download = Download.get_ativo()
-    suporte_email = SiteConfig.get("site_email_contato") or current_app.config.get("MAIL_USERNAME", "")
-    mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
+    try:
+        from ..models.download import Download
+        from ..models.site_config import SiteConfig
+        download = Download.get_ativo()
+        suporte_email = SiteConfig.get("site_email_contato") or current_app.config.get("MAIL_USERNAME", "")
+        mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
+        key_obj = license_.key_obj if license_ else None
 
-    return send_email(
-        to=user.email,
-        subject=f"✅ Sua licença está pronta! Pedido {order.numero_pedido}",
-        template="emails/compra_confirmada.html",
-        user=user,
-        order=order,
-        license=license_,
-        key=license_.key_obj,
-        download=download,
-        base_url=current_app.config["BASE_URL"],
-        suporte_email=suporte_email,
-        mail_footer=mail_footer,
-    )
+        return send_email(
+            to=user.email,
+            subject=f"✅ Sua licença está pronta! Pedido {order.numero_pedido}",
+            template="emails/compra_confirmada.html",
+            user=user,
+            order=order,
+            license=license_,
+            key=key_obj,
+            download=download,
+            base_url=current_app.config["BASE_URL"],
+            suporte_email=suporte_email,
+            mail_footer=mail_footer,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Erro em enviar_confirmacao_compra para {user.email}: {e}")
+        return False
 
 
 def enviar_recuperacao_senha(user, token):
