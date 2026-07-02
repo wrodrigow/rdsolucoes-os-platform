@@ -27,10 +27,10 @@
 
         <!-- Card Produto -->
         <div class="card" style="margin-bottom:20px;border-color:rgba(26,95,168,0.3);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;">
-            <div style="display:flex;align-items:center;gap:16px;">
+          <div class="checkout-product-row">
+            <div style="display:flex;align-items:center;gap:16px;flex:1;min-width:0;">
               <div style="width:52px;height:52px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:white;flex-shrink:0;">RD</div>
-              <div>
+              <div style="min-width:0;">
                 <div style="font-weight:700;color:var(--white);">{{ nome }}</div>
                 <div style="font-size:0.82rem;color:var(--text-muted);">Licença vitalícia • 1 computador • Sem mensalidade</div>
                 <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -40,7 +40,7 @@
                 </div>
               </div>
             </div>
-            <div style="text-align:right;flex-shrink:0;">
+            <div class="checkout-price">
               <div style="font-size:0.8rem;color:var(--text-muted);text-decoration:line-through;">R$ 497,00</div>
               <div style="font-size:1.6rem;font-weight:900;color:var(--white);">R$ {{ "%.2f"|format(preco) | replace('.', ',') }}</div>
             </div>
@@ -52,7 +52,7 @@
           <div style="font-weight:700;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
             <i class="fa-solid fa-box-open" style="color:var(--accent);"></i> O que você recebe
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.88rem;">
+          <div class="checkout-includes-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.88rem;">
             <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Orçamentos em PDF</div>
             <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Ordens de Serviço</div>
             <div style="display:flex;align-items:center;gap:8px;color:var(--text);"><span style="color:var(--success);">✓</span> Cadastro de Clientes</div>
@@ -134,9 +134,25 @@
 
 {% block extra_css %}
 <style>
+.checkout-product-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.checkout-price {
+  text-align: right;
+  flex-shrink: 0;
+}
 @media(max-width:768px){
   div[style*="grid-template-columns:1fr 400px"]{display:block!important;}
   div[style*="position:sticky"]{position:static!important;margin-top:24px;}
+}
+@media(max-width:480px){
+  .checkout-product-row { flex-wrap: wrap; gap: 12px; }
+  .checkout-price { text-align: left; flex-shrink: 1; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; }
+  .checkout-includes-grid { grid-template-columns: 1fr !important; }
+  div[style*="min-height:100vh;padding:90px 24px"] { padding-left: 16px !important; padding-right: 16px !important; }
 }
 </style>
 {% endblock %}
