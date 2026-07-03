@@ -120,7 +120,20 @@ def _processar_pagamento(payment_id: str):
         license_ = assign_key(order)
 
         user = order.user
-        enviar_confirmacao_compra(order, license_, user)
+
+        # Comprador do checkout direto (nunca fez login): gera link para
+        # definir a senha, válido por 7 dias, incluído no e-mail da compra
+        set_password_url = None
+        if user.ultimo_login is None:
+            import secrets as _secrets
+            from datetime import timedelta
+            user.reset_token = _secrets.token_urlsafe(32)
+            user.reset_token_exp = datetime.now(timezone.utc) + timedelta(days=7)
+            db.session.commit()
+            base_url = current_app.config["BASE_URL"]
+            set_password_url = f"{base_url}/auth/nova-senha/{user.reset_token}"
+
+        enviar_confirmacao_compra(order, license_, user, set_password_url=set_password_url)
 
         Log.registrar(
             "compra_aprovada",

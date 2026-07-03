@@ -56,6 +56,14 @@ def contato():
     return render_template("marketing/contato.html")
 
 
+@bp.route("/lp")
+def lp():
+    """Landing page de conversão (tráfego pago) — sem menu, um único CTA."""
+    preco = float(SiteConfig.get("produto_preco", "297.00"))
+    keys_disponiveis = Key.total_disponiveis()
+    return render_template("marketing/lp.html", preco=preco, keys_disponiveis=keys_disponiveis)
+
+
 @bp.route("/privacidade")
 def privacidade():
     return render_template("marketing/privacidade.html")

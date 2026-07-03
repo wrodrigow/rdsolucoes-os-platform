@@ -74,7 +74,7 @@ def _send_via_smtp(to, subject, html_body, text_body):
     return True
 
 
-def enviar_confirmacao_compra(order, license_, user):
+def enviar_confirmacao_compra(order, license_, user, set_password_url=None):
     """Dispara o e-mail de confirmação de compra com a KEY."""
     try:
         from ..models.download import Download
@@ -96,6 +96,7 @@ def enviar_confirmacao_compra(order, license_, user):
             base_url=current_app.config["BASE_URL"],
             suporte_email=suporte_email,
             mail_footer=mail_footer,
+            set_password_url=set_password_url,
         )
     except Exception as e:
         current_app.logger.error(f"Erro em enviar_confirmacao_compra para {user.email}: {e}")

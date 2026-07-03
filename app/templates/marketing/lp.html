@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RD Soluções OS — Orçamentos profissionais em 1 minuto, sem mensalidade</title>
+<meta name="description" content="Gere orçamentos em PDF com sua logo, controle clientes, ordens de serviço e financeiro. Pagamento único de R$ {{ '%.0f' % preco }}, sem mensalidade. Funciona offline."/>
+<link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}"/>
+{% if site_cfg and site_cfg.get('meta_pixel_id') %}
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','{{ site_cfg.get("meta_pixel_id") }}');
+fbq('track','PageView');
+fbq('track','ViewContent',{content_type:'product',content_ids:['rdsolucoes-os-licenca'],content_name:'RD OS — Licença Vitalícia',value:{{ preco }},currency:'BRL'});
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id={{ site_cfg.get('meta_pixel_id') }}&ev=PageView&noscript=1"/></noscript>
+{% endif %}
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;color:#1e293b;background:#fff;line-height:1.6;}
+img{max-width:100%;}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px;}
+.grad{background:linear-gradient(135deg,#1a5fa8,#0d7d8c);}
+.grad-txt{background:linear-gradient(135deg,#1a5fa8,#0d7d8c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* Header */
+.topbar{padding:14px 0;border-bottom:1px solid #f1f5f9;}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:1.1rem;color:#1a5fa8;}
+.brand img{height:34px;width:auto;}
+.selo-topo{font-size:0.75rem;color:#64748b;display:flex;align-items:center;gap:6px;}
+
+/* Hero */
+.hero{padding:56px 0 40px;text-align:center;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(26,95,168,0.08),transparent);}
+.hero h1{font-size:2.2rem;font-weight:900;line-height:1.2;letter-spacing:-0.5px;max-width:760px;margin:0 auto 18px;}
+.hero p.sub{font-size:1.1rem;color:#475569;max-width:640px;margin:0 auto 28px;}
+.eyebrow{display:inline-block;background:#eff6ff;color:#1a5fa8;font-size:0.78rem;font-weight:700;padding:6px 14px;border-radius:999px;margin-bottom:18px;letter-spacing:0.03em;}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-size:1.05rem;font-weight:800;padding:16px 40px;border-radius:10px;text-decoration:none;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(26,95,168,0.35);transition:transform 0.15s;}
+.cta-btn:hover{transform:translateY(-2px);}
+.cta-note{font-size:0.8rem;color:#64748b;margin-top:12px;}
+
+/* Trust bar */
+.trustbar{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:22px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;background:#fafbfc;}
+.trustbar span{font-size:0.85rem;color:#475569;font-weight:600;display:flex;align-items:center;gap:8px;}
+
+/* Sections */
+section{padding:56px 0;}
+.sec-title{font-size:1.7rem;font-weight:900;text-align:center;margin-bottom:8px;letter-spacing:-0.3px;}
+.sec-sub{text-align:center;color:#64748b;margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto;}
+
+/* Dores */
+.dores{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.dor{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:22px;}
+.dor .emj{font-size:1.6rem;margin-bottom:10px;}
+.dor h3{font-size:1rem;margin-bottom:6px;color:#7f1d1d;}
+.dor p{font-size:0.88rem;color:#64748b;}
+
+/* Passos */
+.passos{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.passo{text-align:center;padding:26px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;}
+.passo .num{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-weight:800;font-size:1.1rem;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.passo h3{font-size:1rem;margin-bottom:6px;}
+.passo p{font-size:0.88rem;color:#64748b;}
+
+/* Módulos */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.mod{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:22px;transition:border-color 0.2s;}
+.mod:hover{border-color:#1a5fa8;}
+.mod .emj{font-size:1.5rem;margin-bottom:10px;}
+.mod h3{font-size:0.98rem;margin-bottom:6px;}
+.mod p{font-size:0.85rem;color:#64748b;}
+
+/* Oferta */
+.oferta{background:linear-gradient(180deg,#0f2b46,#123a5e);color:#fff;border-radius:20px;padding:48px 40px;text-align:center;}
+.oferta .riscado{color:#94a3b8;font-size:0.95rem;}
+.oferta .preco{font-size:3.2rem;font-weight:900;letter-spacing:-1px;margin:6px 0;}
+.oferta .preco small{font-size:1.1rem;font-weight:600;color:#7ec8d6;}
+.oferta .cond{color:#bcd7e8;font-size:0.95rem;margin-bottom:28px;}
+.form-compra{max-width:420px;margin:0 auto;text-align:left;}
+.form-compra label{font-size:0.8rem;font-weight:700;color:#bcd7e8;display:block;margin-bottom:5px;}
+.form-compra input{width:100%;padding:13px 16px;border-radius:9px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.95);font-size:0.95rem;margin-bottom:14px;color:#1e293b;}
+.form-compra input:focus{outline:2px solid #7ec8d6;}
+.form-compra .cta-btn{width:100%;text-align:center;font-size:1.1rem;}
+.pag-icons{display:flex;justify-content:center;gap:14px;margin-top:18px;font-size:0.8rem;color:#bcd7e8;flex-wrap:wrap;}
+.flash-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:9px;padding:12px 16px;font-size:0.88rem;margin-bottom:16px;}
+
+/* Garantia */
+.garantia{display:flex;gap:24px;align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;padding:30px 34px;}
+.garantia .selo{font-size:3rem;flex-shrink:0;}
+.garantia h3{color:#14532d;margin-bottom:6px;}
+.garantia p{font-size:0.92rem;color:#374151;}
+
+/* FAQ */
+.faq details{border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:10px;background:#fff;}
+.faq summary{font-weight:700;font-size:0.95rem;cursor:pointer;color:#1e293b;}
+.faq details p{margin-top:10px;font-size:0.9rem;color:#64748b;}
+
+/* Footer */
+footer{padding:28px 0;border-top:1px solid #f1f5f9;text-align:center;font-size:0.78rem;color:#94a3b8;}
+footer a{color:#64748b;text-decoration:none;margin:0 8px;}
+
+/* WhatsApp float */
+.wa-float{position:fixed;bottom:22px;right:22px;width:56px;height:56px;background:#25d366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,0.25);z-index:99;text-decoration:none;}
+.wa-float svg{width:30px;height:30px;fill:#fff;}
+
+@media(max-width:760px){
+  .hero h1{font-size:1.6rem;}
+  .hero p.sub{font-size:0.98rem;}
+  .dores,.passos,.mods{grid-template-columns:1fr;}
+  .oferta{padding:36px 22px;border-radius:14px;}
+  .oferta .preco{font-size:2.6rem;}
+  .garantia{flex-direction:column;text-align:center;padding:26px 20px;}
+  section{padding:40px 0;}
+  .trustbar{gap:14px;padding:16px 10px;}
+  .trustbar span{font-size:0.75rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- Topo -->
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="RD Soluções OS"/> RD Soluções OS</div>
+    <div class="selo-topo">🔒 Pagamento seguro via Mercado Pago</div>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">PARA PRESTADORES DE SERVIÇO E PEQUENAS EMPRESAS</div>
+    <h1>Pare de fazer orçamento no papel, no Word ou no WhatsApp.</h1>
+    <p class="sub">Gere <strong>orçamentos profissionais em PDF com a sua logo</strong> em menos de 1 minuto — e controle clientes, ordens de serviço e o financeiro da sua empresa num só programa. <strong>Sem internet. Sem mensalidade.</strong></p>
+    <a href="#comprar" class="cta-btn" onclick="if(typeof fbq!=='undefined')fbq('track','AddToCart',{value:{{ preco }},currency:'BRL'});">Quero meus orçamentos profissionais →</a>
+    <div class="cta-note">Pagamento único de R$ {{ '%.0f' % preco }} • Licença vitalícia • Garantia de 7 dias</div>
+  </div>
+</div>
+
+<!-- Trust bar -->
+<div class="trustbar">
+  <span>🔒 Compra segura Mercado Pago</span>
+  <span>⚡ Pix com liberação imediata</span>
+  <span>💳 Até 12x no cartão</span>
+  <span>✅ Garantia de 7 dias</span>
+</div>
+
+<!-- Dores -->
+<section>
+  <div class="wrap">
+    <h2 class="sec-title">Você se identifica com isso?</h2>
+    <p class="sec-sub">A maioria dos prestadores de serviço perde venda e dinheiro por falta de organização — não por falta de serviço bem feito.</p>
+    <div class="dores">
+      <div class="dor"><div class="emj">😩</div><h3>Orçamento amador</h3><p>Cliente recebe um texto corrido no WhatsApp ou uma foto de papel rabiscado — e fecha com o concorrente que mandou um PDF bonito.</p></div>
+      <div class="dor"><div class="emj">🗂️</div><h3>Tudo espalhado</h3><p>Clientes na agenda, orçamentos no caderno, serviços na cabeça. Na hora de cobrar ou dar garantia, ninguém acha nada.</p></div>
+      <div class="dor"><div class="emj">💸</div><h3>Financeiro no escuro</h3><p>Entra dinheiro, sai dinheiro, e no fim do mês você não sabe se lucrou. Extrato do banco nunca bate com o caderninho.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Como funciona -->
+<section style="background:#fafbfc;">
+  <div class="wrap">
+    <h2 class="sec-title">Simples assim:</h2>
+    <p class="sec-sub">Do pagamento ao primeiro orçamento gerado em menos de 10 minutos.</p>
+    <div class="passos">
+      <div class="passo"><div class="num">1</div><h3>Garanta sua licença</h3><p>Pague com Pix ou cartão pelo Mercado Pago. Aprovação do Pix é na hora.</p></div>
+      <div class="passo"><div class="num">2</div><h3>Receba no e-mail</h3><p>Sua chave de ativação e o link de download chegam automaticamente no seu e-mail.</p></div>
+      <div class="passo"><div class="num">3</div><h3>Instale e use</h3><p>Instale no seu computador Windows, coloque sua logo e gere o primeiro orçamento em 1 minuto.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Módulos -->
+<section>
+  <div class="wrap">
+    <h2 class="sec-title">Tudo que sua empresa precisa, num só lugar</h2>
+    <p class="sec-sub">6 módulos completos — e o programa é seu para sempre.</p>
+    <div class="mods">
+      <div class="mod"><div class="emj">📄</div><h3>Orçamentos em PDF</h3><p>Com sua logo, seus dados, numeração automática e visual profissional. Pronto para mandar no WhatsApp.</p></div>
+      <div class="mod"><div class="emj">👥</div><h3>Cadastro de Clientes</h3><p>Nome, telefone, endereço com busca por CEP. Preenche o orçamento sozinho.</p></div>
+      <div class="mod"><div class="emj">🛠️</div><h3>Ordens de Serviço</h3><p>Orçamento aprovado vira OS com um clique. Controle o status até a conclusão.</p></div>
+      <div class="mod"><div class="emj">💰</div><h3>Controle Financeiro</h3><p>Entradas, saídas, saldo por banco e gráficos. Importa extrato do banco em PDF.</p></div>
+      <div class="mod"><div class="emj">📦</div><h3>Catálogo de Serviços</h3><p>Cadastre seus serviços com preço uma vez e monte orçamentos em segundos.</p></div>
+      <div class="mod"><div class="emj">🔒</div><h3>100% Offline</h3><p>Seus dados ficam no seu computador. Funciona sem internet, sem depender de ninguém.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Oferta / Form -->
+<section id="comprar">
+  <div class="wrap">
+    <div class="oferta">
+      <div class="riscado">Sem mensalidade. Sem surpresa. Compare: sistemas por assinatura custam R$ 60–150 <u>por mês</u>, todo mês, para sempre.</div>
+      <div class="preco">R$ {{ '%.0f' % preco }} <small>pagamento único</small></div>
+      <div class="cond">⚡ Pix com liberação imediata &nbsp;•&nbsp; 💳 em até 12x no cartão &nbsp;•&nbsp; ✅ garantia incondicional de 7 dias</div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="form-compra"><div class="flash-err">{{ msg }}</div></div>
+        {% endfor %}
+      {% endwith %}
+
+      <form class="form-compra" method="POST" action="{{ url_for('checkout.direto') }}"
+            onsubmit="if(typeof fbq!=='undefined')fbq('track','InitiateCheckout',{value:{{ preco }},currency:'BRL',content_ids:['rdsolucoes-os-licenca']});">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <label for="nome">Seu nome completo</label>
+        <input type="text" id="nome" name="nome" required minlength="3" placeholder="Ex: João da Silva" autocomplete="name"/>
+        <label for="email">Seu melhor e-mail <span style="font-weight:400;">(a licença chega nele)</span></label>
+        <input type="email" id="email" name="email" required placeholder="voce@email.com" autocomplete="email"/>
+        <label for="whatsapp">WhatsApp <span style="font-weight:400;">(opcional — para suporte)</span></label>
+        <input type="tel" id="whatsapp" name="whatsapp" placeholder="(11) 99999-9999" autocomplete="tel"/>
+        <button type="submit" class="cta-btn">🔒 Comprar agora — R$ {{ '%.0f' % preco }}</button>
+      </form>
+
+      <div class="pag-icons">
+        <span>Pix</span><span>•</span><span>Crédito até 12x</span><span>•</span><span>Boleto</span><span>•</span><span>Processado pelo Mercado Pago</span>
+      </div>
+      <p style="font-size:0.75rem;color:#7fa3bd;margin-top:14px;">Sem cadastro antes de pagar: você informa só nome e e-mail, paga no ambiente seguro do Mercado Pago e recebe tudo no e-mail.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Garantia -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="garantia">
+      <div class="selo">🛡️</div>
+      <div>
+        <h3>Garantia incondicional de 7 dias</h3>
+        <p>Compre, instale e use. Se em até 7 dias você achar que o RD Soluções OS não é para você, devolvemos <strong>100% do seu dinheiro</strong>, sem perguntas e sem burocracia — é a lei, e é o nosso compromisso. O risco é todo nosso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="background:#fafbfc;" class="faq">
+  <div class="wrap" style="max-width:720px;">
+    <h2 class="sec-title">Perguntas frequentes</h2>
+    <p class="sec-sub">Tudo que você precisa saber antes de comprar.</p>
+    <details><summary>Tem mensalidade ou taxa escondida?</summary><p>Não. Você paga R$ {{ '%.0f' % preco }} uma única vez e a licença é sua para sempre. Sem assinatura, sem renovação, sem surpresa.</p></details>
+    <details><summary>Preciso de internet para usar?</summary><p>Não. O sistema é 100% offline — instala e roda no seu computador. Seus dados ficam com você, não em servidor de terceiros.</p></details>
+    <details><summary>Funciona no meu computador?</summary><p>Funciona em qualquer computador ou notebook com Windows 10 ou 11. É leve: 2 GB de RAM e 200 MB de espaço já bastam.</p></details>
+    <details><summary>Em quantos computadores posso instalar?</summary><p>Cada licença ativa 1 computador. Precisa de mais máquinas? Fale com a gente no WhatsApp que fazemos condição especial.</p></details>
+    <details><summary>Como recebo o programa depois de pagar?</summary><p>Na hora. Assim que o pagamento é aprovado (Pix é imediato), você recebe um e-mail com sua chave de ativação, o link de download e o manual de uso.</p></details>
+    <details><summary>E se eu não gostar?</summary><p>Você tem 7 dias de garantia incondicional. Não gostou? Devolvemos 100% do valor, sem perguntas.</p></details>
+    <details><summary>Preciso entender de tecnologia?</summary><p>Não. Se você usa WhatsApp, consegue usar o RD OS. E o manual ilustrado + suporte por WhatsApp e e-mail estão incluídos.</p></details>
+  </div>
+</section>
+
+<!-- CTA final -->
+<section style="text-align:center;">
+  <div class="wrap">
+    <h2 class="sec-title">Seu próximo orçamento pode sair <span class="grad-txt">profissional</span>.</h2>
+    <p class="sec-sub">Pagamento único, garantia de 7 dias e você usando ainda hoje.</p>
+    <a href="#comprar" class="cta-btn">Garantir minha licença por R$ {{ '%.0f' % preco }} →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    RD Soluções — rdsolucoes.eco.br<br/>
+    <a href="{{ url_for('main.termos') }}">Termos de Uso</a> · <a href="{{ url_for('main.privacidade') }}">Política de Privacidade</a>
+  </div>
+</footer>
+
+<!-- WhatsApp float -->
+{% if site_cfg and site_cfg.get('site_whatsapp') %}
+<a class="wa-float" target="_blank" rel="noopener"
+   href="https://wa.me/{{ site_cfg.get('site_whatsapp') }}?text=Olá! Vi a página do RD Soluções OS e tenho uma dúvida."
+   aria-label="Falar no WhatsApp"
+   onclick="if(typeof fbq!=='undefined')fbq('track','Contact');">
+  <svg viewBox="0 0 32 32"><path d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.5c1.7.9 3.6 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.5-.5-5-1.3l-.4-.2-4.9.9.9-4.7-.2-.4c-.9-1.5-1.4-3.3-1.4-5.2 0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10zm5.5-7.5c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
+</a>
+{% endif %}
+
+</body>
+</html>

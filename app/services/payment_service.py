@@ -42,7 +42,7 @@ def criar_preferencia(order, user):
         "expires": False,
         "payment_methods": {
             "excluded_payment_types": [],
-            "installments": 1,
+            "installments": 12,
         },
         "metadata": {
             "order_id": order.id,

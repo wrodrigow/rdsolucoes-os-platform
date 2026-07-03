@@ -65,7 +65,7 @@ def create_app(env=None):
             "font-src 'self' https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https:; "
             "frame-src https://www.mercadopago.com.br https://www.mercadolibre.com; "
-            "connect-src 'self' https://api.mercadopago.com;"
+            "connect-src 'self' https://api.mercadopago.com https://www.facebook.com https://connect.facebook.net;"
         )
         return response
 
