@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from .config import config
-from .extensions import db, login_manager, mail, csrf, migrate
+from .extensions import db, login_manager, mail, csrf, migrate, limiter
 
 
 def create_app(env=None):
@@ -20,6 +20,7 @@ def create_app(env=None):
     mail.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
 
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Faça login para acessar esta página."
@@ -50,11 +51,39 @@ def create_app(env=None):
             cfg = {}
         return {"site_cfg": cfg, "site_name": app.config["SITE_NAME"]}
 
+    # Security headers
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.googletagmanager.com https://connect.facebook.net; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https:; "
+            "frame-src https://www.mercadopago.com.br https://www.mercadolibre.com; "
+            "connect-src 'self' https://api.mercadopago.com;"
+        )
+        return response
+
     # Handlers de erro
+    @app.errorhandler(403)
+    def forbidden(e):
+        from flask import render_template
+        return render_template("403.html"), 403
+
     @app.errorhandler(404)
     def not_found(e):
         from flask import render_template
         return render_template("404.html"), 404
+
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        from flask import render_template
+        return render_template("429.html"), 429
 
     @app.errorhandler(500)
     def server_error(e):

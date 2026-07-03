@@ -85,11 +85,17 @@ def enviar_confirmacao_compra(order, license_, user):
 
 
 def enviar_recuperacao_senha(user, token):
+    from ..models.site_config import SiteConfig
+    base_url = current_app.config["BASE_URL"]
+    reset_url = f"{base_url}/auth/nova-senha/{token}"
+    mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
     return send_email(
         to=user.email,
         subject="Recuperação de senha — RD Soluções OS",
         template="emails/recuperar_senha.html",
         user=user,
         token=token,
-        base_url=current_app.config["BASE_URL"],
+        reset_url=reset_url,
+        base_url=base_url,
+        mail_footer=mail_footer,
     )

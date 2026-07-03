@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from ..extensions import db
+from ..extensions import db, limiter
 from ..models.user import User
 from ..models.log import Log
 
@@ -14,6 +14,7 @@ def _get_ip():
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("20 per minute;5 per second")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("client.dashboard"))
@@ -64,6 +65,7 @@ def login():
 
 
 @bp.route("/registro", methods=["GET", "POST"])
+@limiter.limit("10 per hour")
 def registro():
     if current_user.is_authenticated:
         return redirect(url_for("client.dashboard"))
@@ -113,6 +115,7 @@ def logout():
 
 
 @bp.route("/recuperar-senha", methods=["GET", "POST"])
+@limiter.limit("5 per hour")
 def recuperar_senha():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
