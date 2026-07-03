@@ -136,7 +136,11 @@ def recuperar_senha():
 @bp.route("/nova-senha/<token>", methods=["GET", "POST"])
 def nova_senha(token):
     user = User.query.filter_by(reset_token=token).first()
-    if not user or not user.reset_token_exp or user.reset_token_exp < datetime.now(timezone.utc):
+    # Coluna DateTime sem timezone: o banco devolve naive (UTC); normaliza antes de comparar
+    exp = user.reset_token_exp if user else None
+    if exp is not None and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    if not user or not exp or exp < datetime.now(timezone.utc):
         flash("Link inválido ou expirado.", "danger")
         return redirect(url_for("auth.recuperar_senha"))
 

@@ -41,9 +41,13 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.senha_hash, senha)
 
     def is_locked(self):
-        if self.locked_until and self.locked_until > datetime.now(timezone.utc):
-            return True
-        return False
+        lu = self.locked_until
+        if lu is None:
+            return False
+        # Coluna DateTime sem timezone: o banco devolve naive (UTC); normaliza antes de comparar
+        if lu.tzinfo is None:
+            lu = lu.replace(tzinfo=timezone.utc)
+        return lu > datetime.now(timezone.utc)
 
     def get_id(self):
         return self.id
