@@ -6,30 +6,54 @@ from ..extensions import mail
 
 
 def send_email(to, subject, template, **kwargs):
-    """Envia um e-mail HTML usando o template fornecido."""
+    """Envia e-mail via Resend API (se RESEND_API_KEY estiver definida) ou SMTP."""
     try:
         html_body = render_template(template, **kwargs)
-        msg = Message(
-            subject=subject,
-            recipients=[to] if isinstance(to, str) else to,
-            html=html_body,
-            sender=current_app.config["MAIL_DEFAULT_SENDER"],
-        )
-        # Flask-Mail 0.10.0 ignora MAIL_TIMEOUT em configure_host(); forçamos
-        # o timeout via socket global para evitar travar o worker gunicorn.
-        _old = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(10)
-        try:
-            mail.send(msg)
-        finally:
-            socket.setdefaulttimeout(_old)
-        return True
+        api_key = current_app.config.get("RESEND_API_KEY", "")
+        if api_key:
+            return _send_via_resend(api_key, to, subject, html_body)
+        return _send_via_smtp(to, subject, html_body)
     except Exception as e:
         current_app.logger.error(
             f"[EMAIL] {type(e).__name__} ao enviar para {to}: {e}\n"
             + traceback.format_exc()
         )
         return False
+
+
+def _send_via_resend(api_key, to, subject, html_body):
+    import resend
+    resend.api_key = api_key
+    sender = current_app.config.get("MAIL_DEFAULT_SENDER", "")
+    params = {
+        "from": sender,
+        "to": [to] if isinstance(to, str) else to,
+        "subject": subject,
+        "html": html_body,
+    }
+    response = resend.Emails.send(params)
+    if response.get("id"):
+        return True
+    current_app.logger.error(f"[EMAIL/Resend] resposta inesperada: {response}")
+    return False
+
+
+def _send_via_smtp(to, subject, html_body):
+    # Flask-Mail 0.10 ignora MAIL_TIMEOUT em configure_host(); usamos
+    # socket.setdefaulttimeout para não travar o worker gunicorn.
+    msg = Message(
+        subject=subject,
+        recipients=[to] if isinstance(to, str) else to,
+        html=html_body,
+        sender=current_app.config["MAIL_DEFAULT_SENDER"],
+    )
+    _old = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(10)
+    try:
+        mail.send(msg)
+    finally:
+        socket.setdefaulttimeout(_old)
+    return True
 
 
 def enviar_confirmacao_compra(order, license_, user):
