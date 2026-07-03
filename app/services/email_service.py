@@ -1,3 +1,4 @@
+import socket
 import traceback
 from flask import current_app, render_template
 from flask_mail import Message
@@ -14,7 +15,14 @@ def send_email(to, subject, template, **kwargs):
             html=html_body,
             sender=current_app.config["MAIL_DEFAULT_SENDER"],
         )
-        mail.send(msg)
+        # Flask-Mail 0.10.0 ignora MAIL_TIMEOUT em configure_host(); forçamos
+        # o timeout via socket global para evitar travar o worker gunicorn.
+        _old = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(10)
+        try:
+            mail.send(msg)
+        finally:
+            socket.setdefaulttimeout(_old)
         return True
     except Exception as e:
         current_app.logger.error(
