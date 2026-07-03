@@ -1,3 +1,4 @@
+import traceback
 from flask import current_app, render_template
 from flask_mail import Message
 from ..extensions import mail
@@ -16,7 +17,10 @@ def send_email(to, subject, template, **kwargs):
         mail.send(msg)
         return True
     except Exception as e:
-        current_app.logger.error(f"Erro ao enviar e-mail para {to}: {e}")
+        current_app.logger.error(
+            f"[EMAIL] {type(e).__name__} ao enviar para {to}: {e}\n"
+            + traceback.format_exc()
+        )
         return False
 
 
