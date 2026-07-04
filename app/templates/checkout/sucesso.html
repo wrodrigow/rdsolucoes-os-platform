@@ -134,5 +134,17 @@ if (typeof fbq !== 'undefined') {
 }
 {% endif %}
 {% endif %}
+{% if site_cfg and site_cfg.get('gads_id') and site_cfg.get('gads_conversion_label') %}
+{% if order and license %}
+if (typeof gtag !== 'undefined') {
+  gtag('event', 'conversion', {
+    send_to: '{{ site_cfg.get("gads_id") }}/{{ site_cfg.get("gads_conversion_label") }}',
+    value: {{ order.valor | default(297) }},
+    currency: 'BRL',
+    transaction_id: '{{ order.numero_pedido }}'
+  });
+}
+{% endif %}
+{% endif %}
 </script>
 {% endblock %}

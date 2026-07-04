@@ -60,12 +60,14 @@ def create_app(env=None):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.googletagmanager.com https://connect.facebook.net; "
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
-            "font-src 'self' https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.googletagmanager.com "
+            "https://www.googleadservices.com https://googleads.g.doubleclick.net https://connect.facebook.net; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "frame-src https://www.mercadopago.com.br https://www.mercadolibre.com; "
-            "connect-src 'self' https://api.mercadopago.com https://www.facebook.com https://connect.facebook.net;"
+            "frame-src https://www.mercadopago.com.br https://www.mercadolibre.com https://td.doubleclick.net https://www.googletagmanager.com; "
+            "connect-src 'self' https://api.mercadopago.com https://www.facebook.com https://connect.facebook.net "
+            "https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com;"
         )
         return response
 

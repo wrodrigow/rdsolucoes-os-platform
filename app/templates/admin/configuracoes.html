@@ -70,6 +70,16 @@
         <input type="text" name="meta_pixel_id" class="adm-input" value="{{ cfg.meta_pixel_id or '' }}" placeholder="123456789012345"/>
         <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID numérico do Pixel do Facebook/Instagram Ads</div>
       </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Google Ads ID</label>
+        <input type="text" name="gads_id" class="adm-input" value="{{ cfg.gads_id or '' }}" placeholder="AW-123456789"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID da tag do Google Ads (começa com AW-). Ativa a tag no site inteiro.</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Google Ads — Rótulo de Conversão</label>
+        <input type="text" name="gads_conversion_label" class="adm-input" value="{{ cfg.gads_conversion_label or '' }}" placeholder="AbCdEfGhIj0KLmNoPq"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Rótulo da ação de conversão "Compra" (parte após a barra em AW-XXXX/rótulo). Dispara na página de sucesso.</div>
+      </div>
     </div>
 
     <!-- Produto & Preço -->

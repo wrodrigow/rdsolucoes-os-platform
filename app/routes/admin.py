@@ -438,7 +438,8 @@ def configuracoes():
         chaves_editaveis = [
             "site_name", "site_slogan", "site_email_contato", "site_whatsapp",
             "site_telefone", "site_url", "site_cnpj", "seo_title", "seo_description",
-            "seo_keywords", "ga_id", "meta_pixel_id", "produto_nome", "produto_preco",
+            "seo_keywords", "ga_id", "meta_pixel_id", "gads_id", "gads_conversion_label",
+            "produto_nome", "produto_preco",
             "produto_preco_de", "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
         ]
         for chave in chaves_editaveis:
