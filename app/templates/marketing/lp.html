@@ -28,6 +28,7 @@ img{max-width:100%;}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px;}
 .grad-txt{background:linear-gradient(135deg,#1a5fa8,#0d7d8c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .nowrap{white-space:nowrap;}
+svg.ic{display:block;flex-shrink:0;}
 
 /* ── Topo ─────────────────────────────────────────── */
 .topbar{padding:12px 0;border-bottom:1px solid #f1f5f9;background:#fff;}
@@ -95,25 +96,65 @@ section{padding:56px 0;}
 .mod h3{font-size:0.98rem;margin-bottom:6px;}
 .mod p{font-size:0.85rem;color:#64748b;}
 
-/* ── Oferta ───────────────────────────────────────── */
+/* ── Quanto você economiza (comparativo) ──────────── */
+.economia-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:14px;}
+.economia-card{border-radius:18px;padding:28px 24px;text-align:center;background:#fff;border:1.5px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,43,70,0.05);}
+.economia-card.ruim{background:#fef6f5;border-color:#fbd9d3;}
+.economia-card.bom{background:linear-gradient(165deg,#0f2b46,#123a5e);border-color:transparent;color:#fff;box-shadow:0 20px 46px rgba(15,43,70,0.28);}
+.eco-tag{font-size:0.76rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px;}
+.economia-card.ruim .eco-tag{color:#b91c1c;}
+.economia-card.bom .eco-tag{color:#7ec8d6;}
+.eco-valor{font-size:2.1rem;font-weight:900;letter-spacing:-1px;margin-bottom:4px;white-space:nowrap;}
+.economia-card.ruim .eco-valor{color:#7f2d1d;}
+.eco-periodo{font-size:0.82rem;color:#94a3b8;margin-bottom:20px;}
+.economia-card.bom .eco-periodo{color:#9db8cc;}
+.eco-total-label{font-size:0.7rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;}
+.economia-card.bom .eco-total-label{color:#8fc7d6;}
+.eco-total{font-size:1.7rem;font-weight:900;white-space:nowrap;}
+.economia-card.ruim .eco-total{color:#991b1b;}
+.eco-foot{font-size:0.82rem;margin-top:10px;color:#64748b;}
+.economia-card.bom .eco-foot{color:#bcd7e8;}
+.economia-vs{display:flex;align-items:center;justify-content:center;font-weight:800;color:#94a3b8;font-size:0.8rem;}
+
+/* ── Oferta / Preço ───────────────────────────────── */
 .oferta{background:linear-gradient(165deg,#0f2b46,#123a5e 60%,#0d4a5e);color:#fff;border-radius:22px;padding:46px 40px;text-align:center;box-shadow:0 30px 70px rgba(15,43,70,0.35);}
-.oferta .riscado{color:#9db8cc;font-size:0.92rem;max-width:520px;margin:0 auto 22px;text-wrap:pretty;}
-.oferta .riscado u{color:#c8dcea;}
-.preco-bloco{margin-bottom:8px;}
-.preco{font-size:3.6rem;font-weight:900;letter-spacing:-1.5px;line-height:1;white-space:nowrap;}
-.preco-label{color:#7ec8d6;font-weight:800;font-size:0.95rem;margin-top:6px;letter-spacing:0.02em;}
-.preco-sub{color:#bcd7e8;font-size:0.88rem;margin-top:3px;}
-.cond{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:20px 0 26px;}
-.cond span{white-space:nowrap;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);padding:7px 13px;border-radius:999px;font-size:0.78rem;color:#d3e7f2;font-weight:600;}
-.form-compra{max-width:420px;margin:0 auto;text-align:left;}
+.oferta-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#ffcf87;font-weight:800;font-size:0.8rem;letter-spacing:0.04em;padding:8px 18px;border-radius:999px;margin-bottom:24px;}
+.preco-de{color:#8ca3b8;font-size:1.05rem;text-decoration:line-through;text-decoration-color:#7191a8;margin-bottom:4px;}
+.preco-por{color:#bcd7e8;font-size:0.82rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.preco-mega{font-size:4rem;font-weight:900;letter-spacing:-2px;line-height:1;white-space:nowrap;}
+.preco-mega .avista{display:block;font-size:1rem;font-weight:700;color:#bcd7e8;letter-spacing:0;margin-top:6px;}
+.preco-ou{color:#7fa3bd;font-size:0.78rem;font-weight:800;letter-spacing:0.1em;margin:16px 0 6px;}
+.preco-parcela{font-size:1.5rem;font-weight:800;color:#7ec8d6;white-space:nowrap;}
+.economia-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-weight:800;font-size:0.86rem;padding:9px 18px;border-radius:999px;margin-top:22px;white-space:nowrap;}
+
+.selos{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:28px 0 6px;}
+.selo-item{display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.35);border-radius:14px;padding:16px 8px;text-align:center;}
+.selo-item svg{width:22px;height:22px;stroke:#4ade80;}
+.selo-item span{font-size:0.72rem;font-weight:700;color:#d1fae5;line-height:1.25;}
+
+.oportunidade-box{max-width:480px;margin:24px auto 0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:15px 20px;font-size:0.78rem;color:#a9c3d6;line-height:1.65;}
+
+.form-compra{max-width:420px;margin:30px auto 0;text-align:left;}
 .form-compra label{font-size:0.78rem;font-weight:700;color:#bcd7e8;display:block;margin-bottom:5px;}
 .form-compra input{width:100%;padding:14px 16px;border-radius:11px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.97);font-size:16px;margin-bottom:14px;color:#1e293b;}
 .form-compra input:focus{outline:2.5px solid #7ec8d6;border-color:transparent;}
-.form-compra .cta-btn{width:100%;font-size:1.08rem;padding:17px 20px;}
-.pag-icons{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:20px;}
-.pag-icons span{white-space:nowrap;font-size:0.72rem;color:#9db8cc;border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:999px;}
-.oferta .micro{font-size:0.74rem;color:#7fa3bd;margin-top:14px;max-width:420px;margin-left:auto;margin-right:auto;text-wrap:pretty;}
+.form-compra .cta-btn{width:100%;font-size:1.1rem;padding:19px 20px;}
+.form-compra .cta-btn svg{stroke:#fff;}
+
+.seguro-row{margin-top:16px;font-size:0.84rem;color:#bcd7e8;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;}
+.seguro-row svg{width:16px;height:16px;stroke:#7ec8d6;}
+.pag-icons{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.pag-icons span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:0.72rem;color:#9db8cc;border:1px solid rgba(255,255,255,0.14);padding:6px 12px;border-radius:999px;}
+.pag-icons svg{width:14px;height:14px;stroke:#9db8cc;}
+.oferta .micro{font-size:0.74rem;color:#7fa3bd;margin-top:18px;max-width:420px;margin-left:auto;margin-right:auto;text-wrap:pretty;}
 .flash-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:12px 16px;font-size:0.88rem;margin-bottom:16px;}
+
+/* ── Você compra uma única vez ────────────────────── */
+.unica-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.unica-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 18px;text-align:center;box-shadow:0 4px 14px rgba(15,43,70,0.04);}
+.unica-card .ic{width:40px;height:40px;border-radius:50%;background:#ecfdf5;color:#059669;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.unica-card .ic svg{stroke:#059669;width:20px;height:20px;}
+.unica-card p{font-size:0.9rem;font-weight:700;color:#1e293b;}
 
 /* ── Garantia ─────────────────────────────────────── */
 .garantia{display:flex;gap:24px;align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:18px;padding:30px 34px;}
@@ -176,14 +217,25 @@ body.bar-on .wa-float{bottom:88px;}
   .dores,.passos,.mods{grid-template-columns:1fr;gap:14px;}
   .dor,.passo,.mod{padding:20px 18px;}
 
-  .oferta{padding:36px 20px 30px;border-radius:16px;}
-  .oferta .riscado{font-size:0.84rem;margin-bottom:18px;}
-  .preco{font-size:3rem;}
-  .preco-label{font-size:0.88rem;}
-  .cond{gap:7px;margin:18px 0 22px;}
-  .cond span{font-size:0.73rem;padding:7px 11px;}
-  .form-compra .cta-btn{font-size:1.02rem;}
+  .economia-grid{grid-template-columns:1fr;gap:14px;}
+  .economia-vs{padding:2px 0;}
+  .economia-card.bom{order:-1;}
+
+  .oferta{padding:36px 20px 32px;border-radius:16px;}
+  .oferta-tag{font-size:0.72rem;padding:7px 14px;margin-bottom:20px;}
+  .preco-de{font-size:0.92rem;}
+  .preco-mega{font-size:2.9rem;}
+  .preco-mega .avista{font-size:0.88rem;}
+  .preco-parcela{font-size:1.25rem;}
+  .economia-badge{font-size:0.78rem;padding:8px 14px;white-space:normal;}
+  .selos{grid-template-columns:1fr 1fr;gap:8px;}
+  .selo-item{padding:13px 6px;}
+  .selo-item span{font-size:0.68rem;}
+  .form-compra .cta-btn{font-size:1.02rem;padding:17px 16px;}
   .pag-icons span{font-size:0.66rem;}
+
+  .unica-grid{grid-template-columns:1fr 1fr;gap:12px;}
+  .unica-card{padding:20px 12px;}
 
   .garantia{flex-direction:column;text-align:center;padding:26px 20px;gap:12px;}
   .cta-final .cta-btn{width:100%;}
@@ -292,21 +344,67 @@ body.bar-on .wa-float{bottom:88px;}
   </div>
 </section>
 
+<!-- Quanto você economiza -->
+<section style="background:#fafbfc;">
+  <div class="wrap">
+    <h2 class="sec-title">Quanto você economiza?</h2>
+    <p class="sec-sub">Sistemas de gestão por assinatura cobram todo mês, para sempre. O RD OS você paga uma vez só.</p>
+    <div class="economia-grid">
+      <div class="economia-card ruim">
+        <div class="eco-tag">❌ Sistema comum</div>
+        <div class="eco-valor">R$ 89<span style="font-size:1rem;font-weight:700;">/mês</span></div>
+        <div class="eco-periodo">cobrado todo mês, sem parar</div>
+        <div class="eco-total-label">Após 12 meses — total</div>
+        <div class="eco-total">R$ 1.068</div>
+        <div class="eco-foot">e continua cobrando ano após ano</div>
+      </div>
+      <div class="economia-vs">VS</div>
+      <div class="economia-card bom">
+        <div class="eco-tag">✅ RD Soluções OS</div>
+        <div class="eco-valor">R$ {{ preco_fmt }}</div>
+        <div class="eco-periodo">pagamento único</div>
+        <div class="eco-total-label">Depois disso</div>
+        <div class="eco-total">R$ 0</div>
+        <div class="eco-foot">licença para sempre, sem mais cobranças</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Oferta / Form -->
 <section id="comprar">
   <div class="wrap">
     <div class="oferta">
-      <div class="riscado">Sem mensalidade. Sem surpresa. Compare: sistemas por assinatura custam R$ 60–150 <u>por mês</u>, todo mês, para sempre.</div>
-      <div class="preco-bloco">
-        <div class="preco">R$ {{ '%.0f' % preco }}</div>
-        <div class="preco-label">pagamento único · licença vitalícia</div>
-        <div class="preco-sub">ou em até 12x no cartão</div>
+      <div class="oferta-tag">🔥 OFERTA DE LANÇAMENTO</div>
+
+      <div class="preco-de">De R$ {{ preco_de_fmt }}</div>
+      <div class="preco-por">por apenas</div>
+      <div class="preco-mega">R$ {{ preco_fmt }}<span class="avista">à vista</span></div>
+      <div class="preco-ou">OU</div>
+      <div class="preco-parcela">12x de R$ {{ parcela_fmt }}</div>
+
+      <div class="economia-badge">💰 Economize R$ {{ economia_fmt }} nesta oferta</div>
+
+      <div class="selos">
+        <div class="selo-item">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12c0-1.7 1.35-3 3-3s3 1.3 3 3-1.35 3-3 3-3-1.3-3-3z"/><path d="M12 12c0-1.7 1.35-3 3-3s3 1.3 3 3-1.35 3-3 3-3-1.3-3-3z"/></svg>
+          <span>Licença Vitalícia</span>
+        </div>
+        <div class="selo-item">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"/></svg>
+          <span>Sem Mensalidade</span>
+        </div>
+        <div class="selo-item">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+          <span>Ativação Imediata</span>
+        </div>
+        <div class="selo-item">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+          <span>Atualizações Gratuitas</span>
+        </div>
       </div>
-      <div class="cond">
-        <span>⚡ Pix na hora</span>
-        <span>💳 até 12x</span>
-        <span>✅ 7 dias de garantia</span>
-      </div>
+
+      <div class="oportunidade-box">Oferta de lançamento com desconto especial. O preço poderá voltar para R$ {{ preco_de_fmt }} após o encerramento da campanha.</div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% for cat, msg in messages %}
@@ -323,19 +421,55 @@ body.bar-on .wa-float{bottom:88px;}
         <input type="email" id="email" name="email" required placeholder="voce@email.com" autocomplete="email"/>
         <label for="whatsapp">WhatsApp <span style="font-weight:400;">(opcional — para suporte)</span></label>
         <input type="tel" id="whatsapp" name="whatsapp" placeholder="(11) 99999-9999" autocomplete="tel"/>
-        <button type="submit" class="cta-btn">🔒 Comprar agora — R$&nbsp;{{ '%.0f' % preco }}</button>
+        <button type="submit" class="cta-btn">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>
+          QUERO MINHA LICENÇA AGORA
+        </button>
       </form>
 
+      <div class="seguro-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>
+        Pagamento 100% seguro
+      </div>
       <div class="pag-icons">
-        <span>Pix</span><span>Crédito até 12x</span><span>Boleto</span><span>Mercado Pago</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Pix</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="9.5" x2="22" y2="9.5"/></svg>Crédito até 12x</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Boleto</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>Mercado Pago</span>
       </div>
       <p class="micro">Sem cadastro antes de pagar: você informa só nome e e-mail, paga no ambiente seguro do Mercado Pago e recebe tudo no e-mail.</p>
     </div>
   </div>
 </section>
 
+<!-- Você compra uma única vez -->
+<section style="background:#fafbfc;">
+  <div class="wrap">
+    <h2 class="sec-title">Você compra uma única vez.</h2>
+    <p class="sec-sub">Sem pegadinha, sem letra miúda. É isso mesmo.</p>
+    <div class="unica-grid">
+      <div class="unica-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></div>
+        <p>Sem mensalidades</p>
+      </div>
+      <div class="unica-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></div>
+        <p>Licença permanente</p>
+      </div>
+      <div class="unica-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></div>
+        <p>Atualizações gratuitas</p>
+      </div>
+      <div class="unica-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg></div>
+        <p>Suporte técnico</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Garantia -->
-<section style="padding-top:0;">
+<section>
   <div class="wrap">
     <div class="garantia">
       <div class="selo">🛡️</div>
@@ -352,7 +486,7 @@ body.bar-on .wa-float{bottom:88px;}
   <div class="wrap" style="max-width:720px;">
     <h2 class="sec-title">Perguntas frequentes</h2>
     <p class="sec-sub">Tudo que você precisa saber antes de comprar.</p>
-    <details><summary>Tem mensalidade ou taxa escondida?</summary><p>Não. Você paga R$ {{ '%.0f' % preco }} uma única vez e a licença é sua para sempre. Sem assinatura, sem renovação, sem surpresa.</p></details>
+    <details><summary>Tem mensalidade ou taxa escondida?</summary><p>Não. Você paga R$ {{ preco_fmt }} uma única vez e a licença é sua para sempre. Sem assinatura, sem renovação, sem surpresa.</p></details>
     <details><summary>Preciso de internet para usar?</summary><p>Não. O sistema é 100% offline — instala e roda no seu computador. Seus dados ficam com você, não em servidor de terceiros.</p></details>
     <details><summary>Funciona no meu computador?</summary><p>Funciona em qualquer computador ou notebook com Windows 10 ou 11. É leve: 2 GB de RAM e 200 MB de espaço já bastam.</p></details>
     <details><summary>Em quantos computadores posso instalar?</summary><p>Cada licença ativa 1 computador. Precisa de mais máquinas? Fale com a gente no WhatsApp que fazemos condição especial.</p></details>
