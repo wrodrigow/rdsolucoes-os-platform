@@ -105,8 +105,8 @@ def _seed_initial_data(app):
     defaults = {
         "site_nome": "RD Soluções OS",
         "site_email_contato": "contato@rdsolucoes.com.br",
-        "site_telefone": "(11) 99316-7183",
-        "site_whatsapp": "5511993167183",
+        "site_telefone": "(11) 94157-9827",
+        "site_whatsapp": "5511941579827",
         "hero_headline": "Chega de Bagunça. Gerencie Sua Empresa com Profissionalismo.",
         "hero_subheadline": "Orçamentos, Ordens de Serviço, Controle Financeiro e Cadastro de Clientes — tudo em um único sistema. Sem internet. Sem mensalidade.",
         "produto_preco": "297.00",
