@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Limpar Dados de Teste — Admin{% endblock %}
+{% block page_title %}Limpar Dados de Teste{% endblock %}
+
+{% block content %}
+
+<div style="padding:14px 18px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:20px;color:#b91c1c;font-size:0.88rem;">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  <strong>Ação irreversível.</strong> Isso remove permanentemente todos os logs de atividade, todos os
+  eventos de tráfego coletados até agora e os pedidos abaixo (incluindo a venda simulada/fictícia e
+  qualquer tentativa de compra pendente ou cancelada). Vendas realmente aprovadas com pagamento de
+  verdade <strong>não</strong> aparecem nesta lista e não serão afetadas.
+</div>
+
+<div class="adm-card" style="margin-bottom:20px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title">O que será removido</div>
+  </div>
+  <ul style="font-size:0.9rem;line-height:1.9;margin:0;padding-left:20px;">
+    <li><strong>{{ total_logs }}</strong> registro(s) em Logs de Atividade</li>
+    <li><strong>{{ total_traffic_events }}</strong> evento(s) no painel de Tráfego (Ads)</li>
+    <li><strong>{{ pedidos_teste|length }}</strong> pedido(s) de teste/incompletos (listados abaixo)</li>
+  </ul>
+</div>
+
+<div class="adm-card" style="margin-bottom:20px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Pedidos que serão removidos ({{ pedidos_teste|length }})</div>
+  </div>
+  {% if pedidos_teste %}
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead><tr><th>Pedido</th><th>Cliente</th><th>Valor</th><th>Status</th><th>Origem</th><th>Data</th></tr></thead>
+      <tbody>
+        {% for p in pedidos_teste %}
+        <tr>
+          <td><code style="font-size:0.78rem;">{{ p.numero_pedido }}</code></td>
+          <td style="font-size:0.84rem;">{{ p.user.nome if p.user else '—' }}</td>
+          <td style="font-size:0.84rem;">{{ p.valor_formatado() }}</td>
+          <td>{{ p.status_label() | safe }}</td>
+          <td style="font-size:0.8rem;color:var(--adm-muted);">
+            {{ 'Venda simulada (fictícia)' if p.mp_payment_id == 'SIMULADO' else 'Tentativa incompleta' }}
+          </td>
+          <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhum pedido de teste encontrado.</div>
+  {% endif %}
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Confirmar limpeza</div>
+  </div>
+  <form method="POST">
+    <label style="font-size:0.88rem;font-weight:600;display:block;margin-bottom:8px;">
+      Digite <code>CONFIRMAR</code> para prosseguir:
+    </label>
+    <input type="text" name="confirmar" class="adm-input" style="max-width:260px;margin-bottom:16px;" autocomplete="off" placeholder="CONFIRMAR"/>
+    <div style="display:flex;gap:12px;">
+      <button type="submit" class="adm-btn" style="background:#dc2626;color:#fff;">
+        <i class="fa-solid fa-trash"></i> Limpar tudo agora
+      </button>
+      <a href="{{ url_for('admin.dashboard') }}" class="adm-btn adm-btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

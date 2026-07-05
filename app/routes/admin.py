@@ -653,3 +653,64 @@ def trafego_dados():
         "eventos_recentes": eventos_recentes,
         "atualizado_em": now.strftime("%H:%M:%S"),
     })
+
+
+# ── Manutenção: limpar dados de teste ────────────────────────────────────────
+
+def _pedidos_de_teste_query():
+    """Pedidos de teste/incompletos: a venda simulada (fictícia) e qualquer
+    pedido que nunca foi de fato aprovado com pagamento real (pendente,
+    cancelado, em processamento). Vendas realmente aprovadas (não simuladas)
+    nunca são tocadas por esta rotina."""
+    return Order.query.filter(
+        db.or_(
+            Order.mp_payment_id == "SIMULADO",
+            Order.status.in_(["pending", "cancelled", "in_process"]),
+        )
+    )
+
+
+@bp.route("/manutencao/limpar-testes", methods=["GET", "POST"])
+@admin_required
+def limpar_testes():
+    pedidos_teste = _pedidos_de_teste_query().order_by(Order.created_at.desc()).all()
+    total_logs = Log.query.count()
+    total_traffic_events = TrafficEvent.query.count()
+
+    if request.method == "POST":
+        if request.form.get("confirmar") != "CONFIRMAR":
+            flash("Digite CONFIRMAR (em maiúsculas) para prosseguir com a limpeza.", "warning")
+            return redirect(url_for("admin.limpar_testes"))
+
+        total_logs_removidos = Log.query.delete()
+        total_traffic_removidos = TrafficEvent.query.delete()
+
+        keys_liberadas = 0
+        pedidos_removidos = 0
+        for o in pedidos_teste:
+            if o.license and o.license.key_obj:
+                k = o.license.key_obj
+                k.status = "disponivel"
+                k.order_id = None
+                k.user_id = None
+                k.data_venda = None
+                keys_liberadas += 1
+            db.session.delete(o)  # cascade remove a License associada
+            pedidos_removidos += 1
+
+        db.session.commit()
+
+        flash(
+            f"Limpeza concluída: {total_logs_removidos} log(s), {total_traffic_removidos} evento(s) de "
+            f"tráfego e {pedidos_removidos} pedido(s) de teste removidos. {keys_liberadas} key(s) "
+            f"liberada(s) de volta ao estoque disponível.",
+            "success",
+        )
+        return redirect(url_for("admin.dashboard"))
+
+    return render_template(
+        "admin/limpar_testes.html",
+        pedidos_teste=pedidos_teste,
+        total_logs=total_logs,
+        total_traffic_events=total_traffic_events,
+    )
