@@ -557,10 +557,14 @@ def trafego():
     return render_template("admin/trafego.html")
 
 
+BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
+
+
 @bp.route("/trafego/dados")
 @admin_required
 def trafego_dados():
     now = datetime.now(timezone.utc)
+    now_local = now.astimezone(BRT)
     desde = now - timedelta(hours=24)
 
     eventos = (
@@ -571,15 +575,17 @@ def trafego_dados():
 
     buckets = OrderedDict()
     for i in range(23, -1, -1):
-        hora_dt = (now - timedelta(hours=i)).replace(minute=0, second=0, microsecond=0)
+        hora_dt = (now_local - timedelta(hours=i)).replace(minute=0, second=0, microsecond=0)
         buckets[hora_dt.strftime("%d/%m %Hh")] = {"real": 0, "bot": 0}
 
     lp_real = lp_bot = checkout_start = checkout_success = checkout_fail = 0
     device_mobile = device_desktop = 0
 
     for e in eventos:
+        # created_at é salvo em UTC; convertemos para horário local antes de exibir
+        criado_local = e.created_at.replace(tzinfo=timezone.utc).astimezone(BRT)
         if e.event_type == "lp_view":
-            hora_dt = e.created_at.replace(minute=0, second=0, microsecond=0)
+            hora_dt = criado_local.replace(minute=0, second=0, microsecond=0)
             label = hora_dt.strftime("%d/%m %Hh")
             if label in buckets:
                 buckets[label]["bot" if e.is_bot else "real"] += 1
@@ -629,7 +635,7 @@ def trafego_dados():
 
     eventos_recentes = [
         {
-            "hora": e.created_at.strftime("%d/%m %H:%M"),
+            "hora": e.created_at.replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m %H:%M"),
             "tipo": e.event_type,
             "bot": e.is_bot,
             "device": e.device or "—",
@@ -651,7 +657,7 @@ def trafego_dados():
         "device": {"mobile": device_mobile, "desktop": device_desktop},
         "insights": insights,
         "eventos_recentes": eventos_recentes,
-        "atualizado_em": now.strftime("%H:%M:%S"),
+        "atualizado_em": now_local.strftime("%H:%M:%S"),
     })
 
 
