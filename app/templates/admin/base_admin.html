@@ -42,6 +42,9 @@
         <a href="{{ url_for('admin.financeiro') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.financeiro' }}">
           <i class="fa-solid fa-chart-line adm-nav-icon"></i> Financeiro
         </a>
+        <a href="{{ url_for('admin.trafego') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.trafego' }}">
+          <i class="fa-solid fa-satellite-dish adm-nav-icon"></i> Tráfego (Ads)
+        </a>
       </div>
       <div class="adm-nav-section">
         <div class="adm-nav-section-title">Sistema</div>

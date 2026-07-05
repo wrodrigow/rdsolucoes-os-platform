@@ -136,6 +136,10 @@ def direto():
         init_point = preference.get("init_point") or preference.get("sandbox_init_point")
         if not init_point:
             raise RuntimeError("init_point não retornado pelo Mercado Pago.")
+
+        from ..models.traffic_event import TrafficEvent
+        TrafficEvent.registrar("checkout_start", request, order_id=order.id)
+
         return redirect(init_point)
 
     except Exception as e:
@@ -158,6 +162,9 @@ def sucesso():
         if order and order.license:
             license_ = order.license
 
+    from ..models.traffic_event import TrafficEvent
+    TrafficEvent.registrar("checkout_success", request, order_id=order_id)
+
     return render_template(
         "checkout/sucesso.html",
         order=order,
@@ -176,4 +183,6 @@ def pendente():
 
 @bp.route("/falha")
 def falha():
+    from ..models.traffic_event import TrafficEvent
+    TrafficEvent.registrar("checkout_fail", request)
     return render_template("checkout/falha.html")

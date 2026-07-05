@@ -1,0 +1,246 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Tráfego (Ads) — Admin{% endblock %}
+{% block page_title %}Tráfego Pago em Tempo Real{% endblock %}
+
+{% block topbar_actions %}
+<span id="traf-atualizado" style="font-size:0.78rem;color:var(--adm-muted);background:var(--adm-bg-alt);padding:4px 10px;border-radius:6px;">
+  Carregando...
+</span>
+{% endblock %}
+
+{% block content %}
+
+<div id="traf-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+
+<!-- Funil -->
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;">
+      <i class="fa-solid fa-eye"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-lp-real">—</div>
+      <div class="adm-stat-label">Visitas Reais na LP (24h)</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(107,114,128,0.12);color:#6b7280;">
+      <i class="fa-solid fa-robot"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-lp-bot">—</div>
+      <div class="adm-stat-label">Tráfego de Robô/Crawler</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(234,179,8,0.12);color:#ca8a04;">
+      <i class="fa-solid fa-cart-shopping"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-checkout-start">—</div>
+      <div class="adm-stat-label">Checkouts Iniciados</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;">
+      <i class="fa-solid fa-check-circle"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-checkout-success">—</div>
+      <div class="adm-stat-label">Vendas Concluídas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-chart-line" style="color:#2563eb;"></i> Visitas na LP por Hora (últimas 24h)</div>
+    <div style="display:flex;gap:14px;font-size:0.78rem;color:var(--adm-muted);">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:4px;"></span>Real</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#d1d5db;margin-right:4px;"></span>Robô</span>
+    </div>
+  </div>
+  <canvas id="traf-chart" height="90" style="width:100%;max-width:100%;"></canvas>
+</div>
+
+<div class="adm-grid-2">
+  <!-- Funil detalhado -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Funil de Conversão (24h)</div>
+    </div>
+    <div id="traf-funil" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+
+  <!-- Eventos recentes -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Eventos Recentes</div>
+    </div>
+    <div class="adm-table-wrapper" style="max-height:360px;overflow-y:auto;">
+      <table class="adm-table">
+        <thead><tr><th>Hora</th><th>Evento</th><th>Origem</th><th>Dispositivo</th></tr></thead>
+        <tbody id="traf-eventos-tbody">
+          <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const EVENTO_LABELS = {
+  lp_view: 'Visita à LP',
+  checkout_start: 'Checkout iniciado',
+  checkout_success: 'Compra aprovada',
+  checkout_fail: 'Pagamento falhou',
+};
+
+function trafDesenharGrafico(labels, real, bot) {
+  const canvas = document.getElementById('traf-chart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = canvas.parentElement.clientWidth;
+  const cssHeight = 220;
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.width = cssWidth + 'px';
+  canvas.style.height = cssHeight + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  const n = labels.length;
+  if (n === 0) return;
+  const max = Math.max(...real.map((v, i) => v + bot[i]), 1);
+  const padLeft = 30, padBottom = 26, padTop = 10, padRight = 10;
+  const plotW = cssWidth - padLeft - padRight;
+  const plotH = cssHeight - padTop - padBottom;
+  const barW = plotW / n * 0.6;
+  const gap = plotW / n;
+
+  // grid horizontal
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '10px Inter, sans-serif';
+  const steps = 4;
+  for (let s = 0; s <= steps; s++) {
+    const y = padTop + plotH - (plotH * s / steps);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(cssWidth - padRight, y);
+    ctx.stroke();
+    ctx.fillText(Math.round(max * s / steps), 2, y + 3);
+  }
+
+  for (let i = 0; i < n; i++) {
+    const x = padLeft + gap * i + (gap - barW) / 2;
+    const botH = (bot[i] / max) * plotH;
+    const realH = (real[i] / max) * plotH;
+    const baseY = padTop + plotH;
+
+    ctx.fillStyle = '#d1d5db';
+    ctx.fillRect(x, baseY - botH, barW, botH);
+
+    ctx.fillStyle = '#2563eb';
+    ctx.fillRect(x, baseY - botH - realH, barW, realH);
+
+    if (i % 3 === 0 || n <= 12) {
+      ctx.fillStyle = '#9ca3af';
+      ctx.save();
+      ctx.translate(x + barW / 2, baseY + 14);
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[i].split(' ')[1] || labels[i], 0, 0);
+      ctx.restore();
+    }
+  }
+}
+
+function trafRenderInsights(insights) {
+  const cores = {
+    success: {bg: 'rgba(5,150,105,0.08)', border: 'rgba(5,150,105,0.3)', color: '#059669', icon: 'fa-circle-check'},
+    warning: {bg: 'rgba(234,179,8,0.08)', border: 'rgba(234,179,8,0.3)', color: '#92400e', icon: 'fa-triangle-exclamation'},
+    danger:  {bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)', color: '#b91c1c', icon: 'fa-circle-exclamation'},
+    info:    {bg: 'rgba(37,99,235,0.08)', border: 'rgba(37,99,235,0.3)', color: '#1d4ed8', icon: 'fa-circle-info'},
+  };
+  const el = document.getElementById('traf-insights');
+  el.innerHTML = insights.map(ins => {
+    const c = cores[ins.tipo] || cores.info;
+    return `<div style="padding:12px 16px;background:${c.bg};border:1px solid ${c.border};border-radius:8px;font-size:0.86rem;color:${c.color};display:flex;gap:10px;align-items:flex-start;">
+      <i class="fa-solid ${c.icon}" style="margin-top:2px;"></i><span>${ins.texto}</span>
+    </div>`;
+  }).join('');
+}
+
+function trafRenderFunil(funil) {
+  const etapas = [
+    {label: 'Visitas reais na LP', valor: funil.lp_real, cor: '#2563eb'},
+    {label: 'Checkouts iniciados', valor: funil.checkout_start, cor: '#ca8a04'},
+    {label: 'Compras aprovadas', valor: funil.checkout_success, cor: '#059669'},
+  ];
+  const max = Math.max(...etapas.map(e => e.valor), 1);
+  const el = document.getElementById('traf-funil');
+  el.innerHTML = etapas.map(e => {
+    const pct = Math.max(Math.round(e.valor / max * 100), e.valor > 0 ? 4 : 0);
+    return `<div>
+      <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px;">
+        <span>${e.label}</span><strong>${e.valor}</strong>
+      </div>
+      <div style="background:var(--adm-bg-alt);border-radius:6px;height:10px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${e.cor};border-radius:6px;"></div>
+      </div>
+    </div>`;
+  }).join('');
+  if (funil.checkout_fail > 0) {
+    el.innerHTML += `<div style="font-size:0.8rem;color:#b91c1c;margin-top:4px;">
+      <i class="fa-solid fa-circle-exclamation"></i> ${funil.checkout_fail} pagamento(s) recusado(s)/abandonado(s) no Mercado Pago
+    </div>`;
+  }
+}
+
+function trafRenderEventos(eventos) {
+  const tbody = document.getElementById('traf-eventos-tbody');
+  if (!eventos.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhum evento nas últimas 24h.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = eventos.map(e => `
+    <tr>
+      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${e.hora}</td>
+      <td><span class="adm-badge adm-badge-${e.tipo === 'checkout_success' ? 'success' : e.tipo === 'checkout_fail' ? 'danger' : e.tipo === 'checkout_start' ? 'warning' : 'info'}">${EVENTO_LABELS[e.tipo] || e.tipo}</span></td>
+      <td style="font-size:0.8rem;">${e.bot ? '<span style="color:#9ca3af;"><i class="fa-solid fa-robot"></i> robô</span>' : '<span style="color:#059669;"><i class="fa-solid fa-user"></i> real</span>'}</td>
+      <td style="font-size:0.8rem;color:var(--adm-muted);">${e.device}</td>
+    </tr>
+  `).join('');
+}
+
+async function trafAtualizar() {
+  try {
+    const r = await fetch('{{ url_for("admin.trafego_dados") }}');
+    const d = await r.json();
+
+    document.getElementById('stat-lp-real').textContent = d.funil.lp_real;
+    document.getElementById('stat-lp-bot').textContent = d.funil.lp_bot;
+    document.getElementById('stat-checkout-start').textContent = d.funil.checkout_start;
+    document.getElementById('stat-checkout-success').textContent = d.funil.checkout_success;
+
+    trafDesenharGrafico(d.chart_labels, d.chart_real, d.chart_bot);
+    trafRenderInsights(d.insights);
+    trafRenderFunil(d.funil);
+    trafRenderEventos(d.eventos_recentes);
+
+    document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
+  } catch (e) {
+    document.getElementById('traf-atualizado').textContent = 'Erro ao atualizar';
+  }
+}
+
+trafAtualizar();
+setInterval(trafAtualizar, 20000);
+window.addEventListener('resize', () => trafAtualizar());
+</script>
+{% endblock %}

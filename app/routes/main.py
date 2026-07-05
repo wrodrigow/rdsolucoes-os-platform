@@ -59,6 +59,9 @@ def contato():
 @bp.route("/lp")
 def lp():
     """Landing page de conversão (tráfego pago) — sem menu, um único CTA."""
+    from ..models.traffic_event import TrafficEvent
+    TrafficEvent.registrar("lp_view", request)
+
     preco = float(SiteConfig.get("produto_preco", "297.00"))
     try:
         preco_de = float(SiteConfig.get("produto_preco_de") or 0)

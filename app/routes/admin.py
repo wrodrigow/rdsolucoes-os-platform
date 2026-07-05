@@ -2,10 +2,11 @@ import os
 import re
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from collections import OrderedDict
 from functools import wraps
 from flask import (Blueprint, render_template, redirect, url_for, flash,
-                   request, current_app, Response)
+                   request, current_app, Response, jsonify)
 from flask_login import login_required, current_user
 from ..extensions import db
 from ..models.user import User
@@ -15,6 +16,7 @@ from ..models.license import License
 from ..models.download import Download
 from ..models.log import Log
 from ..models.site_config import SiteConfig
+from ..models.traffic_event import TrafficEvent
 
 bp = Blueprint("admin", __name__)
 
@@ -545,3 +547,109 @@ def logs():
                            pagination=pagination,
                            q=q,
                            acao_filter=acao_filter)
+
+
+# ── Tráfego (Google Ads / LP) ────────────────────────────────────────────────
+
+@bp.route("/trafego")
+@admin_required
+def trafego():
+    return render_template("admin/trafego.html")
+
+
+@bp.route("/trafego/dados")
+@admin_required
+def trafego_dados():
+    now = datetime.now(timezone.utc)
+    desde = now - timedelta(hours=24)
+
+    eventos = (
+        TrafficEvent.query.filter(TrafficEvent.created_at >= desde)
+        .order_by(TrafficEvent.created_at.asc())
+        .all()
+    )
+
+    buckets = OrderedDict()
+    for i in range(23, -1, -1):
+        hora_dt = (now - timedelta(hours=i)).replace(minute=0, second=0, microsecond=0)
+        buckets[hora_dt.strftime("%d/%m %Hh")] = {"real": 0, "bot": 0}
+
+    lp_real = lp_bot = checkout_start = checkout_success = checkout_fail = 0
+    device_mobile = device_desktop = 0
+
+    for e in eventos:
+        if e.event_type == "lp_view":
+            hora_dt = e.created_at.replace(minute=0, second=0, microsecond=0)
+            label = hora_dt.strftime("%d/%m %Hh")
+            if label in buckets:
+                buckets[label]["bot" if e.is_bot else "real"] += 1
+            if e.is_bot:
+                lp_bot += 1
+            else:
+                lp_real += 1
+                if e.device == "mobile":
+                    device_mobile += 1
+                elif e.device == "desktop":
+                    device_desktop += 1
+        elif e.event_type == "checkout_start":
+            checkout_start += 1
+        elif e.event_type == "checkout_success":
+            checkout_success += 1
+        elif e.event_type == "checkout_fail":
+            checkout_fail += 1
+
+    total_lp = lp_real + lp_bot
+    insights = []
+    if lp_real > 0 and checkout_start == 0:
+        insights.append({
+            "tipo": "warning",
+            "texto": f"{lp_real} visita(s) real(is) na LP nas últimas 24h, mas nenhuma tentativa de checkout. "
+                     f"Pode ser preço, copy ou oferta — considere revisar a página ou testar um novo anúncio.",
+        })
+    if checkout_start > 0 and checkout_success == 0:
+        insights.append({
+            "tipo": "danger",
+            "texto": f"{checkout_start} tentativa(s) de checkout iniciada(s), nenhuma concluída. "
+                     f"O atrito está no Mercado Pago (ou o comprador desistiu no meio do pagamento), não na sua LP.",
+        })
+    if checkout_fail > 0:
+        insights.append({
+            "tipo": "danger",
+            "texto": f"{checkout_fail} retorno(s) de falha/cancelamento do Mercado Pago nas últimas 24h.",
+        })
+    if total_lp > 0 and (lp_bot / total_lp) > 0.4:
+        pct = round(lp_bot / total_lp * 100)
+        insights.append({
+            "tipo": "info",
+            "texto": f"{lp_bot} de {total_lp} acessos à LP ({pct}%) são tráfego de robô/crawler "
+                     f"(ex.: verificação automática do Google Ads), não cliques pagos reais.",
+        })
+    if not insights:
+        insights.append({"tipo": "success", "texto": "Nenhum alerta no momento — funil sem gargalos aparentes nas últimas 24h."})
+
+    eventos_recentes = [
+        {
+            "hora": e.created_at.strftime("%d/%m %H:%M"),
+            "tipo": e.event_type,
+            "bot": e.is_bot,
+            "device": e.device or "—",
+        }
+        for e in reversed(eventos[-40:])
+    ]
+
+    return jsonify({
+        "chart_labels": list(buckets.keys()),
+        "chart_real": [v["real"] for v in buckets.values()],
+        "chart_bot": [v["bot"] for v in buckets.values()],
+        "funil": {
+            "lp_real": lp_real,
+            "lp_bot": lp_bot,
+            "checkout_start": checkout_start,
+            "checkout_success": checkout_success,
+            "checkout_fail": checkout_fail,
+        },
+        "device": {"mobile": device_mobile, "desktop": device_desktop},
+        "insights": insights,
+        "eventos_recentes": eventos_recentes,
+        "atualizado_em": now.strftime("%H:%M:%S"),
+    })

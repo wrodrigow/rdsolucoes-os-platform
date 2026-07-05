@@ -5,3 +5,4 @@ from .license import License
 from .download import Download
 from .log import Log
 from .site_config import SiteConfig
+from .traffic_event import TrafficEvent
