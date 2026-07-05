@@ -57,6 +57,7 @@
     <div class="adm-card-title">Confirmar limpeza</div>
   </div>
   <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <label style="font-size:0.88rem;font-weight:600;display:block;margin-bottom:8px;">
       Digite <code>CONFIRMAR</code> para prosseguir:
     </label>
