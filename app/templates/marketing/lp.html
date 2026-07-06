@@ -26,6 +26,16 @@ fbq('track','ViewContent',{content_type:'product',content_ids:['rdsolucoes-os-li
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={{ site_cfg.get('meta_pixel_id') }}&ev=PageView&noscript=1"/></noscript>
 {% endif %}
+{% if site_cfg and site_cfg.get('clarity_id') %}
+<!-- Microsoft Clarity — mapas de calor e gravações de sessão -->
+<script type="text/javascript">
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "{{ site_cfg.get('clarity_id') }}");
+</script>
+{% endif %}
 {% if site_cfg and site_cfg.get('gads_id') %}
 <!-- Google tag (gtag.js) — Google Ads -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ site_cfg.get('gads_id') }}"></script>

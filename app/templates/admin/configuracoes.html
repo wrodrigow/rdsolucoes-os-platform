@@ -76,6 +76,11 @@
         <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID da tag do Google Ads (começa com AW-). Ativa a tag no site inteiro.</div>
       </div>
       <div class="adm-form-group">
+        <label class="adm-label">Microsoft Clarity ID</label>
+        <input type="text" name="clarity_id" class="adm-input" value="{{ cfg.clarity_id or '' }}" placeholder="abcd1efgh2"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID do projeto no clarity.microsoft.com (mapas de calor e gravações de sessão — grátis). Ativa na LP e no site.</div>
+      </div>
+      <div class="adm-form-group">
         <label class="adm-label">Google Ads — Rótulo de Conversão</label>
         <input type="text" name="gads_conversion_label" class="adm-input" value="{{ cfg.gads_conversion_label or '' }}" placeholder="AbCdEfGhIj0KLmNoPq"/>
         <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Rótulo da ação de conversão "Compra" (parte após a barra em AW-XXXX/rótulo). Dispara na página de sucesso.</div>
