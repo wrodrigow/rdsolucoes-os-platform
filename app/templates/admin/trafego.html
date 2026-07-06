@@ -74,6 +74,17 @@
   </div>
 </div>
 
+<!-- Meta Ads — desempenho real (gasto/cliques/impressões) -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-brands fa-facebook" style="color:#1877f2;"></i> Meta Ads — Desempenho Real da Campanha</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Direto da API do Meta, desde o início da campanha</div>
+  </div>
+  <div id="traf-meta-ads-content">
+    <div style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</div>
+  </div>
+</div>
+
 <!-- Origem do tráfego (Google Ads x Meta Ads x Direto) -->
 <div class="adm-card" style="margin-bottom:24px;">
   <div class="adm-card-header">
@@ -289,6 +300,32 @@ function trafRenderVendas(vendas) {
   `).join('');
 }
 
+function trafRenderMetaAds(m) {
+  const el = document.getElementById('traf-meta-ads-content');
+  if (!m || !m.disponivel) {
+    el.innerHTML = `<div style="padding:16px;color:var(--adm-muted);font-size:0.85rem;">
+      <i class="fa-solid fa-circle-info"></i> Ainda não disponível: ${m && m.erro ? m.erro : 'configuração pendente'}.
+    </div>`;
+    return;
+  }
+  const cards = [
+    {label: 'Valor Gasto', valor: m.gasto, icon: 'fa-sack-dollar', cor: '#059669'},
+    {label: 'Impressões', valor: m.impressoes.toLocaleString('pt-BR'), icon: 'fa-eye', cor: '#2563eb'},
+    {label: 'Cliques', valor: m.cliques.toLocaleString('pt-BR'), icon: 'fa-arrow-pointer', cor: '#ca8a04'},
+    {label: 'CPC Médio', valor: m.cpc, icon: 'fa-coins', cor: '#9333ea'},
+    {label: 'CTR', valor: m.ctr, icon: 'fa-percent', cor: '#0891b2'},
+    {label: 'Alcance', valor: m.alcance.toLocaleString('pt-BR'), icon: 'fa-users', cor: '#6b7280'},
+  ];
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;padding:16px;">` +
+    cards.map(c => `
+      <div style="text-align:center;">
+        <i class="fa-solid ${c.icon}" style="color:${c.cor};font-size:1.1rem;"></i>
+        <div style="font-size:1.3rem;font-weight:700;margin-top:4px;">${c.valor}</div>
+        <div style="font-size:0.75rem;color:var(--adm-muted);">${c.label}</div>
+      </div>
+    `).join('') + `</div>`;
+}
+
 const CANAL_LABELS = { google_ads: 'Google Ads', meta_ads: 'Meta Ads', direto: 'Direto/Outro' };
 const CANAL_ICONS = { google_ads: 'fa-google', meta_ads: 'fa-facebook', direto: 'fa-link' };
 
@@ -325,6 +362,7 @@ async function trafAtualizar() {
     trafRenderEventos(d.eventos_recentes);
     trafRenderVendas(d.vendas_recentes);
     trafRenderCanal(d.canal);
+    trafRenderMetaAds(d.meta_ads);
 
     document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
   } catch (e) {

@@ -560,6 +560,64 @@ def trafego():
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
 
 
+def _buscar_metricas_meta_ads():
+    """Gasto/cliques/impressões reais da campanha no Meta Ads, via Graph API.
+    Retorna erro=None em caso de sucesso; qualquer falha (token ainda não
+    propagado, conta sem permissão, timeout) é reportada em vez de derrubar
+    o painel de tráfego inteiro."""
+    import requests
+
+    token = current_app.config.get("META_ACCESS_TOKEN")
+    campaign_id = current_app.config.get("META_CAMPAIGN_ID")
+    if not token:
+        return {"disponivel": False, "erro": "META_ACCESS_TOKEN não configurado."}
+
+    try:
+        resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{campaign_id}/insights",
+            params={
+                "fields": "spend,impressions,clicks,cpc,ctr,reach",
+                "date_preset": "maximum",
+                "access_token": token,
+            },
+            timeout=8,
+        )
+        data = resp.json()
+    except requests.RequestException as e:
+        return {"disponivel": False, "erro": f"Falha ao conectar com o Meta Ads: {e}"}
+
+    if "error" in data:
+        return {"disponivel": False, "erro": data["error"].get("message", "Erro desconhecido na API do Meta.")}
+
+    linhas = data.get("data") or []
+    if not linhas:
+        return {
+            "disponivel": True,
+            "erro": None,
+            "gasto": "R$ 0,00",
+            "impressoes": 0,
+            "cliques": 0,
+            "cpc": "R$ 0,00",
+            "ctr": "0%",
+            "alcance": 0,
+        }
+
+    m = linhas[0]
+    gasto = float(m.get("spend", 0))
+    cpc = float(m.get("cpc", 0))
+    ctr = float(m.get("ctr", 0))
+    return {
+        "disponivel": True,
+        "erro": None,
+        "gasto": f"R$ {gasto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "impressoes": int(m.get("impressions", 0)),
+        "cliques": int(m.get("clicks", 0)),
+        "cpc": f"R$ {cpc:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "ctr": f"{ctr:.2f}%",
+        "alcance": int(m.get("reach", 0)),
+    }
+
+
 @bp.route("/trafego/dados")
 @admin_required
 def trafego_dados():
@@ -711,6 +769,7 @@ def trafego_dados():
             "vendas_total": canal_vendas_total,
         },
         "insights": insights,
+        "meta_ads": _buscar_metricas_meta_ads(),
         "eventos_recentes": eventos_recentes,
         "totais": {
             "acessos_reais": total_acessos_reais,

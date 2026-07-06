@@ -39,6 +39,11 @@ class Config:
     MP_PUBLIC_KEY = os.environ.get("MP_PUBLIC_KEY", "")
     MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
 
+    # Meta Ads (System User token — ver painel de Tráfego)
+    META_ACCESS_TOKEN = os.environ.get("META_ACCESS_TOKEN", "")
+    META_AD_ACCOUNT_ID = os.environ.get("META_AD_ACCOUNT_ID", "647736268111948")
+    META_CAMPAIGN_ID = os.environ.get("META_CAMPAIGN_ID", "120254148075450311")
+
     # Site
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
     SITE_NAME = os.environ.get("SITE_NAME", "RD Soluções OS")
