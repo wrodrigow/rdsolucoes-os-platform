@@ -643,6 +643,30 @@ def trafego_dados():
         for e in reversed(eventos[-40:])
     ]
 
+    # Totais gerais (desde sempre, não só as últimas 24h) — dão o panorama
+    # completo de acessos e vendas para acompanhamento contínuo da campanha.
+    total_acessos_reais = TrafficEvent.query.filter(
+        TrafficEvent.event_type == "lp_view", TrafficEvent.is_bot == False
+    ).count()
+    total_acessos_bot = TrafficEvent.query.filter(
+        TrafficEvent.event_type == "lp_view", TrafficEvent.is_bot == True
+    ).count()
+
+    vendas_aprovadas = Order.query.filter(Order.status == "approved").order_by(Order.approved_at.desc()).all()
+    total_vendas = len(vendas_aprovadas)
+    receita_total = sum(float(o.valor) for o in vendas_aprovadas)
+
+    vendas_recentes = [
+        {
+            "numero_pedido": o.numero_pedido,
+            "cliente": o.user.nome if o.user else "—",
+            "email": o.user.email if o.user else "—",
+            "valor": o.valor_formatado(),
+            "data": (o.approved_at or o.created_at).replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m/%Y %H:%M"),
+        }
+        for o in vendas_aprovadas[:15]
+    ]
+
     return jsonify({
         "chart_labels": list(buckets.keys()),
         "chart_real": [v["real"] for v in buckets.values()],
@@ -657,6 +681,13 @@ def trafego_dados():
         "device": {"mobile": device_mobile, "desktop": device_desktop},
         "insights": insights,
         "eventos_recentes": eventos_recentes,
+        "totais": {
+            "acessos_reais": total_acessos_reais,
+            "acessos_bot": total_acessos_bot,
+            "total_vendas": total_vendas,
+            "receita_total": f"R$ {receita_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        },
+        "vendas_recentes": vendas_recentes,
         "atualizado_em": now_local.strftime("%H:%M:%S"),
     })
 

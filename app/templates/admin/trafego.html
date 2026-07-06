@@ -47,7 +47,38 @@
     </div>
     <div class="adm-stat-info">
       <div class="adm-stat-value" id="stat-checkout-success">—</div>
-      <div class="adm-stat-label">Vendas Concluídas</div>
+      <div class="adm-stat-label">Vendas Concluídas (24h)</div>
+    </div>
+  </div>
+</div>
+
+<!-- Totais gerais (desde o início da campanha) -->
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;">
+      <i class="fa-solid fa-signs-post"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-total-acessos">—</div>
+      <div class="adm-stat-label">Acessos Reais na LP (total)</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(147,51,234,0.12);color:#9333ea;">
+      <i class="fa-solid fa-bag-shopping"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-total-vendas">—</div>
+      <div class="adm-stat-label">Vendas Aprovadas (total)</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;">
+      <i class="fa-solid fa-sack-dollar"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="stat-receita-total">—</div>
+      <div class="adm-stat-label">Receita Total</div>
     </div>
   </div>
 </div>
@@ -86,6 +117,21 @@
         </tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<!-- Vendas recentes -->
+<div class="adm-card" style="margin-top:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-sack-dollar" style="color:#059669;"></i> Vendas Recentes (aprovadas)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead><tr><th>Pedido</th><th>Cliente</th><th>E-mail</th><th>Valor</th><th>Data</th></tr></thead>
+      <tbody id="traf-vendas-tbody">
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -218,6 +264,23 @@ function trafRenderEventos(eventos) {
   `).join('');
 }
 
+function trafRenderVendas(vendas) {
+  const tbody = document.getElementById('traf-vendas-tbody');
+  if (!vendas.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhuma venda aprovada ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = vendas.map(v => `
+    <tr>
+      <td style="font-size:0.82rem;font-weight:600;">${v.numero_pedido}</td>
+      <td style="font-size:0.82rem;">${v.cliente}</td>
+      <td style="font-size:0.8rem;color:var(--adm-muted);">${v.email}</td>
+      <td style="font-size:0.82rem;color:#059669;font-weight:600;">${v.valor}</td>
+      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${v.data}</td>
+    </tr>
+  `).join('');
+}
+
 async function trafAtualizar() {
   try {
     const r = await fetch('{{ url_for("admin.trafego_dados") }}');
@@ -228,10 +291,15 @@ async function trafAtualizar() {
     document.getElementById('stat-checkout-start').textContent = d.funil.checkout_start;
     document.getElementById('stat-checkout-success').textContent = d.funil.checkout_success;
 
+    document.getElementById('stat-total-acessos').textContent = d.totais.acessos_reais;
+    document.getElementById('stat-total-vendas').textContent = d.totais.total_vendas;
+    document.getElementById('stat-receita-total').textContent = d.totais.receita_total;
+
     trafDesenharGrafico(d.chart_labels, d.chart_real, d.chart_bot);
     trafRenderInsights(d.insights);
     trafRenderFunil(d.funil);
     trafRenderEventos(d.eventos_recentes);
+    trafRenderVendas(d.vendas_recentes);
 
     document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
   } catch (e) {
