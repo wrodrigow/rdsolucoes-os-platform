@@ -101,6 +101,17 @@
   </div>
 </div>
 
+<!-- Comportamento na LP -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-arrows-down-to-line" style="color:#7c3aed;"></i> Comportamento na LP (últimas 24h)</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Até onde os visitantes rolam e o que fazem na página</div>
+  </div>
+  <div id="traf-comportamento-content">
+    <div style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</div>
+  </div>
+</div>
+
 <!-- Gráfico -->
 <div class="adm-card" style="margin-bottom:24px;">
   <div class="adm-card-header">
@@ -326,6 +337,42 @@ function trafRenderMetaAds(m) {
     `).join('') + `</div>`;
 }
 
+function trafRenderComportamento(cp, lpReal) {
+  const el = document.getElementById('traf-comportamento-content');
+  if (!cp) { el.innerHTML = ''; return; }
+  const temDados = Object.values(cp).some(v => v > 0);
+  if (!temDados) {
+    el.innerHTML = `<div style="text-align:center;padding:18px;color:var(--adm-muted);font-size:0.85rem;">
+      Ainda sem eventos de comportamento — os dados começam a aparecer conforme novas visitas chegam à página.</div>`;
+    return;
+  }
+  const base = Math.max(lpReal, 1);
+  const barra = (rotulo, valor, cor) => {
+    const pct = Math.min(Math.round(valor / base * 100), 100);
+    return `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+        <div style="flex:0 0 170px;font-size:0.8rem;color:var(--adm-text);">${rotulo}</div>
+        <div style="flex:1;background:var(--adm-border,#e5e7eb);border-radius:6px;height:18px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${cor};border-radius:6px;"></div>
+        </div>
+        <div style="flex:0 0 90px;font-size:0.8rem;font-weight:700;text-align:right;">${valor} <span style="color:var(--adm-muted);font-weight:400;">(${pct}%)</span></div>
+      </div>`;
+  };
+  el.innerHTML = `
+    ${barra('Visitas reais', lpReal, '#2563eb')}
+    ${barra('Rolou 25% da página', cp.lp_scroll_25, '#7c3aed')}
+    ${barra('Rolou 50%', cp.lp_scroll_50, '#7c3aed')}
+    ${barra('Rolou 75%', cp.lp_scroll_75, '#7c3aed')}
+    ${barra('Chegou ao fim', cp.lp_scroll_100, '#7c3aed')}
+    ${barra('Viu a oferta (preço)', cp.lp_viu_oferta, '#f59e0b')}
+    ${barra('Focou no formulário', cp.lp_form_focus, '#059669')}
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:0.8rem;color:var(--adm-muted);">
+      <span>🖱️ CTA do topo: <strong>${cp.lp_cta_hero}</strong></span>
+      <span>📱 CTA barra fixa: <strong>${cp.lp_cta_bar}</strong></span>
+      <span>💬 WhatsApp: <strong>${cp.lp_whatsapp}</strong></span>
+    </div>`;
+}
+
 const CANAL_LABELS = { google_ads: 'Google Ads', meta_ads: 'Meta Ads', direto: 'Direto/Outro' };
 const CANAL_ICONS = { google_ads: 'fa-google', meta_ads: 'fa-facebook', direto: 'fa-link' };
 
@@ -363,6 +410,7 @@ async function trafAtualizar() {
     trafRenderVendas(d.vendas_recentes);
     trafRenderCanal(d.canal);
     trafRenderMetaAds(d.meta_ads);
+    trafRenderComportamento(d.comportamento, d.funil.lp_real);
 
     document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
   } catch (e) {

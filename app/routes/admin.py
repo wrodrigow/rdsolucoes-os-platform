@@ -639,6 +639,12 @@ def trafego_dados():
     lp_real = lp_bot = checkout_start = checkout_success = checkout_fail = 0
     device_mobile = device_desktop = 0
     canal_visitas_24h = {"google_ads": 0, "meta_ads": 0, "direto": 0}
+    # Eventos de comportamento na LP (beacon do front): quanto rolam, se
+    # chegam à oferta, se focam o formulário e onde clicam.
+    comportamento = {k: 0 for k in (
+        "lp_scroll_25", "lp_scroll_50", "lp_scroll_75", "lp_scroll_100",
+        "lp_viu_oferta", "lp_form_focus", "lp_cta_hero", "lp_cta_bar", "lp_whatsapp",
+    )}
 
     for e in eventos:
         # created_at é salvo em UTC; convertemos para horário local antes de exibir
@@ -663,6 +669,8 @@ def trafego_dados():
             checkout_success += 1
         elif e.event_type == "checkout_fail":
             checkout_fail += 1
+        elif e.event_type in comportamento and not e.is_bot:
+            comportamento[e.event_type] += 1
 
     total_lp = lp_real + lp_bot
     insights = []
@@ -763,6 +771,7 @@ def trafego_dados():
             "checkout_fail": checkout_fail,
         },
         "device": {"mobile": device_mobile, "desktop": device_desktop},
+        "comportamento": comportamento,
         "canal": {
             "visitas_24h": canal_visitas_24h,
             "visitas_total": canal_visitas_total,

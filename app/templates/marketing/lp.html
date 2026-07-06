@@ -635,6 +635,43 @@ body.bar-on .wa-float{bottom:88px;}
   }
 })();
 
+// Métricas de comportamento (anônimas): quanto da página o visitante rola,
+// se chega até a oferta, se foca no formulário e em qual CTA clica. Cada
+// evento é enviado uma única vez por visita, via sendBeacon (não bloqueia
+// a navegação). Sem cookies e sem dados pessoais.
+(function(){
+  var enviados = {};
+  var URL_EVENTO = {{ url_for('main.lp_evento')|tojson }};
+  function bater(tipo){
+    if (enviados[tipo]) return;
+    enviados[tipo] = true;
+    try {
+      var corpo = new URLSearchParams({tipo: tipo});
+      if (navigator.sendBeacon) navigator.sendBeacon(URL_EVENTO, corpo);
+      else fetch(URL_EVENTO, {method:'POST', body: corpo, keepalive: true});
+    } catch(e){}
+  }
+  var marcos = [[25,'lp_scroll_25'],[50,'lp_scroll_50'],[75,'lp_scroll_75'],[97,'lp_scroll_100']];
+  window.addEventListener('scroll', function(){
+    var h = document.documentElement;
+    var pct = (window.scrollY + window.innerHeight) / h.scrollHeight * 100;
+    for (var i=0;i<marcos.length;i++){ if (pct >= marcos[i][0]) bater(marcos[i][1]); }
+  }, {passive:true});
+  var oferta = document.getElementById('comprar');
+  if (oferta && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function(es){ if (es[0].isIntersecting) bater('lp_viu_oferta'); }, {threshold:0.25}).observe(oferta);
+  }
+  ['nome','email','whatsapp'].forEach(function(id){
+    var campo = document.getElementById(id);
+    if (campo) campo.addEventListener('focus', function(){ bater('lp_form_focus'); }, {once:true});
+  });
+  document.querySelectorAll('a[href="#comprar"]').forEach(function(a){
+    a.addEventListener('click', function(){ bater(a.closest('.ctabar') ? 'lp_cta_bar' : 'lp_cta_hero'); });
+  });
+  var wa = document.querySelector('.wa-float');
+  if (wa) wa.addEventListener('click', function(){ bater('lp_whatsapp'); });
+})();
+
 // Propaga gclid/fbclid da URL do clique no anúncio até o formulário de
 // checkout, para sabermos depois qual canal (Google Ads / Meta Ads) gerou
 // a venda — sem isso só sabíamos a origem da visita, não da compra.

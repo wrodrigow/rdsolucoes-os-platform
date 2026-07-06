@@ -1,9 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from ..extensions import csrf, limiter
 from ..models.key import Key
 from ..models.site_config import SiteConfig
 from ..models.download import Download
 
 bp = Blueprint("main", __name__)
+
+# Eventos de comportamento aceitos pelo beacon da LP. Whitelist fechada:
+# qualquer outro valor é descartado sem gravar nada.
+LP_EVENTOS_PERMITIDOS = {
+    "lp_scroll_25", "lp_scroll_50", "lp_scroll_75", "lp_scroll_100",
+    "lp_viu_oferta", "lp_form_focus", "lp_cta_hero", "lp_cta_bar", "lp_whatsapp",
+}
 
 
 @bp.route("/")
@@ -85,6 +93,21 @@ def lp():
         economia_fmt=_fmt(economia),
         keys_disponiveis=keys_disponiveis,
     )
+
+
+@bp.route("/lp/evento", methods=["POST"])
+@csrf.exempt  # beacon anônimo via sendBeacon — não carrega token CSRF
+@limiter.limit("60 per minute")  # visita normal gera no máx. 9 eventos
+def lp_evento():
+    """Registra eventos de comportamento na LP (scroll, oferta visível,
+    foco no formulário, cliques em CTA). Sem dados pessoais: só o tipo
+    do evento + device/IP que o TrafficEvent já registra para visitas."""
+    tipo = (request.form.get("tipo") or "").strip()
+    if tipo not in LP_EVENTOS_PERMITIDOS:
+        return "", 204
+    from ..models.traffic_event import TrafficEvent
+    TrafficEvent.registrar(tipo, request)
+    return "", 204
 
 
 @bp.route("/privacidade")
