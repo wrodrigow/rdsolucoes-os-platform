@@ -129,6 +129,16 @@ section{padding:56px 0;}
 .economia-card.bom .eco-foot{color:#bcd7e8;}
 .economia-vs{display:flex;align-items:center;justify-content:center;font-weight:800;color:#94a3b8;font-size:0.8rem;}
 
+/* ── Depoimentos ──────────────────────────────────── */
+.depos{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.depo{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 22px;box-shadow:0 4px 14px rgba(15,43,70,0.05);display:flex;flex-direction:column;}
+.depo .aspas{font-size:1.9rem;line-height:1;color:#7ec8d6;font-weight:900;margin-bottom:8px;font-family:Georgia,serif;}
+.depo p.txt{font-size:0.92rem;color:#334155;font-style:italic;margin-bottom:18px;flex:1;}
+.depo .quem{display:flex;align-items:center;gap:12px;}
+.depo .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;}
+.depo .nome{font-weight:800;font-size:0.9rem;color:#1e293b;}
+.depo .cargo{font-size:0.76rem;color:#64748b;}
+
 /* ── Oferta / Preço ───────────────────────────────── */
 .oferta{background:linear-gradient(165deg,#0f2b46,#123a5e 60%,#0d4a5e);color:#fff;border-radius:22px;padding:46px 40px;text-align:center;box-shadow:0 30px 70px rgba(15,43,70,0.35);}
 .oferta-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#ffcf87;font-weight:800;font-size:0.8rem;letter-spacing:0.04em;padding:8px 18px;border-radius:999px;margin-bottom:24px;}
@@ -232,6 +242,7 @@ body.bar-on .wa-float{bottom:88px;}
   .economia-grid{grid-template-columns:1fr;gap:14px;}
   .economia-vs{padding:2px 0;}
   .economia-card.bom{order:-1;}
+  .depos{grid-template-columns:1fr;gap:14px;}
 
   .oferta{padding:36px 20px 32px;border-radius:16px;}
   .oferta-tag{font-size:0.72rem;padding:7px 14px;margin-bottom:20px;}
@@ -391,6 +402,40 @@ body.bar-on .wa-float{bottom:88px;}
         <div class="eco-total-label">Depois disso</div>
         <div class="eco-total">R$ 0</div>
         <div class="eco-foot">licença para sempre, sem mais cobranças</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Depoimentos -->
+<section style="background:#fafbfc;">
+  <div class="wrap">
+    <h2 class="sec-title">Quem usa, recomenda</h2>
+    <p class="sec-sub">O que dizem as pessoas que já emitem orçamentos com o RD OS.</p>
+    <div class="depos">
+      <div class="depo">
+        <div class="aspas">“</div>
+        <p class="txt">O que mais gostei foi a simplicidade. Em poucos minutos consegui cadastrar meus clientes e emitir um orçamento com a identidade da minha empresa. Antes eu fazia tudo pelo WhatsApp e em planilhas. Agora está tudo muito mais organizado.</p>
+        <div class="quem">
+          <div class="avatar">DS</div>
+          <div><div class="nome">Daniele Vidal Salerno</div><div class="cargo">Usuária do RD OS</div></div>
+        </div>
+      </div>
+      <div class="depo">
+        <div class="aspas">“</div>
+        <p class="txt">Cara, esse sistema facilitou demais meu dia. Antes eu fazia tudo no WhatsApp e acabava perdendo orçamento. Agora tá tudo organizado e consigo mandar um PDF bonito pro cliente em poucos minutos.</p>
+        <div class="quem">
+          <div class="avatar">LW</div>
+          <div><div class="nome">Leonardo Waldenmeier</div><div class="cargo">Usuário do RD OS</div></div>
+        </div>
+      </div>
+      <div class="depo">
+        <div class="aspas">“</div>
+        <p class="txt">Depois que comecei a usar o RD OS passei uma imagem muito mais profissional. Os clientes recebem um orçamento bem organizado e isso dá muito mais confiança.</p>
+        <div class="quem">
+          <div class="avatar">BS</div>
+          <div><div class="nome">Bruno de Souza</div><div class="cargo">Usuário do RD OS</div></div>
+        </div>
       </div>
     </div>
   </div>
