@@ -425,6 +425,8 @@ body.bar-on .wa-float{bottom:88px;}
       <form class="form-compra" method="POST" action="{{ url_for('checkout.direto') }}"
             onsubmit="if(typeof fbq!=='undefined')fbq('track','InitiateCheckout',{value:{{ preco }},currency:'BRL',content_ids:['rdsolucoes-os-licenca']});">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="gclid" id="checkout-gclid" value=""/>
+        <input type="hidden" name="fbclid" id="checkout-fbclid" value=""/>
         <label for="nome">Seu nome completo</label>
         <input type="text" id="nome" name="nome" required minlength="3" placeholder="Ex: João da Silva" autocomplete="name"/>
         <label for="email">Seu melhor e-mail <span style="font-weight:400;">(a licença chega nele)</span></label>
@@ -570,6 +572,19 @@ body.bar-on .wa-float{bottom:88px;}
       update();
     }, {threshold:0.12}).observe(form);
   }
+})();
+
+// Propaga gclid/fbclid da URL do clique no anúncio até o formulário de
+// checkout, para sabermos depois qual canal (Google Ads / Meta Ads) gerou
+// a venda — sem isso só sabíamos a origem da visita, não da compra.
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var gclid = params.get('gclid');
+  var fbclid = params.get('fbclid');
+  var gclidField = document.getElementById('checkout-gclid');
+  var fbclidField = document.getElementById('checkout-fbclid');
+  if (gclid && gclidField) gclidField.value = gclid;
+  if (fbclid && fbclidField) fbclidField.value = fbclid;
 })();
 </script>
 

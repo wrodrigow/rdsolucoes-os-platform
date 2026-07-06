@@ -95,9 +95,27 @@ def create_app(env=None):
     # Criar tabelas e dados iniciais
     with app.app_context():
         db.create_all()
+        _ensure_schema_upgrades()
         _seed_initial_data(app)
 
     return app
+
+
+def _ensure_schema_upgrades():
+    """Adiciona colunas novas em tabelas já existentes em produção.
+    Não há Alembic configurado (só create_all, que não altera tabelas
+    existentes), então colunas novas de um model precisam ser adicionadas
+    aqui manualmente — idempotente, seguro rodar em todo boot."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if "traffic_events" not in inspector.get_table_names():
+        return
+    colunas_existentes = {c["name"] for c in inspector.get_columns("traffic_events")}
+    with db.engine.begin() as conn:
+        if "fbclid" not in colunas_existentes:
+            conn.execute(text("ALTER TABLE traffic_events ADD COLUMN fbclid VARCHAR(300)"))
+        if "canal" not in colunas_existentes:
+            conn.execute(text("ALTER TABLE traffic_events ADD COLUMN canal VARCHAR(20) NOT NULL DEFAULT 'direto'"))
 
 
 def _seed_initial_data(app):

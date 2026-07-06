@@ -580,6 +580,7 @@ def trafego_dados():
 
     lp_real = lp_bot = checkout_start = checkout_success = checkout_fail = 0
     device_mobile = device_desktop = 0
+    canal_visitas_24h = {"google_ads": 0, "meta_ads": 0, "direto": 0}
 
     for e in eventos:
         # created_at é salvo em UTC; convertemos para horário local antes de exibir
@@ -593,6 +594,7 @@ def trafego_dados():
                 lp_bot += 1
             else:
                 lp_real += 1
+                canal_visitas_24h[e.canal or "direto"] += 1
                 if e.device == "mobile":
                     device_mobile += 1
                 elif e.device == "desktop":
@@ -652,9 +654,32 @@ def trafego_dados():
         TrafficEvent.event_type == "lp_view", TrafficEvent.is_bot == True
     ).count()
 
+    canal_visitas_total = {}
+    for canal_key in ("google_ads", "meta_ads", "direto"):
+        canal_visitas_total[canal_key] = TrafficEvent.query.filter(
+            TrafficEvent.event_type == "lp_view",
+            TrafficEvent.is_bot == False,
+            TrafficEvent.canal == canal_key,
+        ).count()
+
+    CANAL_LABELS = {"google_ads": "Google Ads", "meta_ads": "Meta Ads", "direto": "Direto/Outro"}
+
     vendas_aprovadas = Order.query.filter(Order.status == "approved").order_by(Order.approved_at.desc()).all()
     total_vendas = len(vendas_aprovadas)
     receita_total = sum(float(o.valor) for o in vendas_aprovadas)
+
+    # O canal de uma venda vem do evento "checkout_start" ligado ao pedido
+    # (o gclid/fbclid só está disponível no clique que trouxe o comprador
+    # até o formulário, não depois — por isso olhamos o checkout_start, não
+    # o checkout_success).
+    canal_por_order_id = {
+        ev.order_id: ev.canal
+        for ev in TrafficEvent.query.filter(TrafficEvent.event_type == "checkout_start").all()
+        if ev.order_id
+    }
+    canal_vendas_total = {"google_ads": 0, "meta_ads": 0, "direto": 0}
+    for o in vendas_aprovadas:
+        canal_vendas_total[canal_por_order_id.get(o.id, "direto")] += 1
 
     vendas_recentes = [
         {
@@ -662,6 +687,7 @@ def trafego_dados():
             "cliente": o.user.nome if o.user else "—",
             "email": o.user.email if o.user else "—",
             "valor": o.valor_formatado(),
+            "canal": CANAL_LABELS.get(canal_por_order_id.get(o.id, "direto"), "Direto/Outro"),
             "data": (o.approved_at or o.created_at).replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m/%Y %H:%M"),
         }
         for o in vendas_aprovadas[:15]
@@ -679,6 +705,11 @@ def trafego_dados():
             "checkout_fail": checkout_fail,
         },
         "device": {"mobile": device_mobile, "desktop": device_desktop},
+        "canal": {
+            "visitas_24h": canal_visitas_24h,
+            "visitas_total": canal_visitas_total,
+            "vendas_total": canal_vendas_total,
+        },
         "insights": insights,
         "eventos_recentes": eventos_recentes,
         "totais": {

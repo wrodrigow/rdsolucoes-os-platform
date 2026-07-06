@@ -12,7 +12,9 @@ class TrafficEvent(db.Model):
     event_type = db.Column(db.String(30), nullable=False, index=True)
     path = db.Column(db.String(200), nullable=True)
     gclid = db.Column(db.String(300), nullable=True)
+    fbclid = db.Column(db.String(300), nullable=True)
     gad_campaignid = db.Column(db.String(50), nullable=True)
+    canal = db.Column(db.String(20), nullable=False, default="direto", index=True)  # google_ads | meta_ads | direto
     is_bot = db.Column(db.Boolean, default=False, nullable=False, index=True)
     device = db.Column(db.String(20), nullable=True)  # mobile | desktop | unknown
     ip = db.Column(db.String(45), nullable=True)
@@ -28,8 +30,17 @@ class TrafficEvent(db.Model):
         return len(gclid) >= 20 and not gclid.isdigit()
 
     @classmethod
+    def _identificar_canal(cls, gclid, fbclid):
+        if cls._parece_gclid_real(gclid):
+            return "google_ads"
+        if fbclid:
+            return "meta_ads"
+        return "direto"
+
+    @classmethod
     def registrar(cls, event_type, request, order_id=None):
         gclid = request.args.get("gclid") or request.form.get("gclid")
+        fbclid = request.args.get("fbclid") or request.form.get("fbclid")
         gad_campaignid = request.args.get("gad_campaignid")
         order_id = order_id or request.args.get("external_reference")
         ua = request.user_agent.string or ""
@@ -50,7 +61,9 @@ class TrafficEvent(db.Model):
             event_type=event_type,
             path=request.path,
             gclid=gclid,
+            fbclid=fbclid,
             gad_campaignid=gad_campaignid,
+            canal=cls._identificar_canal(gclid, fbclid),
             is_bot=is_bot,
             device=device,
             ip=request.remote_addr,

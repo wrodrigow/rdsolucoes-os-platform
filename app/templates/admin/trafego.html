@@ -20,7 +20,7 @@
     </div>
     <div class="adm-stat-info">
       <div class="adm-stat-value" id="stat-lp-real">—</div>
-      <div class="adm-stat-label">Visitas Reais na LP (24h)</div>
+      <div class="adm-stat-label">Visitas Reais na LP (24h) <span id="stat-lp-real-total" style="color:var(--adm-muted);font-weight:400;"></span></div>
     </div>
   </div>
   <div class="adm-stat-card">
@@ -55,15 +55,6 @@
 <!-- Totais gerais (desde o início da campanha) -->
 <div class="adm-stats-grid" style="margin-bottom:24px;">
   <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;">
-      <i class="fa-solid fa-signs-post"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-total-acessos">—</div>
-      <div class="adm-stat-label">Acessos Reais na LP (total)</div>
-    </div>
-  </div>
-  <div class="adm-stat-card">
     <div class="adm-stat-icon" style="background:rgba(147,51,234,0.12);color:#9333ea;">
       <i class="fa-solid fa-bag-shopping"></i>
     </div>
@@ -80,6 +71,22 @@
       <div class="adm-stat-value" id="stat-receita-total">—</div>
       <div class="adm-stat-label">Receita Total</div>
     </div>
+  </div>
+</div>
+
+<!-- Origem do tráfego (Google Ads x Meta Ads x Direto) -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-bullseye" style="color:#2563eb;"></i> Origem do Tráfego e das Vendas</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Por onde vem mais gente e mais venda — pra saber onde focar o orçamento</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead><tr><th>Canal</th><th>Visitas (24h)</th><th>Visitas (total)</th><th>Vendas (total)</th></tr></thead>
+      <tbody id="traf-canal-tbody">
+        <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -127,9 +134,9 @@
   </div>
   <div class="adm-table-wrapper">
     <table class="adm-table">
-      <thead><tr><th>Pedido</th><th>Cliente</th><th>E-mail</th><th>Valor</th><th>Data</th></tr></thead>
+      <thead><tr><th>Pedido</th><th>Cliente</th><th>E-mail</th><th>Valor</th><th>Canal</th><th>Data</th></tr></thead>
       <tbody id="traf-vendas-tbody">
-        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
+        <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
       </tbody>
     </table>
   </div>
@@ -276,7 +283,24 @@ function trafRenderVendas(vendas) {
       <td style="font-size:0.82rem;">${v.cliente}</td>
       <td style="font-size:0.8rem;color:var(--adm-muted);">${v.email}</td>
       <td style="font-size:0.82rem;color:#059669;font-weight:600;">${v.valor}</td>
+      <td style="font-size:0.8rem;">${v.canal}</td>
       <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${v.data}</td>
+    </tr>
+  `).join('');
+}
+
+const CANAL_LABELS = { google_ads: 'Google Ads', meta_ads: 'Meta Ads', direto: 'Direto/Outro' };
+const CANAL_ICONS = { google_ads: 'fa-google', meta_ads: 'fa-facebook', direto: 'fa-link' };
+
+function trafRenderCanal(canal) {
+  const tbody = document.getElementById('traf-canal-tbody');
+  const chaves = ['google_ads', 'meta_ads', 'direto'];
+  tbody.innerHTML = chaves.map(k => `
+    <tr>
+      <td style="font-size:0.85rem;font-weight:600;"><i class="fa-brands ${CANAL_ICONS[k]}" style="margin-right:6px;color:var(--adm-muted);"></i>${CANAL_LABELS[k]}</td>
+      <td style="font-size:0.85rem;">${canal.visitas_24h[k] || 0}</td>
+      <td style="font-size:0.85rem;">${canal.visitas_total[k] || 0}</td>
+      <td style="font-size:0.85rem;font-weight:600;color:${canal.vendas_total[k] > 0 ? '#059669' : 'inherit'};">${canal.vendas_total[k] || 0}</td>
     </tr>
   `).join('');
 }
@@ -291,7 +315,7 @@ async function trafAtualizar() {
     document.getElementById('stat-checkout-start').textContent = d.funil.checkout_start;
     document.getElementById('stat-checkout-success').textContent = d.funil.checkout_success;
 
-    document.getElementById('stat-total-acessos').textContent = d.totais.acessos_reais;
+    document.getElementById('stat-lp-real-total').textContent = '(total: ' + d.totais.acessos_reais + ')';
     document.getElementById('stat-total-vendas').textContent = d.totais.total_vendas;
     document.getElementById('stat-receita-total').textContent = d.totais.receita_total;
 
@@ -300,6 +324,7 @@ async function trafAtualizar() {
     trafRenderFunil(d.funil);
     trafRenderEventos(d.eventos_recentes);
     trafRenderVendas(d.vendas_recentes);
+    trafRenderCanal(d.canal);
 
     document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
   } catch (e) {
