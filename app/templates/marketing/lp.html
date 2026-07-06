@@ -135,7 +135,7 @@ section{padding:56px 0;}
 .depo .aspas{font-size:1.9rem;line-height:1;color:#7ec8d6;font-weight:900;margin-bottom:8px;font-family:Georgia,serif;}
 .depo p.txt{font-size:0.92rem;color:#334155;font-style:italic;margin-bottom:18px;flex:1;}
 .depo .quem{display:flex;align-items:center;gap:12px;}
-.depo .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;}
+.depo .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e2e8f0;}
 .depo .nome{font-weight:800;font-size:0.9rem;color:#1e293b;}
 .depo .cargo{font-size:0.76rem;color:#64748b;}
 
@@ -417,7 +417,7 @@ body.bar-on .wa-float{bottom:88px;}
         <div class="aspas">“</div>
         <p class="txt">O que mais gostei foi a simplicidade. Em poucos minutos consegui cadastrar meus clientes e emitir um orçamento com a identidade da minha empresa. Antes eu fazia tudo pelo WhatsApp e em planilhas. Agora está tudo muito mais organizado.</p>
         <div class="quem">
-          <div class="avatar">DS</div>
+          <img class="avatar" src="{{ url_for('static', filename='marketing/depo_daniele.jpg') }}" alt="Foto de Daniele Vidal Salerno" loading="lazy"/>
           <div><div class="nome">Daniele Vidal Salerno</div><div class="cargo">Usuária do RD OS</div></div>
         </div>
       </div>
@@ -425,7 +425,7 @@ body.bar-on .wa-float{bottom:88px;}
         <div class="aspas">“</div>
         <p class="txt">Cara, esse sistema facilitou demais meu dia. Antes eu fazia tudo no WhatsApp e acabava perdendo orçamento. Agora tá tudo organizado e consigo mandar um PDF bonito pro cliente em poucos minutos.</p>
         <div class="quem">
-          <div class="avatar">LW</div>
+          <img class="avatar" src="{{ url_for('static', filename='marketing/depo_leonardo.jpg') }}" alt="Foto de Leonardo Waldenmeier" loading="lazy"/>
           <div><div class="nome">Leonardo Waldenmeier</div><div class="cargo">Usuário do RD OS</div></div>
         </div>
       </div>
@@ -433,7 +433,7 @@ body.bar-on .wa-float{bottom:88px;}
         <div class="aspas">“</div>
         <p class="txt">Depois que comecei a usar o RD OS passei uma imagem muito mais profissional. Os clientes recebem um orçamento bem organizado e isso dá muito mais confiança.</p>
         <div class="quem">
-          <div class="avatar">BS</div>
+          <img class="avatar" src="{{ url_for('static', filename='marketing/depo_bruno.jpg') }}" alt="Foto de Bruno de Souza" loading="lazy"/>
           <div><div class="nome">Bruno de Souza</div><div class="cargo">Usuário do RD OS</div></div>
         </div>
       </div>
