@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RD Soluções OS — Orçamentos profissionais em 1 minuto, sem mensalidade</title>
 <meta name="description" content="Gere orçamentos em PDF com sua logo, controle clientes, ordens de serviço e financeiro. Pagamento único de R$ {{ '%.0f' % preco }}, sem mensalidade. Funciona offline."/>
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="RD Soluções OS — Orçamentos profissionais em 1 minuto, sem mensalidade"/>
+<meta property="og:description" content="Orçamentos em PDF com sua logo, ordens de serviço e financeiro. R$ {{ '%.0f' % preco }} uma vez só. Funciona offline."/>
+<meta property="og:image" content="{{ url_for('static', filename='marketing/video_10s_poster.jpg', _external=True) }}"/>
+<meta property="og:url" content="{{ request.url }}"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}"/>
 {% if site_cfg and site_cfg.get('meta_pixel_id') %}
 <script>
@@ -59,23 +65,20 @@ svg.ic{display:block;flex-shrink:0;}
 .cta-note{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;font-size:0.8rem;color:#64748b;margin-top:14px;}
 .cta-note span{white-space:nowrap;}
 
-/* Mockup de orçamento (CSS puro) */
-.mock-area{margin-top:38px;display:flex;justify-content:center;}
-.mock{width:min(380px,92%);background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 24px 60px rgba(15,43,70,0.18);padding:20px 20px 16px;text-align:left;transform:rotate(-1.2deg);position:relative;}
-.mock::after{content:"gerado em 47 segundos ⚡";position:absolute;top:-14px;right:-8px;background:#0d7d8c;color:#fff;font-size:0.68rem;font-weight:700;padding:6px 12px;border-radius:999px;transform:rotate(2deg);box-shadow:0 6px 16px rgba(13,125,140,0.4);}
-.mock-head{display:flex;align-items:center;gap:10px;border-bottom:2px solid #0d7d8c;padding-bottom:12px;margin-bottom:14px;}
-.mock-logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-weight:900;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.mock-t1{font-size:0.82rem;font-weight:800;color:#0f2b46;white-space:nowrap;}
-.mock-t2{font-size:0.68rem;color:#94a3b8;white-space:nowrap;}
-.mock-badge{margin-left:auto;background:#dcfce7;color:#15803d;font-size:0.62rem;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:0.04em;}
-.mock-line{height:9px;border-radius:5px;background:#eef2f7;margin-bottom:9px;}
-.w85{width:85%;}.w60{width:60%;}.w45{width:45%;}
-.mock-item{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;}
-.mock-item .mock-line{margin-bottom:0;flex:1;}
-.mock-item span{font-size:0.72rem;font-weight:700;color:#475569;white-space:nowrap;}
-.mock-total{display:flex;align-items:center;justify-content:space-between;border-top:1.5px dashed #cbd5e1;margin-top:13px;padding-top:12px;}
-.mock-total span{font-size:0.78rem;font-weight:700;color:#64748b;}
-.mock-total strong{font-size:1.05rem;font-weight:900;color:#0d7d8c;white-space:nowrap;}
+/* Vídeo real do sistema no hero */
+.video-area{margin-top:38px;display:flex;justify-content:center;}
+.video-shell{position:relative;width:min(380px,92%);}
+.video-shell::after{content:"telas reais do sistema ⚡";position:absolute;top:-14px;right:-8px;background:#0d7d8c;color:#fff;font-size:0.68rem;font-weight:700;padding:6px 12px;border-radius:999px;transform:rotate(2deg);box-shadow:0 6px 16px rgba(13,125,140,0.4);z-index:2;}
+.video-real{display:block;width:100%;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 24px 60px rgba(15,43,70,0.18);}
+
+/* Telas reais do sistema */
+.telas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start;}
+.tela-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(15,43,70,0.07);}
+.tela-card img{display:block;width:100%;}
+.tela-card figcaption{font-size:0.82rem;font-weight:700;color:#334155;padding:12px 14px;text-align:center;border-top:1px solid #eef2f7;}
+.prova-real{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:22px;font-size:0.86rem;color:#475569;text-align:center;}
+.prova-real strong{color:#0d7d8c;}
+
 
 /* ── Trust bar ────────────────────────────────────── */
 .trustbar{padding:18px 0;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7;background:#fafbfc;}
@@ -150,6 +153,7 @@ section{padding:56px 0;}
 .form-compra input:focus{outline:2.5px solid #7ec8d6;border-color:transparent;}
 .form-compra .cta-btn{width:100%;font-size:1.1rem;padding:19px 20px;}
 .form-compra .cta-btn svg{stroke:#fff;}
+.pos-btn-note{text-align:center;font-size:0.78rem;color:#8fc7d6;font-weight:700;margin-top:12px;}
 
 .seguro-row{margin-top:16px;font-size:0.84rem;color:#bcd7e8;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;}
 .seguro-row svg{width:16px;height:16px;stroke:#7ec8d6;}
@@ -210,12 +214,10 @@ body.bar-on .wa-float{bottom:88px;}
   .hero h1{font-size:1.72rem;line-height:1.22;}
   .hero p.sub{font-size:0.98rem;margin-bottom:22px;}
   .hero .cta-btn{width:100%;font-size:1rem;padding:16px 14px;}
-  .mock-area{margin-top:30px;}
-  .mock{transform:rotate(0deg);}
-  .mock::after{right:6px;}
-  .mock-t1{font-size:0.76rem;}
-  .mock-t2{font-size:0.62rem;}
-  .mock-badge{font-size:0.58rem;padding:4px 7px;}
+  .video-area{margin-top:30px;}
+  .video-shell::after{right:6px;}
+  .telas-grid{grid-template-columns:1fr;gap:14px;}
+  .prova-real{font-size:0.8rem;}
 
   .trustbar{padding:14px 0;}
   .trustbar .wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -280,23 +282,13 @@ body.bar-on .wa-float{bottom:88px;}
       <span>✔ Garantia de 7 dias</span>
     </div>
 
-    <!-- Mockup do orçamento gerado -->
-    <div class="mock-area">
-      <div class="mock" aria-hidden="true">
-        <div class="mock-head">
-          <div class="mock-logo">SUA<br/>LOGO</div>
-          <div>
-            <div class="mock-t1">ORÇAMENTO Nº 0192</div>
-            <div class="mock-t2">Sua Empresa · emitido hoje</div>
-          </div>
-          <div class="mock-badge">APROVADO</div>
-        </div>
-        <div class="mock-line w60"></div>
-        <div class="mock-line w85"></div>
-        <div class="mock-item"><span class="mock-line w45"></span><span>R$ 850,00</span></div>
-        <div class="mock-item"><span class="mock-line w60"></span><span>R$ 620,00</span></div>
-        <div class="mock-item"><span class="mock-line w45"></span><span>R$ 380,00</span></div>
-        <div class="mock-total"><span>TOTAL GERAL</span><strong>R$ 1.850,00</strong></div>
+    <!-- Vídeo real do sistema -->
+    <div class="video-area">
+      <div class="video-shell">
+        <video class="video-real" autoplay muted loop playsinline preload="metadata"
+               poster="{{ url_for('static', filename='marketing/video_10s_poster.jpg') }}">
+          <source src="{{ url_for('static', filename='marketing/video_10s_sistema_4x5.mp4') }}" type="video/mp4"/>
+        </video>
       </div>
     </div>
   </div>
@@ -312,8 +304,31 @@ body.bar-on .wa-float{bottom:88px;}
   </div>
 </div>
 
-<!-- Dores -->
+<!-- Telas reais -->
 <section>
+  <div class="wrap">
+    <h2 class="sec-title">Veja o RD OS por dentro — sem montagem</h2>
+    <p class="sec-sub">Telas reais do sistema. É o mesmo programa que a própria RD Soluções usa todos os dias para atender seus clientes.</p>
+    <div class="telas-grid">
+      <figure class="tela-card">
+        <img src="{{ url_for('static', filename='marketing/lp_tela_orcamentos.jpg') }}" alt="Tela real do RD OS: lista de orçamentos com situação, validade e total" loading="lazy"/>
+        <figcaption>📋 Todos os orçamentos organizados, com situação e total</figcaption>
+      </figure>
+      <figure class="tela-card">
+        <img src="{{ url_for('static', filename='marketing/lp_tela_pdf.jpg') }}" alt="PDF real de orçamento gerado pelo RD OS com logo da empresa" loading="lazy"/>
+        <figcaption>📄 O PDF que seu cliente recebe — com a sua logo</figcaption>
+      </figure>
+      <figure class="tela-card">
+        <img src="{{ url_for('static', filename='marketing/lp_tela_os.jpg') }}" alt="Ordem de serviço real gerada pelo RD OS pronta para imprimir" loading="lazy"/>
+        <figcaption>🛠️ A Ordem de Serviço pronta para imprimir e assinar</figcaption>
+      </figure>
+    </div>
+    <div class="prova-real">✅&nbsp;<span>O que você viu acima <strong>não é maquete</strong>: são capturas reais do programa em uso.</span></div>
+  </div>
+</section>
+
+<!-- Dores -->
+<section style="background:#fafbfc;">
   <div class="wrap">
     <h2 class="sec-title">Você se identifica com isso?</h2>
     <p class="sec-sub">A maioria dos prestadores de serviço perde venda por falta de organização — não por falta de serviço bem feito.</p>
@@ -326,7 +341,7 @@ body.bar-on .wa-float{bottom:88px;}
 </section>
 
 <!-- Como funciona -->
-<section style="background:#fafbfc;">
+<section>
   <div class="wrap">
     <h2 class="sec-title">Simples assim:</h2>
     <p class="sec-sub">Do pagamento ao primeiro orçamento gerado em menos de 10 minutos.</p>
@@ -339,7 +354,7 @@ body.bar-on .wa-float{bottom:88px;}
 </section>
 
 <!-- Módulos -->
-<section>
+<section style="background:#fafbfc;">
   <div class="wrap">
     <h2 class="sec-title">Tudo que sua empresa precisa, num só lugar</h2>
     <p class="sec-sub">6 módulos completos — e o programa é seu para sempre.</p>
@@ -355,7 +370,7 @@ body.bar-on .wa-float{bottom:88px;}
 </section>
 
 <!-- Quanto você economiza -->
-<section style="background:#fafbfc;">
+<section>
   <div class="wrap">
     <h2 class="sec-title">Quanto você economiza?</h2>
     <p class="sec-sub">Sistemas de gestão por assinatura cobram todo mês, para sempre. O RD OS você paga uma vez só.</p>
@@ -437,6 +452,7 @@ body.bar-on .wa-float{bottom:88px;}
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>
           QUERO MINHA LICENÇA AGORA
         </button>
+        <div class="pos-btn-note">⚡ Pix aprovado na hora · chave e download chegam no seu e-mail em minutos</div>
       </form>
 
       <div class="seguro-row">
