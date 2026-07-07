@@ -588,16 +588,20 @@ def _buscar_metricas_clarity():
     try:
         resp = requests.get(
             "https://www.clarity.ms/export-data/api/v1/project-live-insights",
-            headers={"Authorization": f"Bearer {token}"},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             params={"numOfDays": 3},
             timeout=8,
         )
-        if resp.status_code == 429:
-            resultado = {"disponivel": False, "erro": "Cota diária da API do Clarity esgotada (limite: 10 chamadas/dia). Tente novamente mais tarde."}
+        if resp.status_code == 401:
+            resultado = {"disponivel": False, "erro": "Token ausente, inválido ou expirado (401). Gere um novo token em clarity.microsoft.com → Settings → Data Export."}
             cache.update(data=resultado, fetched_at=agora)
             return resultado
         if resp.status_code == 403:
-            resultado = {"disponivel": False, "erro": "Acesso negado (403) — token recém-gerado pode levar alguns minutos para propagar, ou o token foi revogado/é de outro projeto. Tentando de novo em breve."}
+            resultado = {"disponivel": False, "erro": "Token não autorizado para esta operação (403). Confira se ele foi gerado no mesmo projeto do Clarity ID configurado, ou gere um novo token."}
+            cache.update(data=resultado, fetched_at=agora)
+            return resultado
+        if resp.status_code == 429:
+            resultado = {"disponivel": False, "erro": "Cota diária da API do Clarity esgotada (limite: 10 chamadas/dia). Tente novamente mais tarde."}
             cache.update(data=resultado, fetched_at=agora)
             return resultado
         resp.raise_for_status()
