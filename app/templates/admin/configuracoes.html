@@ -81,6 +81,11 @@
         <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">ID do projeto no clarity.microsoft.com (mapas de calor e gravações de sessão — grátis). Ativa na LP e no site.</div>
       </div>
       <div class="adm-form-group">
+        <label class="adm-label">Microsoft Clarity — Token da API</label>
+        <input type="text" name="clarity_api_token" class="adm-input" value="{{ cfg.clarity_api_token or '' }}" placeholder="eyJhbGciOi..."/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Gere em clarity.microsoft.com → Settings → Data Export → Generate new API token. Traz sessões, scroll, cliques de frustração etc. para o painel de Tráfego (limite: 10 chamadas/dia, atualiza a cada 3h).</div>
+      </div>
+      <div class="adm-form-group">
         <label class="adm-label">Google Ads — Rótulo de Conversão</label>
         <input type="text" name="gads_conversion_label" class="adm-input" value="{{ cfg.gads_conversion_label or '' }}" placeholder="AbCdEfGhIj0KLmNoPq"/>
         <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Rótulo da ação de conversão "Compra" (parte após a barra em AW-XXXX/rótulo). Dispara na página de sucesso.</div>

@@ -112,6 +112,17 @@
   </div>
 </div>
 
+<!-- Microsoft Clarity -->
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-video" style="color:#0ea5e9;"></i> Microsoft Clarity — Sessões e Frustração</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Últimos 3 dias · via API (atualiza a cada 3h)</div>
+  </div>
+  <div id="traf-clarity-content">
+    <div style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</div>
+  </div>
+</div>
+
 <!-- Gráfico -->
 <div class="adm-card" style="margin-bottom:24px;">
   <div class="adm-card-header">
@@ -337,6 +348,42 @@ function trafRenderMetaAds(m) {
     `).join('') + `</div>`;
 }
 
+function trafRenderClarity(c, url) {
+  const el = document.getElementById('traf-clarity-content');
+  if (!c || !c.disponivel) {
+    el.innerHTML = `<div style="padding:16px;color:var(--adm-muted);font-size:0.85rem;">
+      <i class="fa-solid fa-circle-info"></i> Ainda não disponível: ${c && c.erro ? c.erro : 'configuração pendente'}.
+    </div>`;
+    return;
+  }
+  const min = Math.floor(c.tempo_ativo_seg / 60);
+  const seg = Math.round(c.tempo_ativo_seg % 60);
+  const cards = [
+    {label: 'Sessões', valor: c.sessoes.toLocaleString('pt-BR'), icon: 'fa-users', cor: '#2563eb'},
+    {label: 'Sessões de robô', valor: c.sessoes_bot.toLocaleString('pt-BR'), icon: 'fa-robot', cor: '#6b7280'},
+    {label: 'Usuários únicos', valor: c.usuarios_unicos.toLocaleString('pt-BR'), icon: 'fa-user', cor: '#0891b2'},
+    {label: 'Tempo ativo médio', valor: `${min}m ${seg}s`, icon: 'fa-clock', cor: '#059669'},
+    {label: 'Rolagem média', valor: `${c.scroll_medio_pct}%`, icon: 'fa-arrows-down-to-line', cor: '#7c3aed'},
+    {label: 'Cliques mortos', valor: `${c.dead_click_pct}%`, icon: 'fa-ban', cor: c.dead_click_pct > 10 ? '#dc2626' : '#ca8a04'},
+    {label: 'Cliques de raiva', valor: `${c.rage_click_pct}%`, icon: 'fa-bolt', cor: c.rage_click_pct > 5 ? '#dc2626' : '#ca8a04'},
+    {label: 'Voltou logo (quickback)', valor: `${c.quickback_pct}%`, icon: 'fa-rotate-left', cor: c.quickback_pct > 10 ? '#dc2626' : '#ca8a04'},
+    {label: 'Erros de script', valor: c.erros_script.toLocaleString('pt-BR'), icon: 'fa-triangle-exclamation', cor: c.erros_script > 0 ? '#dc2626' : '#6b7280'},
+  ];
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;padding:16px 16px 4px;">` +
+    cards.map(c => `
+      <div style="text-align:center;">
+        <i class="fa-solid ${c.icon}" style="color:${c.cor};font-size:1.1rem;"></i>
+        <div style="font-size:1.3rem;font-weight:700;margin-top:4px;">${c.valor}</div>
+        <div style="font-size:0.75rem;color:var(--adm-muted);">${c.label}</div>
+      </div>
+    `).join('') + `</div>
+    <div style="padding:6px 16px 16px;font-size:0.78rem;color:var(--adm-muted);">
+      Cliques mortos, de raiva e quickback são sinais de frustração — quanto maior, mais atrito na página.
+      Gravações de sessão e mapas de calor não têm API pública da Microsoft;
+      <a href="${url}" target="_blank" rel="noopener">abra no Clarity ↗</a> para assistir aos vídeos.
+    </div>`;
+}
+
 function trafRenderComportamento(cp, lpReal) {
   const el = document.getElementById('traf-comportamento-content');
   if (!cp) { el.innerHTML = ''; return; }
@@ -410,6 +457,7 @@ async function trafAtualizar() {
     trafRenderVendas(d.vendas_recentes);
     trafRenderCanal(d.canal);
     trafRenderMetaAds(d.meta_ads);
+    trafRenderClarity(d.clarity, d.clarity_url);
     trafRenderComportamento(d.comportamento, d.funil.lp_real);
 
     document.getElementById('traf-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;

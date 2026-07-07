@@ -440,7 +440,7 @@ def configuracoes():
         chaves_editaveis = [
             "site_name", "site_slogan", "site_email_contato", "site_whatsapp",
             "site_telefone", "site_url", "site_cnpj", "seo_title", "seo_description",
-            "seo_keywords", "ga_id", "meta_pixel_id", "gads_id", "gads_conversion_label", "clarity_id",
+            "seo_keywords", "ga_id", "meta_pixel_id", "gads_id", "gads_conversion_label", "clarity_id", "clarity_api_token",
             "produto_nome", "produto_preco",
             "produto_preco_de", "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
         ]
@@ -558,6 +558,78 @@ def trafego():
 
 
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
+
+
+_CLARITY_CACHE = {"data": None, "fetched_at": None}
+_CLARITY_CACHE_TTL = timedelta(hours=3)  # API permite só 10 chamadas/dia — 3h mantém bem abaixo disso
+
+
+def _buscar_metricas_clarity():
+    """Métricas agregadas de comportamento via Clarity Data Export API
+    (sessões, tempo ativo, scroll, rage/dead clicks). NÃO traz gravações
+    nem imagem de mapa de calor — isso a Microsoft não expõe por API,
+    só dentro do próprio clarity.microsoft.com. Cacheado em memória por
+    algumas horas porque a API só permite 10 chamadas/dia por projeto."""
+    import requests
+
+    token = SiteConfig.get("clarity_api_token")
+    if not token:
+        return {"disponivel": False, "erro": "Token da API do Clarity não configurado."}
+
+    agora = datetime.now(timezone.utc)
+    cache = _CLARITY_CACHE
+    if cache["data"] is not None and cache["fetched_at"] and (agora - cache["fetched_at"]) < _CLARITY_CACHE_TTL:
+        return cache["data"]
+
+    try:
+        resp = requests.get(
+            "https://www.clarity.ms/export-data/api/v1/project-live-insights",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"numOfDays": 3},
+            timeout=8,
+        )
+        if resp.status_code == 429:
+            resultado = {"disponivel": False, "erro": "Cota diária da API do Clarity esgotada (limite: 10 chamadas/dia). Tente novamente mais tarde."}
+            cache.update(data=resultado, fetched_at=agora)
+            return resultado
+        resp.raise_for_status()
+        linhas = resp.json()
+    except (requests.RequestException, ValueError) as e:
+        resultado = {"disponivel": False, "erro": f"Falha ao conectar com o Clarity: {e}"}
+        cache.update(data=resultado, fetched_at=agora)
+        return resultado
+
+    por_metrica = {item.get("metricName"): (item.get("information") or []) for item in (linhas or []) if isinstance(item, dict)}
+
+    def _num(lista, chave, padrao=0):
+        try:
+            return type(padrao)(lista[0].get(chave, padrao))
+        except (IndexError, KeyError, TypeError, ValueError):
+            return padrao
+
+    trafego = por_metrica.get("Traffic", [])
+    engaj = por_metrica.get("EngagementTime", [])
+    scroll = por_metrica.get("ScrollDepth", [])
+    dead = por_metrica.get("DeadClickCount", [])
+    rage = por_metrica.get("RageClickCount", [])
+    quickback = por_metrica.get("QuickbackClick", [])
+    erros = por_metrica.get("ScriptErrorCount", [])
+
+    resultado = {
+        "disponivel": True,
+        "erro": None,
+        "sessoes": _num(trafego, "totalSessionCount"),
+        "sessoes_bot": _num(trafego, "totalBotSessionCount"),
+        "usuarios_unicos": _num(trafego, "distinctUserCount"),
+        "tempo_ativo_seg": _num(engaj, "activeTime"),
+        "scroll_medio_pct": round(_num(scroll, "averageScrollDepth", 0.0), 1),
+        "dead_click_pct": round(_num(dead, "sessionsWithMetricPercentage", 0.0), 1),
+        "rage_click_pct": round(_num(rage, "sessionsWithMetricPercentage", 0.0), 1),
+        "quickback_pct": round(_num(quickback, "sessionsWithMetricPercentage", 0.0), 1),
+        "erros_script": _num(erros, "sessionsCount"),
+    }
+    cache.update(data=resultado, fetched_at=agora)
+    return resultado
 
 
 def _buscar_metricas_meta_ads():
@@ -779,6 +851,8 @@ def trafego_dados():
         },
         "insights": insights,
         "meta_ads": _buscar_metricas_meta_ads(),
+        "clarity": _buscar_metricas_clarity(),
+        "clarity_url": f"https://clarity.microsoft.com/projects/view/{SiteConfig.get('clarity_id')}/dashboard" if SiteConfig.get("clarity_id") else "https://clarity.microsoft.com/",
         "eventos_recentes": eventos_recentes,
         "totais": {
             "acessos_reais": total_acessos_reais,
