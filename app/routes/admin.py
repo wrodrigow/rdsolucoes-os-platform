@@ -561,7 +561,8 @@ BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de ve
 
 
 _CLARITY_CACHE = {"data": None, "fetched_at": None}
-_CLARITY_CACHE_TTL = timedelta(hours=3)  # API permite só 10 chamadas/dia — 3h mantém bem abaixo disso
+_CLARITY_CACHE_TTL = timedelta(hours=3)  # sucesso: API permite só 10 chamadas/dia — 3h mantém bem abaixo disso
+_CLARITY_CACHE_TTL_ERRO = timedelta(minutes=5)  # erro (ex.: token recém-gerado ainda propagando): reconsulta logo
 
 
 def _buscar_metricas_clarity():
@@ -578,8 +579,11 @@ def _buscar_metricas_clarity():
 
     agora = datetime.now(timezone.utc)
     cache = _CLARITY_CACHE
-    if cache["data"] is not None and cache["fetched_at"] and (agora - cache["fetched_at"]) < _CLARITY_CACHE_TTL:
-        return cache["data"]
+    if cache["data"] is not None and cache["fetched_at"]:
+        idade = agora - cache["fetched_at"]
+        ttl = _CLARITY_CACHE_TTL if cache["data"].get("disponivel") else _CLARITY_CACHE_TTL_ERRO
+        if idade < ttl:
+            return cache["data"]
 
     try:
         resp = requests.get(
@@ -590,6 +594,10 @@ def _buscar_metricas_clarity():
         )
         if resp.status_code == 429:
             resultado = {"disponivel": False, "erro": "Cota diária da API do Clarity esgotada (limite: 10 chamadas/dia). Tente novamente mais tarde."}
+            cache.update(data=resultado, fetched_at=agora)
+            return resultado
+        if resp.status_code == 403:
+            resultado = {"disponivel": False, "erro": "Acesso negado (403) — token recém-gerado pode levar alguns minutos para propagar, ou o token foi revogado/é de outro projeto. Tentando de novo em breve."}
             cache.update(data=resultado, fetched_at=agora)
             return resultado
         resp.raise_for_status()
