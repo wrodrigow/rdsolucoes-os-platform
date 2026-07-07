@@ -92,6 +92,47 @@
       </div>
     </div>
 
+    <!-- Google Ads API (dados reais de gasto/cliques no painel de Tráfego) -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title"><i class="fa-brands fa-google" style="color:#ea4335;"></i> Google Ads — API (gasto/cliques reais)</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Developer Token</label>
+        <input type="text" name="gads_developer_token" class="adm-input" value="{{ cfg.gads_developer_token or '' }}" placeholder="AbCdEfGhIjKlMnOpQrStUv"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Google Ads → Ferramentas → Central de API. Tokens novos começam em "Test access" — só funcionam com contas de teste até o Google aprovar acesso Basic/Standard.</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">OAuth Client ID</label>
+        <input type="text" name="gads_client_id" class="adm-input" value="{{ cfg.gads_client_id or '' }}" placeholder="123456789-abc.apps.googleusercontent.com"/>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">OAuth Client Secret</label>
+        <input type="text" name="gads_client_secret" class="adm-input" value="{{ cfg.gads_client_secret or '' }}" placeholder="GOCSPX-..."/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Gerados em console.cloud.google.com → APIs e Serviços → Credenciais (tipo "App para computador").</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Refresh Token</label>
+        <input type="text" name="gads_refresh_token" class="adm-input" value="{{ cfg.gads_refresh_token or '' }}" placeholder="1//0g..."/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Gerado uma única vez autorizando o app com a conta Google dona do Google Ads (fluxo OAuth).</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Customer ID (conta do Google Ads)</label>
+        <input type="text" name="gads_customer_id" class="adm-input" value="{{ cfg.gads_customer_id or '' }}" placeholder="123-456-7890"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Número no canto superior direito do Google Ads. Com ou sem traços, tanto faz.</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Login Customer ID (conta gerenciadora / MCC)</label>
+        <input type="text" name="gads_login_customer_id" class="adm-input" value="{{ cfg.gads_login_customer_id or '' }}" placeholder="opcional"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Só preencha se a conta acima for acessada através de uma conta gerenciadora (MCC).</div>
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label">Campaign ID (RD OS)</label>
+        <input type="text" name="gads_campaign_id" class="adm-input" value="{{ cfg.gads_campaign_id or '' }}" placeholder="opcional — filtra só a campanha do RD OS"/>
+        <div style="font-size:0.75rem;color:var(--adm-muted);margin-top:3px;">Se a conta tiver outras campanhas (outros produtos/clientes), preencha para não misturar os números no painel.</div>
+      </div>
+    </div>
+
     <!-- Produto & Preço -->
     <div class="adm-card">
       <div class="adm-card-header">

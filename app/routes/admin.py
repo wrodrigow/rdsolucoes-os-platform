@@ -441,6 +441,8 @@ def configuracoes():
             "site_name", "site_slogan", "site_email_contato", "site_whatsapp",
             "site_telefone", "site_url", "site_cnpj", "seo_title", "seo_description",
             "seo_keywords", "ga_id", "meta_pixel_id", "gads_id", "gads_conversion_label", "clarity_id", "clarity_api_token",
+            "gads_developer_token", "gads_client_id", "gads_client_secret", "gads_refresh_token",
+            "gads_customer_id", "gads_login_customer_id", "gads_campaign_id",
             "produto_nome", "produto_preco",
             "produto_preco_de", "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
         ]
@@ -558,6 +560,121 @@ def trafego():
 
 
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
+
+
+_GADS_CACHE = {"data": None, "fetched_at": None}
+_GADS_CACHE_TTL = timedelta(minutes=20)
+_GADS_CACHE_TTL_ERRO = timedelta(minutes=5)
+
+
+def _buscar_metricas_google_ads():
+    """Gasto/cliques/impressões reais via Google Ads API (REST + OAuth refresh
+    token). Se GADS_CAMPAIGN_ID estiver configurado, filtra só essa campanha
+    (a conta pode ter outras campanhas de outros produtos/clientes, como
+    aconteceu no Meta Ads); senão, agrega a conta inteira com um aviso."""
+    import requests
+
+    dev_token = SiteConfig.get("gads_developer_token")
+    client_id = SiteConfig.get("gads_client_id")
+    client_secret = SiteConfig.get("gads_client_secret")
+    refresh_token = SiteConfig.get("gads_refresh_token")
+    customer_id = (SiteConfig.get("gads_customer_id") or "").replace("-", "").strip()
+    login_customer_id = (SiteConfig.get("gads_login_customer_id") or "").replace("-", "").strip()
+    campaign_id = SiteConfig.get("gads_campaign_id")
+
+    faltando = [n for n, v in [
+        ("Developer Token", dev_token), ("Client ID", client_id), ("Client Secret", client_secret),
+        ("Refresh Token", refresh_token), ("Customer ID", customer_id),
+    ] if not v]
+    if faltando:
+        return {"disponivel": False, "erro": f"Configuração pendente: {', '.join(faltando)}."}
+
+    agora = datetime.now(timezone.utc)
+    cache = _GADS_CACHE
+    if cache["data"] is not None and cache["fetched_at"]:
+        ttl = _GADS_CACHE_TTL if cache["data"].get("disponivel") else _GADS_CACHE_TTL_ERRO
+        if (agora - cache["fetched_at"]) < ttl:
+            return cache["data"]
+
+    def _erro(msg):
+        resultado = {"disponivel": False, "erro": msg}
+        cache.update(data=resultado, fetched_at=agora)
+        return resultado
+
+    try:
+        token_resp = requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": client_id, "client_secret": client_secret,
+                "refresh_token": refresh_token, "grant_type": "refresh_token",
+            },
+            timeout=8,
+        )
+        token_data = token_resp.json()
+        if token_resp.status_code != 200 or "access_token" not in token_data:
+            return _erro(f"Falha ao renovar token OAuth: {token_data.get('error_description', token_data.get('error', 'erro desconhecido'))}. Gere um novo Refresh Token.")
+        access_token = token_data["access_token"]
+    except requests.RequestException as e:
+        return _erro(f"Falha ao conectar com o Google OAuth: {e}")
+
+    query = (
+        "SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, "
+        "metrics.clicks, metrics.cost_micros, metrics.ctr, metrics.average_cpc "
+        "FROM campaign WHERE segments.date DURING LAST_30_DAYS"
+    )
+    if campaign_id:
+        query += f" AND campaign.id = {int(campaign_id)}"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "developer-token": dev_token,
+        "Content-Type": "application/json",
+    }
+    if login_customer_id:
+        headers["login-customer-id"] = login_customer_id
+
+    try:
+        resp = requests.post(
+            f"https://googleads.googleapis.com/v18/customers/{customer_id}/googleAds:search",
+            headers=headers, json={"query": query}, timeout=10,
+        )
+        data = resp.json()
+    except (requests.RequestException, ValueError) as e:
+        return _erro(f"Falha ao conectar com o Google Ads: {e}")
+
+    if resp.status_code != 200:
+        detalhes = data.get("error", {}).get("message", "erro desconhecido") if isinstance(data, dict) else str(data)
+        dica = ""
+        if resp.status_code in (401, 403):
+            dica = " Confira o Developer Token — tokens recém-criados ficam em 'Test access' e só funcionam com contas de teste até serem aprovados pelo Google."
+        return _erro(f"Erro {resp.status_code} do Google Ads: {detalhes}.{dica}")
+
+    linhas = data.get("results", [])
+    impressoes = cliques = 0
+    custo_micros = 0
+    for linha in linhas:
+        m = linha.get("metrics", {})
+        impressoes += int(m.get("impressions", 0))
+        cliques += int(m.get("clicks", 0))
+        custo_micros += int(m.get("costMicros", 0))
+
+    gasto = custo_micros / 1_000_000
+    ctr = (cliques / impressoes * 100) if impressoes else 0.0
+    cpc = (gasto / cliques) if cliques else 0.0
+
+    resultado = {
+        "disponivel": True,
+        "erro": None,
+        "gasto": f"R$ {gasto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "impressoes": impressoes,
+        "cliques": cliques,
+        "cpc": f"R$ {cpc:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "ctr": f"{ctr:.2f}%",
+        "campanhas": len(linhas),
+        "filtrado": bool(campaign_id),
+    }
+    cache.update(data=resultado, fetched_at=agora)
+    return resultado
 
 
 _CLARITY_CACHE = {"data": None, "fetched_at": None}
@@ -863,6 +980,7 @@ def trafego_dados():
         },
         "insights": insights,
         "meta_ads": _buscar_metricas_meta_ads(),
+        "google_ads": _buscar_metricas_google_ads(),
         "clarity": _buscar_metricas_clarity(),
         "clarity_url": f"https://clarity.microsoft.com/projects/view/{SiteConfig.get('clarity_id')}/dashboard" if SiteConfig.get("clarity_id") else "https://clarity.microsoft.com/",
         "eventos_recentes": eventos_recentes,
