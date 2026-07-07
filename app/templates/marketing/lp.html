@@ -73,6 +73,8 @@ svg.ic{display:block;flex-shrink:0;}
 .cta-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#1a5fa8,#0d7d8c);color:#fff;font-size:1.02rem;font-weight:800;padding:16px 36px;border-radius:12px;text-decoration:none;border:none;cursor:pointer;box-shadow:0 10px 26px rgba(26,95,168,0.35);transition:transform .15s,box-shadow .15s;line-height:1.25;}
 .cta-btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(26,95,168,0.4);}
 .cta-note{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;font-size:0.8rem;color:#64748b;margin-top:14px;}
+.cta-sec{display:inline-block;margin-top:14px;font-size:0.92rem;font-weight:700;color:#1a5fa8;text-decoration:none;border-bottom:1.5px dashed #93b8dc;padding-bottom:2px;}
+.cta-sec:hover{color:#0d7d8c;border-color:#0d7d8c;}
 .cta-note span{white-space:nowrap;}
 
 /* Vídeo real do sistema no hero */
@@ -293,14 +295,15 @@ body.bar-on .wa-float{bottom:88px;}
 <!-- Hero -->
 <div class="hero">
   <div class="wrap">
-    <div class="eyebrow">PARA PRESTADORES DE SERVIÇO E PEQUENAS EMPRESAS</div>
-    <h1>Pare de fazer orçamento no papel, no Word ou no WhatsApp.</h1>
-    <p class="sub">Gere <strong>orçamentos profissionais em PDF com a sua logo</strong> em menos de 1 minuto — e controle clientes, ordens de serviço e o financeiro num só programa. <strong>Sem internet. Sem mensalidade.</strong></p>
-    <a href="#comprar" class="cta-btn" onclick="if(typeof fbq!=='undefined')fbq('track','AddToCart',{value:{{ preco }},currency:'BRL'});">Gerar orçamentos profissionais →</a>
+    <div class="eyebrow">PROGRAMA DE ORÇAMENTOS E OS PARA WINDOWS — SEM MENSALIDADE</div>
+    <h1>Orçamento com a sua logo, OS pra imprimir e financeiro organizado — num programa que você compra uma vez só.</h1>
+    <p class="sub">Instala no computador em minutos e é fácil de verdade: quem só usa WhatsApp aprende no primeiro dia. Seus dados ficam na sua máquina (funciona até sem internet) e a licença é vitalícia: <strong>R$&nbsp;{{ '%.0f' % preco }} únicos, ou 12x de R$&nbsp;{{ parcela_fmt }}</strong>.</p>
+    <a href="#comprar" class="cta-btn" onclick="if(typeof fbq!=='undefined')fbq('track','AddToCart',{value:{{ preco }},currency:'BRL'});">Quero garantir minha licença →</a>
+    <div><a href="#telas" class="cta-sec">Ver o programa por dentro ↓</a></div>
     <div class="cta-note">
-      <span>✔ Pagamento único de R$&nbsp;{{ '%.0f' % preco }}</span>
-      <span>✔ Licença vitalícia</span>
-      <span>✔ Garantia de 7 dias</span>
+      <span>✔ Pagamento único — sem assinatura, sem surpresa</span>
+      <span>✔ Chave e download no e-mail em minutos</span>
+      <span>✔ Garantia incondicional de 7 dias</span>
     </div>
 
     <!-- Vídeo real do sistema -->
@@ -326,7 +329,7 @@ body.bar-on .wa-float{bottom:88px;}
 </div>
 
 <!-- Telas reais -->
-<section>
+<section id="telas">
   <div class="wrap">
     <h2 class="sec-title">Veja o RD OS por dentro — sem montagem</h2>
     <p class="sec-sub">Telas reais do sistema. É o mesmo programa que a própria RD Soluções usa todos os dias para atender seus clientes.</p>
@@ -385,7 +388,7 @@ body.bar-on .wa-float{bottom:88px;}
       <div class="mod"><div class="emj">🛠️</div><h3>Ordens de Serviço</h3><p>Orçamento aprovado vira OS com um clique. Controle o status até a conclusão.</p></div>
       <div class="mod"><div class="emj">💰</div><h3>Controle Financeiro</h3><p>Entradas, saídas, saldo por banco e gráficos. Importa extrato do banco em PDF.</p></div>
       <div class="mod"><div class="emj">📦</div><h3>Catálogo de Serviços</h3><p>Cadastre seus serviços com preço uma vez e monte orçamentos em segundos.</p></div>
-      <div class="mod"><div class="emj">🔒</div><h3>100% Offline</h3><p>Seus dados ficam no seu computador. Funciona sem internet, sem depender de ninguém.</p></div>
+      <div class="mod"><div class="emj">🔒</div><h3>Seus dados são seus</h3><p>Tudo fica no seu computador e funciona até sem internet — sem depender de servidor de ninguém.</p></div>
     </div>
   </div>
 </section>
