@@ -7,6 +7,11 @@ class TrafficEvent(db.Model):
     para o painel de acompanhamento em tempo real do admin."""
     __tablename__ = "traffic_events"
 
+    # Fonte única de produtos monitorados. Adicionar um produto novo no
+    # futuro é só acrescentar uma linha aqui (chave = valor salvo na coluna
+    # `produto`, usado também para validar o endpoint público de tracking).
+    PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas"}
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # lp_view | checkout_start | checkout_success | checkout_fail
     event_type = db.Column(db.String(30), nullable=False, index=True)
@@ -15,6 +20,7 @@ class TrafficEvent(db.Model):
     fbclid = db.Column(db.String(300), nullable=True)
     gad_campaignid = db.Column(db.String(50), nullable=True)
     canal = db.Column(db.String(20), nullable=False, default="direto", index=True)  # google_ads | meta_ads | direto
+    produto = db.Column(db.String(20), nullable=False, default="rd_os", index=True)  # ver PRODUTOS acima
     is_bot = db.Column(db.Boolean, default=False, nullable=False, index=True)
     device = db.Column(db.String(20), nullable=True)  # mobile | desktop | unknown
     ip = db.Column(db.String(45), nullable=True)
@@ -38,7 +44,7 @@ class TrafficEvent(db.Model):
         return "direto"
 
     @classmethod
-    def registrar(cls, event_type, request, order_id=None):
+    def registrar(cls, event_type, request, order_id=None, produto="rd_os"):
         gclid = request.args.get("gclid") or request.form.get("gclid")
         fbclid = request.args.get("fbclid") or request.form.get("fbclid")
         gad_campaignid = request.args.get("gad_campaignid")
@@ -64,6 +70,7 @@ class TrafficEvent(db.Model):
             fbclid=fbclid,
             gad_campaignid=gad_campaignid,
             canal=cls._identificar_canal(gclid, fbclid),
+            produto=produto if produto in cls.PRODUTOS else "rd_os",
             is_bot=is_bot,
             device=device,
             ip=request.remote_addr,

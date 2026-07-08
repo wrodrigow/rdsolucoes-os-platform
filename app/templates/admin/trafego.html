@@ -3,6 +3,7 @@
 {% block page_title %}Tráfego Pago em Tempo Real{% endblock %}
 
 {% block topbar_actions %}
+<div id="traf-produto-seletor" style="display:flex;gap:6px;margin-right:10px;"></div>
 <span id="traf-atualizado" style="font-size:0.78rem;color:var(--adm-muted);background:var(--adm-bg-alt);padding:4px 10px;border-radius:6px;">
   Carregando...
 </span>
@@ -12,67 +13,11 @@
 
 <div id="traf-insights" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
 
-<!-- Funil -->
-<div class="adm-stats-grid" style="margin-bottom:24px;">
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(37,99,235,0.12);color:#2563eb;">
-      <i class="fa-solid fa-eye"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-lp-real">—</div>
-      <div class="adm-stat-label">Visitas Reais na LP (24h) <span id="stat-lp-real-total" style="color:var(--adm-muted);font-weight:400;"></span></div>
-    </div>
-  </div>
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(107,114,128,0.12);color:#6b7280;">
-      <i class="fa-solid fa-robot"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-lp-bot">—</div>
-      <div class="adm-stat-label">Tráfego de Robô/Crawler</div>
-    </div>
-  </div>
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(234,179,8,0.12);color:#ca8a04;">
-      <i class="fa-solid fa-cart-shopping"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-checkout-start">—</div>
-      <div class="adm-stat-label">Checkouts Iniciados</div>
-    </div>
-  </div>
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;">
-      <i class="fa-solid fa-check-circle"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-checkout-success">—</div>
-      <div class="adm-stat-label">Vendas Concluídas (24h)</div>
-    </div>
-  </div>
-</div>
+<!-- Funil (24h) -->
+<div class="adm-stats-grid" id="traf-stats-funil" style="margin-bottom:24px;"></div>
 
 <!-- Totais gerais (desde o início da campanha) -->
-<div class="adm-stats-grid" style="margin-bottom:24px;">
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(147,51,234,0.12);color:#9333ea;">
-      <i class="fa-solid fa-bag-shopping"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-total-vendas">—</div>
-      <div class="adm-stat-label">Vendas Aprovadas (total)</div>
-    </div>
-  </div>
-  <div class="adm-stat-card">
-    <div class="adm-stat-icon" style="background:rgba(5,150,105,0.12);color:#059669;">
-      <i class="fa-solid fa-sack-dollar"></i>
-    </div>
-    <div class="adm-stat-info">
-      <div class="adm-stat-value" id="stat-receita-total">—</div>
-      <div class="adm-stat-label">Receita Total</div>
-    </div>
-  </div>
-</div>
+<div class="adm-stats-grid" id="traf-stats-totais" style="margin-bottom:24px;"></div>
 
 <!-- Meta Ads — desempenho real (gasto/cliques/impressões) -->
 <div class="adm-card" style="margin-bottom:24px;">
@@ -99,12 +44,12 @@
 <!-- Origem do tráfego (Google Ads x Meta Ads x Direto) -->
 <div class="adm-card" style="margin-bottom:24px;">
   <div class="adm-card-header">
-    <div class="adm-card-title"><i class="fa-solid fa-bullseye" style="color:#2563eb;"></i> Origem do Tráfego e das Vendas</div>
+    <div class="adm-card-title" id="traf-canal-titulo"><i class="fa-solid fa-bullseye" style="color:#2563eb;"></i> Origem do Tráfego e das Vendas</div>
     <div style="font-size:0.78rem;color:var(--adm-muted);">Por onde vem mais gente e mais venda — pra saber onde focar o orçamento</div>
   </div>
   <div class="adm-table-wrapper">
     <table class="adm-table">
-      <thead><tr><th>Canal</th><th>Visitas (24h)</th><th>Visitas (total)</th><th>Vendas (total)</th></tr></thead>
+      <thead><tr><th>Canal</th><th>Visitas (24h)</th><th>Visitas (total)</th><th id="traf-canal-col4">Vendas (total)</th></tr></thead>
       <tbody id="traf-canal-tbody">
         <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--adm-muted);">Carregando...</td></tr>
       </tbody>
@@ -150,7 +95,7 @@
   <!-- Funil detalhado -->
   <div class="adm-card">
     <div class="adm-card-header">
-      <div class="adm-card-title">Funil de Conversão (24h)</div>
+      <div class="adm-card-title" id="traf-funil-titulo">Funil de Conversão (24h)</div>
     </div>
     <div id="traf-funil" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
@@ -171,8 +116,8 @@
   </div>
 </div>
 
-<!-- Vendas recentes -->
-<div class="adm-card" style="margin-top:24px;">
+<!-- Vendas recentes (só existe pra produto com checkout — ex.: RD OS) -->
+<div class="adm-card" id="traf-card-vendas" style="margin-top:24px;">
   <div class="adm-card-header">
     <div class="adm-card-title"><i class="fa-solid fa-sack-dollar" style="color:#059669;"></i> Vendas Recentes (aprovadas)</div>
   </div>
@@ -191,11 +136,36 @@
 {% block extra_js %}
 <script>
 const EVENTO_LABELS = {
-  lp_view: 'Visita à LP',
+  lp_view: 'Visita à página',
   checkout_start: 'Checkout iniciado',
   checkout_success: 'Compra aprovada',
   checkout_fail: 'Pagamento falhou',
+  whatsapp_click: 'Clique no WhatsApp',
+  scroll_50: 'Rolou 50%',
+  scroll_100: 'Rolou até o fim',
+  faq_view: 'Viu o FAQ',
 };
+
+const PRODUTOS = Object.assign({todos: 'Todos'}, {{ produtos|tojson }});
+let trafProdutoAtual = 'todos';
+
+function trafRenderSeletorProduto() {
+  const el = document.getElementById('traf-produto-seletor');
+  el.innerHTML = Object.entries(PRODUTOS).map(([chave, label]) => `
+    <button type="button" data-produto="${chave}" class="traf-pill${chave === trafProdutoAtual ? ' traf-pill-ativa' : ''}"
+      style="font-size:0.78rem;padding:5px 12px;border-radius:999px;cursor:pointer;
+      border:1px solid ${chave === trafProdutoAtual ? '#2563eb' : 'var(--adm-border,#e5e7eb)'};
+      background:${chave === trafProdutoAtual ? '#2563eb' : 'var(--adm-bg-alt)'};
+      color:${chave === trafProdutoAtual ? '#fff' : 'var(--adm-text)'};">${label}</button>
+  `).join('');
+  el.querySelectorAll('button[data-produto]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trafProdutoAtual = btn.dataset.produto;
+      trafRenderSeletorProduto();
+      trafAtualizar();
+    });
+  });
+}
 
 function trafDesenharGrafico(labels, real, bot) {
   const canvas = document.getElementById('traf-chart');
@@ -273,11 +243,15 @@ function trafRenderInsights(insights) {
   }).join('');
 }
 
-function trafRenderFunil(funil) {
-  const etapas = [
+function trafRenderFunil(funil, mostrarVendas) {
+  document.getElementById('traf-funil-titulo').textContent = mostrarVendas ? 'Funil de Conversão (24h)' : 'Funil de Leads (24h)';
+  const etapas = mostrarVendas ? [
     {label: 'Visitas reais na LP', valor: funil.lp_real, cor: '#2563eb'},
     {label: 'Checkouts iniciados', valor: funil.checkout_start, cor: '#ca8a04'},
     {label: 'Compras aprovadas', valor: funil.checkout_success, cor: '#059669'},
+  ] : [
+    {label: 'Visitas reais na página', valor: funil.lp_real, cor: '#2563eb'},
+    {label: 'Cliques no WhatsApp (leads)', valor: funil.leads_whatsapp, cor: '#25D366'},
   ];
   const max = Math.max(...etapas.map(e => e.valor), 1);
   const el = document.getElementById('traf-funil');
@@ -474,23 +448,47 @@ function trafRenderCanal(canal) {
   `).join('');
 }
 
+function trafStatCard(icon, cor, valor, label, id) {
+  return `<div class="adm-stat-card">
+    <div class="adm-stat-icon" style="background:${cor}1f;color:${cor};"><i class="fa-solid ${icon}"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" id="${id}">${valor}</div>
+      <div class="adm-stat-label">${label}</div>
+    </div>
+  </div>`;
+}
+
+function trafRenderStatsTop(d) {
+  const f = d.funil, t = d.totais;
+  document.getElementById('traf-stats-funil').innerHTML =
+    trafStatCard('fa-eye', '#2563eb', f.lp_real, `Visitas Reais (24h) <span style="color:var(--adm-muted);font-weight:400;">(total: ${t.acessos_reais})</span>`) +
+    trafStatCard('fa-robot', '#6b7280', f.lp_bot, 'Tráfego de Robô/Crawler') +
+    (d.mostrar_vendas
+      ? trafStatCard('fa-cart-shopping', '#ca8a04', f.checkout_start, 'Checkouts Iniciados') +
+        trafStatCard('fa-check-circle', '#059669', f.checkout_success, 'Vendas Concluídas (24h)')
+      : trafStatCard('fa-brands fa-whatsapp', '#25D366', f.leads_whatsapp, 'Leads via WhatsApp (24h)'));
+
+  document.getElementById('traf-stats-totais').innerHTML = d.mostrar_vendas
+    ? trafStatCard('fa-bag-shopping', '#9333ea', t.total_vendas, 'Vendas Aprovadas (total)') +
+      trafStatCard('fa-sack-dollar', '#059669', t.receita_total, 'Receita Total')
+    : trafStatCard('fa-brands fa-whatsapp', '#25D366', t.conversoes_whatsapp, 'Leads via WhatsApp (total)');
+
+  document.getElementById('traf-card-vendas').style.display = d.mostrar_vendas ? '' : 'none';
+  document.getElementById('traf-canal-col4').textContent = d.mostrar_vendas ? 'Vendas (total)' : 'Leads (total)';
+  document.getElementById('traf-canal-titulo').innerHTML =
+    `<i class="fa-solid fa-bullseye" style="color:#2563eb;"></i> Origem do Tráfego${d.mostrar_vendas ? ' e das Vendas' : ' e dos Leads'}`;
+}
+
 async function trafAtualizar() {
   try {
-    const r = await fetch('{{ url_for("admin.trafego_dados") }}');
+    const qs = trafProdutoAtual === 'todos' ? '' : ('?produto=' + encodeURIComponent(trafProdutoAtual));
+    const r = await fetch('{{ url_for("admin.trafego_dados") }}' + qs);
     const d = await r.json();
 
-    document.getElementById('stat-lp-real').textContent = d.funil.lp_real;
-    document.getElementById('stat-lp-bot').textContent = d.funil.lp_bot;
-    document.getElementById('stat-checkout-start').textContent = d.funil.checkout_start;
-    document.getElementById('stat-checkout-success').textContent = d.funil.checkout_success;
-
-    document.getElementById('stat-lp-real-total').textContent = '(total: ' + d.totais.acessos_reais + ')';
-    document.getElementById('stat-total-vendas').textContent = d.totais.total_vendas;
-    document.getElementById('stat-receita-total').textContent = d.totais.receita_total;
-
+    trafRenderStatsTop(d);
     trafDesenharGrafico(d.chart_labels, d.chart_real, d.chart_bot);
     trafRenderInsights(d.insights);
-    trafRenderFunil(d.funil);
+    trafRenderFunil(d.funil, d.mostrar_vendas);
     trafRenderEventos(d.eventos_recentes);
     trafRenderVendas(d.vendas_recentes);
     trafRenderCanal(d.canal);
@@ -505,6 +503,7 @@ async function trafAtualizar() {
   }
 }
 
+trafRenderSeletorProduto();
 trafAtualizar();
 setInterval(trafAtualizar, 20000);
 window.addEventListener('resize', () => trafAtualizar());

@@ -33,6 +33,7 @@ def create_app(env=None):
     from .routes.admin import bp as admin_bp
     from .routes.checkout import bp as checkout_bp
     from .routes.payment import bp as payment_bp
+    from .routes.tracking import bp as tracking_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -40,6 +41,7 @@ def create_app(env=None):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(checkout_bp, url_prefix="/checkout")
     app.register_blueprint(payment_bp, url_prefix="/payment")
+    app.register_blueprint(tracking_bp, url_prefix="/api/tracking")
 
     # Contexto global para templates
     @app.context_processor
@@ -118,6 +120,8 @@ def _ensure_schema_upgrades():
             conn.execute(text("ALTER TABLE traffic_events ADD COLUMN fbclid VARCHAR(300)"))
         if "canal" not in colunas_existentes:
             conn.execute(text("ALTER TABLE traffic_events ADD COLUMN canal VARCHAR(20) NOT NULL DEFAULT 'direto'"))
+        if "produto" not in colunas_existentes:
+            conn.execute(text("ALTER TABLE traffic_events ADD COLUMN produto VARCHAR(20) NOT NULL DEFAULT 'rd_os'"))
 
 
 def _seed_initial_data(app):

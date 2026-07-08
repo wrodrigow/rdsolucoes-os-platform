@@ -556,7 +556,7 @@ def logs():
 @bp.route("/trafego")
 @admin_required
 def trafego():
-    return render_template("admin/trafego.html")
+    return render_template("admin/trafego.html", produtos=TrafficEvent.PRODUTOS)
 
 
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
@@ -826,8 +826,23 @@ def trafego_dados():
     now_local = now.astimezone(BRT)
     desde = now - timedelta(hours=24)
 
+    # produto="" (ou valor inválido) = "Todos" — soma tudo, comportamento
+    # idêntico ao existente antes do filtro por produto ter sido criado.
+    produto = request.args.get("produto", "").strip()
+    if produto not in TrafficEvent.PRODUTOS:
+        produto = ""
+
+    def _por_produto(query):
+        return query.filter(TrafficEvent.produto == produto) if produto else query
+
+    # RD Soldas não tem Order/checkout (é geração de lead via WhatsApp, não
+    # licença vendida) — a seção de vendas/receita, que é 100% baseada em
+    # Order, só faz sentido para "Todos" (histórico é todo RD OS) ou "RD OS"
+    # explicitamente. Ver PRODUTOS em models/traffic_event.py.
+    mostrar_vendas = produto in ("", "rd_os")
+
     eventos = (
-        TrafficEvent.query.filter(TrafficEvent.created_at >= desde)
+        _por_produto(TrafficEvent.query).filter(TrafficEvent.created_at >= desde)
         .order_by(TrafficEvent.created_at.asc())
         .all()
     )
@@ -838,6 +853,7 @@ def trafego_dados():
         buckets[hora_dt.strftime("%d/%m %Hh")] = {"real": 0, "bot": 0}
 
     lp_real = lp_bot = checkout_start = checkout_success = checkout_fail = 0
+    leads_whatsapp_24h = 0  # conversão de produtos sem checkout (ex.: RD Soldas)
     device_mobile = device_desktop = 0
     canal_visitas_24h = {"google_ads": 0, "meta_ads": 0, "direto": 0}
     # Eventos de comportamento na LP (beacon do front): quanto rolam, se
@@ -870,6 +886,8 @@ def trafego_dados():
             checkout_success += 1
         elif e.event_type == "checkout_fail":
             checkout_fail += 1
+        elif e.event_type == "whatsapp_click" and not e.is_bot:
+            leads_whatsapp_24h += 1
         elif e.event_type in comportamento and not e.is_bot:
             comportamento[e.event_type] += 1
 
@@ -914,16 +932,16 @@ def trafego_dados():
 
     # Totais gerais (desde sempre, não só as últimas 24h) — dão o panorama
     # completo de acessos e vendas para acompanhamento contínuo da campanha.
-    total_acessos_reais = TrafficEvent.query.filter(
+    total_acessos_reais = _por_produto(TrafficEvent.query).filter(
         TrafficEvent.event_type == "lp_view", TrafficEvent.is_bot == False
     ).count()
-    total_acessos_bot = TrafficEvent.query.filter(
+    total_acessos_bot = _por_produto(TrafficEvent.query).filter(
         TrafficEvent.event_type == "lp_view", TrafficEvent.is_bot == True
     ).count()
 
     canal_visitas_total = {}
     for canal_key in ("google_ads", "meta_ads", "direto"):
-        canal_visitas_total[canal_key] = TrafficEvent.query.filter(
+        canal_visitas_total[canal_key] = _por_produto(TrafficEvent.query).filter(
             TrafficEvent.event_type == "lp_view",
             TrafficEvent.is_bot == False,
             TrafficEvent.canal == canal_key,
@@ -931,34 +949,49 @@ def trafego_dados():
 
     CANAL_LABELS = {"google_ads": "Google Ads", "meta_ads": "Meta Ads", "direto": "Direto/Outro"}
 
-    vendas_aprovadas = Order.query.filter(Order.status == "approved").order_by(Order.approved_at.desc()).all()
-    total_vendas = len(vendas_aprovadas)
-    receita_total = sum(float(o.valor) for o in vendas_aprovadas)
+    # Vendas/receita vêm de Order, que hoje não tem noção de produto (só o
+    # RD OS vende licença via checkout) — só faz sentido mostrar esta seção
+    # para "Todos" ou "RD OS". Para produtos sem checkout (ex.: RD Soldas,
+    # que converte por clique no WhatsApp), mostramos a contagem de
+    # conversões do próprio TrafficEvent no lugar.
+    total_conversoes_whatsapp = 0
+    if mostrar_vendas:
+        vendas_aprovadas = Order.query.filter(Order.status == "approved").order_by(Order.approved_at.desc()).all()
+        total_vendas = len(vendas_aprovadas)
+        receita_total = sum(float(o.valor) for o in vendas_aprovadas)
 
-    # O canal de uma venda vem do evento "checkout_start" ligado ao pedido
-    # (o gclid/fbclid só está disponível no clique que trouxe o comprador
-    # até o formulário, não depois — por isso olhamos o checkout_start, não
-    # o checkout_success).
-    canal_por_order_id = {
-        ev.order_id: ev.canal
-        for ev in TrafficEvent.query.filter(TrafficEvent.event_type == "checkout_start").all()
-        if ev.order_id
-    }
-    canal_vendas_total = {"google_ads": 0, "meta_ads": 0, "direto": 0}
-    for o in vendas_aprovadas:
-        canal_vendas_total[canal_por_order_id.get(o.id, "direto")] += 1
-
-    vendas_recentes = [
-        {
-            "numero_pedido": o.numero_pedido,
-            "cliente": o.user.nome if o.user else "—",
-            "email": o.user.email if o.user else "—",
-            "valor": o.valor_formatado(),
-            "canal": CANAL_LABELS.get(canal_por_order_id.get(o.id, "direto"), "Direto/Outro"),
-            "data": (o.approved_at or o.created_at).replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m/%Y %H:%M"),
+        # O canal de uma venda vem do evento "checkout_start" ligado ao pedido
+        # (o gclid/fbclid só está disponível no clique que trouxe o comprador
+        # até o formulário, não depois — por isso olhamos o checkout_start, não
+        # o checkout_success).
+        canal_por_order_id = {
+            ev.order_id: ev.canal
+            for ev in TrafficEvent.query.filter(TrafficEvent.event_type == "checkout_start").all()
+            if ev.order_id
         }
-        for o in vendas_aprovadas[:15]
-    ]
+        canal_vendas_total = {"google_ads": 0, "meta_ads": 0, "direto": 0}
+        for o in vendas_aprovadas:
+            canal_vendas_total[canal_por_order_id.get(o.id, "direto")] += 1
+
+        vendas_recentes = [
+            {
+                "numero_pedido": o.numero_pedido,
+                "cliente": o.user.nome if o.user else "—",
+                "email": o.user.email if o.user else "—",
+                "valor": o.valor_formatado(),
+                "canal": CANAL_LABELS.get(canal_por_order_id.get(o.id, "direto"), "Direto/Outro"),
+                "data": (o.approved_at or o.created_at).replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m/%Y %H:%M"),
+            }
+            for o in vendas_aprovadas[:15]
+        ]
+    else:
+        total_vendas = 0
+        receita_total = 0.0
+        canal_vendas_total = {"google_ads": 0, "meta_ads": 0, "direto": 0}
+        vendas_recentes = []
+        total_conversoes_whatsapp = _por_produto(TrafficEvent.query).filter(
+            TrafficEvent.event_type == "whatsapp_click", TrafficEvent.is_bot == False
+        ).count()
 
     return jsonify({
         "chart_labels": list(buckets.keys()),
@@ -970,6 +1003,7 @@ def trafego_dados():
             "checkout_start": checkout_start,
             "checkout_success": checkout_success,
             "checkout_fail": checkout_fail,
+            "leads_whatsapp": leads_whatsapp_24h,
         },
         "device": {"mobile": device_mobile, "desktop": device_desktop},
         "comportamento": comportamento,
@@ -979,16 +1013,22 @@ def trafego_dados():
             "vendas_total": canal_vendas_total,
         },
         "insights": insights,
-        "meta_ads": _buscar_metricas_meta_ads(),
-        "google_ads": _buscar_metricas_google_ads(),
+        # Métricas reais de Meta/Google Ads hoje são de uma única campanha
+        # (configurada globalmente) — ainda não existe campanha paga para
+        # outros produtos, então só exibimos quando a seção de vendas
+        # (RD OS) está ativa. Ver "Fora do escopo" no plano de tráfego por produto.
+        "meta_ads": _buscar_metricas_meta_ads() if mostrar_vendas else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
+        "google_ads": _buscar_metricas_google_ads() if mostrar_vendas else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
         "clarity": _buscar_metricas_clarity(),
         "clarity_url": f"https://clarity.microsoft.com/projects/view/{SiteConfig.get('clarity_id')}/dashboard" if SiteConfig.get("clarity_id") else "https://clarity.microsoft.com/",
         "eventos_recentes": eventos_recentes,
+        "mostrar_vendas": mostrar_vendas,
         "totais": {
             "acessos_reais": total_acessos_reais,
             "acessos_bot": total_acessos_bot,
             "total_vendas": total_vendas,
             "receita_total": f"R$ {receita_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "conversoes_whatsapp": total_conversoes_whatsapp,
         },
         "vendas_recentes": vendas_recentes,
         "atualizado_em": now_local.strftime("%H:%M:%S"),
