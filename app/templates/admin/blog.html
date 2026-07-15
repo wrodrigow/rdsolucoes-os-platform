@@ -1,0 +1,97 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Blog (Conteúdo) — Admin{% endblock %}
+{% block page_title %}Blog RD Soluções — Publicações{% endblock %}
+
+{% block content %}
+
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Artigos publicados</div>
+    <div class="adm-stat-value">{{ artigos.total }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Inscritos na newsletter</div>
+    <div class="adm-stat-value">{{ total_inscritos }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Leads vindos do blog</div>
+    <div class="adm-stat-value">{{ total_leads }}</div>
+  </div>
+</div>
+
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-newspaper"></i> Artigos publicados</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Registrados pela automação diária</div>
+  </div>
+  <table class="adm-table">
+    <thead>
+      <tr><th>Data</th><th>Título</th><th>Categoria</th><th>Palavra-chave</th><th>Palavras</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for a in artigos.items %}
+      <tr>
+        <td>{{ a.published_at.strftime("%d/%m/%Y") }}</td>
+        <td>{{ a.title }}</td>
+        <td>{{ a.category }}</td>
+        <td>{{ a.keyword or "—" }}</td>
+        <td>{{ a.words or "—" }}</td>
+        <td><a href="{{ a.url }}" target="_blank" rel="noopener">Abrir ↗</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:var(--adm-muted);padding:20px;">Nenhum artigo registrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if artigos.pages > 1 %}
+  <div style="display:flex;gap:12px;justify-content:center;padding:12px;">
+    {% if artigos.has_prev %}<a href="{{ url_for('admin.blog', page=artigos.prev_num) }}">← Anterior</a>{% endif %}
+    <span style="color:var(--adm-muted);">Página {{ artigos.page }} de {{ artigos.pages }}</span>
+    {% if artigos.has_next %}<a href="{{ url_for('admin.blog', page=artigos.next_num) }}">Próxima →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-envelope"></i> Newsletter — últimos inscritos</div>
+  </div>
+  <table class="adm-table">
+    <thead><tr><th>Data</th><th>Email</th><th>Artigo de origem</th></tr></thead>
+    <tbody>
+      {% for i in inscritos %}
+      <tr>
+        <td>{{ i.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+        <td>{{ i.email }}</td>
+        <td>{{ i.origem or "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" style="text-align:center;color:var(--adm-muted);padding:20px;">Nenhum inscrito ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-user-plus"></i> Leads do blog — últimos 50</div>
+  </div>
+  <table class="adm-table">
+    <thead><tr><th>Data</th><th>Nome</th><th>Contato</th><th>Mensagem</th><th>Origem</th></tr></thead>
+    <tbody>
+      {% for l in leads %}
+      <tr>
+        <td>{{ l.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+        <td>{{ l.nome or "—" }}</td>
+        <td>{{ l.email or "" }} {{ l.telefone or "" }}</td>
+        <td>{{ (l.mensagem or "—") | truncate(80) }}</td>
+        <td>{{ l.origem or "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:var(--adm-muted);padding:20px;">Nenhum lead ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

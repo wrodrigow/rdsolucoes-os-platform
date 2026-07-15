@@ -559,6 +559,30 @@ def trafego():
     return render_template("admin/trafego.html", produtos=TrafficEvent.PRODUTOS)
 
 
+# ── Blog (conteúdo publicado em rdsolucoes.eco.br/blog) ─────────────────────
+
+@bp.route("/blog")
+@admin_required
+def blog():
+    from ..models.blog import BlogArticle, BlogLead, BlogSubscriber
+    page = request.args.get("page", 1, type=int)
+    artigos = (BlogArticle.query
+               .order_by(BlogArticle.published_at.desc())
+               .paginate(page=page, per_page=25, error_out=False))
+    inscritos = (BlogSubscriber.query
+                 .order_by(BlogSubscriber.created_at.desc())
+                 .limit(50).all())
+    leads = (BlogLead.query
+             .order_by(BlogLead.created_at.desc())
+             .limit(50).all())
+    return render_template("admin/blog.html",
+                           artigos=artigos,
+                           inscritos=inscritos,
+                           leads=leads,
+                           total_inscritos=BlogSubscriber.query.count(),
+                           total_leads=BlogLead.query.count())
+
+
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
 
 
