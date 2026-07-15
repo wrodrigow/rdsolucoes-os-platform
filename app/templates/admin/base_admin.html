@@ -48,6 +48,9 @@
         <a href="{{ url_for('admin.blog') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.blog' }}">
           <i class="fa-solid fa-newspaper adm-nav-icon"></i> Blog (Conteúdo)
         </a>
+        <a href="{{ url_for('admin.blog_trafego') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.blog_trafego' }}">
+          <i class="fa-solid fa-chart-line adm-nav-icon"></i> Blog (Comportamento)
+        </a>
       </div>
       <div class="adm-nav-section">
         <div class="adm-nav-section-title">Sistema</div>

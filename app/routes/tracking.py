@@ -23,6 +23,12 @@ EVENTOS_PERMITIDOS = {
     "rd_soldas": {
         "lp_view", "whatsapp_click", "scroll_50", "scroll_100", "faq_view",
     },
+    "blog": {
+        # lp_view = visualização de página (mesmo nome universal, pra reaproveitar
+        # o gráfico/funil de 24h já pronto no admin sem duplicar lógica).
+        "lp_view", "whatsapp_click", "scroll_50", "scroll_100",
+        "click_afiliado", "click_interno",
+    },
 }
 
 
@@ -52,5 +58,7 @@ def evento():
     if produto not in EVENTOS_PERMITIDOS or tipo not in EVENTOS_PERMITIDOS[produto]:
         return "", 204
 
-    TrafficEvent.registrar(tipo, request, produto=produto)
+    slug = (request.form.get("slug") or "").strip()
+    detalhe = (request.form.get("detalhe") or "").strip()
+    TrafficEvent.registrar(tipo, request, produto=produto, slug=slug or None, detalhe=detalhe or None)
     return "", 204

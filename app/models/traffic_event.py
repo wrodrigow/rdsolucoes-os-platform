@@ -10,10 +10,10 @@ class TrafficEvent(db.Model):
     # Fonte única de produtos monitorados. Adicionar um produto novo no
     # futuro é só acrescentar uma linha aqui (chave = valor salvo na coluna
     # `produto`, usado também para validar o endpoint público de tracking).
-    PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas"}
+    PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas", "blog": "Blog"}
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    # lp_view | checkout_start | checkout_success | checkout_fail
+    # lp_view | checkout_start | checkout_success | checkout_fail | post_view | click_afiliado | ...
     event_type = db.Column(db.String(30), nullable=False, index=True)
     path = db.Column(db.String(200), nullable=True)
     gclid = db.Column(db.String(300), nullable=True)
@@ -25,6 +25,11 @@ class TrafficEvent(db.Model):
     device = db.Column(db.String(20), nullable=True)  # mobile | desktop | unknown
     ip = db.Column(db.String(45), nullable=True)
     order_id = db.Column(db.String(36), nullable=True, index=True)
+    # slug do post do blog (quando produto="blog") — permite agrupar por artigo.
+    slug = db.Column(db.String(200), nullable=True, index=True)
+    # contexto extra livre por tipo de evento: URL clicada num click_afiliado/click_interno,
+    # nome do produto de afiliado, etc. — não estruturado, só pra exibir no admin.
+    detalhe = db.Column(db.String(300), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     @staticmethod
@@ -44,7 +49,7 @@ class TrafficEvent(db.Model):
         return "direto"
 
     @classmethod
-    def registrar(cls, event_type, request, order_id=None, produto="rd_os"):
+    def registrar(cls, event_type, request, order_id=None, produto="rd_os", slug=None, detalhe=None):
         gclid = request.args.get("gclid") or request.form.get("gclid")
         fbclid = request.args.get("fbclid") or request.form.get("fbclid")
         gad_campaignid = request.args.get("gad_campaignid")
@@ -75,6 +80,8 @@ class TrafficEvent(db.Model):
             device=device,
             ip=request.remote_addr,
             order_id=order_id,
+            slug=(slug or "")[:200] or None,
+            detalhe=(detalhe or "")[:300] or None,
         )
         db.session.add(ev)
         try:

@@ -124,6 +124,11 @@ def _ensure_schema_upgrades():
             conn.execute(text("ALTER TABLE traffic_events ADD COLUMN canal VARCHAR(20) NOT NULL DEFAULT 'direto'"))
         if "produto" not in colunas_existentes:
             conn.execute(text("ALTER TABLE traffic_events ADD COLUMN produto VARCHAR(20) NOT NULL DEFAULT 'rd_os'"))
+        if "slug" not in colunas_existentes:
+            conn.execute(text("ALTER TABLE traffic_events ADD COLUMN slug VARCHAR(200)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_traffic_events_slug ON traffic_events (slug)"))
+        if "detalhe" not in colunas_existentes:
+            conn.execute(text("ALTER TABLE traffic_events ADD COLUMN detalhe VARCHAR(300)"))
 
 
 def _seed_initial_data(app):

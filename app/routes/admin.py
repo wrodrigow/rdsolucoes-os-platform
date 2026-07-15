@@ -583,6 +583,95 @@ def blog():
                            total_leads=BlogLead.query.count())
 
 
+@bp.route("/blog/trafego")
+@admin_required
+def blog_trafego():
+    """Comportamento do usuário no blog: qual post foi visto, cliques em
+    afiliado/interno/WhatsApp, por artigo. Reaproveita TrafficEvent (produto
+    'blog') registrado via /api/tracking/evento pelo script embutido no
+    base.html do blog estático."""
+    from ..models.blog import BlogArticle
+    from sqlalchemy import func
+
+    agora = datetime.now(timezone.utc)
+    inicio_24h = agora - timedelta(hours=24)
+    base_q = TrafficEvent.query.filter(TrafficEvent.produto == "blog", TrafficEvent.is_bot.is_(False))
+
+    def contagem_por_slug(tipo, desde=None):
+        q = base_q.filter(TrafficEvent.event_type == tipo)
+        if desde:
+            q = q.filter(TrafficEvent.created_at >= desde)
+        linhas = (q.with_entities(TrafficEvent.slug, func.count(TrafficEvent.id))
+                  .group_by(TrafficEvent.slug).all())
+        return {slug or "(desconhecido)": n for slug, n in linhas}
+
+    views_total = contagem_por_slug("lp_view")
+    views_24h = contagem_por_slug("lp_view", inicio_24h)
+    whatsapp_por_slug = contagem_por_slug("whatsapp_click")
+    afiliado_por_slug = contagem_por_slug("click_afiliado")
+    interno_por_slug = contagem_por_slug("click_interno")
+    scroll100_por_slug = contagem_por_slug("scroll_100")
+
+    artigos_por_slug = {a.slug: a for a in BlogArticle.query.all()}
+    max_views = max(views_total.values()) if views_total else 1
+
+    posts = []
+    todos_slugs = set(views_total) | set(whatsapp_por_slug) | set(afiliado_por_slug) | set(interno_por_slug)
+    for slug in todos_slugs:
+        artigo = artigos_por_slug.get(slug)
+        v = views_total.get(slug, 0)
+        posts.append({
+            "slug": slug,
+            "titulo": artigo.title if artigo else slug,
+            "categoria": artigo.category if artigo else None,
+            "url": artigo.url if artigo else None,
+            "views": v,
+            "views_24h": views_24h.get(slug, 0),
+            "whatsapp": whatsapp_por_slug.get(slug, 0),
+            "afiliado": afiliado_por_slug.get(slug, 0),
+            "interno": interno_por_slug.get(slug, 0),
+            "scroll100": scroll100_por_slug.get(slug, 0),
+            "taxa_scroll": round(scroll100_por_slug.get(slug, 0) / v * 100) if v else 0,
+            "barra_pct": round(v / max_views * 100) if max_views else 0,
+        })
+    posts.sort(key=lambda p: p["views"], reverse=True)
+
+    # Produtos de afiliado mais clicados (detalhe = texto do link ou URL)
+    top_afiliados_rows = (base_q.filter(TrafficEvent.event_type == "click_afiliado")
+                           .with_entities(TrafficEvent.detalhe, func.count(TrafficEvent.id))
+                           .group_by(TrafficEvent.detalhe)
+                           .order_by(func.count(TrafficEvent.id).desc())
+                           .limit(15).all())
+    top_afiliados = [{"detalhe": d or "(sem descrição)", "cliques": n} for d, n in top_afiliados_rows]
+
+    totais = {
+        "views_24h": sum(views_24h.values()),
+        "views_total": sum(views_total.values()),
+        "whatsapp_total": sum(whatsapp_por_slug.values()),
+        "afiliado_total": sum(afiliado_por_slug.values()),
+        "interno_total": sum(interno_por_slug.values()),
+        "posts_com_trafego": len(todos_slugs),
+        "posts_publicados": BlogArticle.query.count(),
+    }
+
+    recentes_rows = (base_q.order_by(TrafficEvent.created_at.desc()).limit(40).all())
+    recentes = []
+    for ev in recentes_rows:
+        artigo = artigos_por_slug.get(ev.slug)
+        recentes.append({
+            "tipo": ev.event_type,
+            "slug": ev.slug,
+            "titulo": (artigo.title if artigo else ev.slug) or "(página do blog)",
+            "detalhe": ev.detalhe,
+            "device": ev.device,
+            "created_at": ev.created_at,
+        })
+
+    return render_template("admin/blog_trafego.html",
+                           posts=posts, top_afiliados=top_afiliados,
+                           totais=totais, recentes=recentes)
+
+
 BRT = timezone(timedelta(hours=-3))  # Horário de Brasília (sem horário de verão desde 2019)
 
 

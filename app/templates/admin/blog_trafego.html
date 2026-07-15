@@ -1,0 +1,130 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Comportamento no Blog — Admin{% endblock %}
+{% block page_title %}Blog — Comportamento do usuário{% endblock %}
+
+{% block extra_css %}
+<style>
+  .bt-barra-wrap { background: var(--adm-border); border-radius: 6px; height: 8px; overflow: hidden; margin-top: 6px; width: 100%; }
+  .bt-barra { background: linear-gradient(90deg, var(--adm-secondary), var(--adm-primary)); height: 100%; border-radius: 6px; }
+  .bt-post-titulo { font-weight: 600; color: var(--adm-text); }
+  .bt-post-cat { font-size: 0.72rem; color: var(--adm-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .bt-metric { display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; color: var(--adm-muted); margin-right: 14px; }
+  .bt-metric i { width: 14px; text-align: center; }
+  .bt-empty { text-align: center; color: var(--adm-muted); padding: 28px; }
+  .bt-icon-view { color: var(--adm-info); }
+  .bt-icon-wpp { color: var(--adm-success); }
+  .bt-icon-afiliado { color: var(--adm-warning); }
+  .bt-icon-interno { color: var(--adm-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="adm-stats-grid" style="margin-bottom:24px;">
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Visualizações (24h)</div>
+    <div class="adm-stat-value">{{ totais.views_24h }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Visualizações (total)</div>
+    <div class="adm-stat-value">{{ totais.views_total }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Cliques em afiliado</div>
+    <div class="adm-stat-value">{{ totais.afiliado_total }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Cliques no WhatsApp</div>
+    <div class="adm-stat-value">{{ totais.whatsapp_total }}</div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-label">Posts com tráfego</div>
+    <div class="adm-stat-value">{{ totais.posts_com_trafego }} / {{ totais.posts_publicados }}</div>
+  </div>
+</div>
+
+<div class="adm-card" style="margin-bottom:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-ranking-star"></i> Posts mais acessados</div>
+    <div style="font-size:0.78rem;color:var(--adm-muted);">Ordenado por visualizações totais</div>
+  </div>
+  {% if posts %}
+  <table class="adm-table">
+    <thead>
+      <tr><th style="width:38%;">Artigo</th><th>Visualizações</th><th>Engajamento</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in posts %}
+      <tr>
+        <td>
+          <div class="bt-post-titulo">{{ p.titulo }}</div>
+          {% if p.categoria %}<div class="bt-post-cat">{{ p.categoria | replace('-', ' ') }}</div>{% endif %}
+        </td>
+        <td style="min-width:160px;">
+          <strong>{{ p.views }}</strong> <span style="color:var(--adm-muted);font-size:0.78rem;">({{ p.views_24h }} nas últimas 24h)</span>
+          <div class="bt-barra-wrap"><div class="bt-barra" style="width:{{ p.barra_pct }}%;"></div></div>
+        </td>
+        <td>
+          <span class="bt-metric" title="Cliques no WhatsApp"><i class="fa-brands fa-whatsapp bt-icon-wpp"></i> {{ p.whatsapp }}</span>
+          <span class="bt-metric" title="Cliques em produto de afiliado"><i class="fa-solid fa-cart-shopping bt-icon-afiliado"></i> {{ p.afiliado }}</span>
+          <span class="bt-metric" title="Cliques em link interno"><i class="fa-solid fa-link bt-icon-interno"></i> {{ p.interno }}</span>
+          <span class="bt-metric" title="Leu até o fim (rolagem 95%+)"><i class="fa-solid fa-arrow-down-long"></i> {{ p.taxa_scroll }}% leu até o fim</span>
+        </td>
+        <td>{% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">Abrir ↗</a>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="bt-empty">Nenhum acesso registrado ainda. Assim que alguém visitar um post do blog, ele aparece aqui.</div>
+  {% endif %}
+</div>
+
+<div class="adm-grid-2" style="margin-bottom:24px;">
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-cart-shopping"></i> Produtos de afiliado mais clicados</div>
+    </div>
+    <table class="adm-table">
+      <thead><tr><th>Produto / link</th><th>Cliques</th></tr></thead>
+      <tbody>
+        {% for a in top_afiliados %}
+        <tr><td>{{ a.detalhe }}</td><td>{{ a.cliques }}</td></tr>
+        {% else %}
+        <tr><td colspan="2" class="bt-empty">Nenhum clique em afiliado registrado ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Atividade recente</div>
+    </div>
+    <table class="adm-table">
+      <thead><tr><th>Quando</th><th>O quê</th><th>Onde</th></tr></thead>
+      <tbody>
+        {% for r in recentes %}
+        <tr>
+          <td style="white-space:nowrap;">{{ r.created_at.strftime("%d/%m %H:%M") }}</td>
+          <td>
+            {% if r.tipo == 'lp_view' %}<i class="fa-solid fa-eye bt-icon-view"></i> Visualizou
+            {% elif r.tipo == 'whatsapp_click' %}<i class="fa-brands fa-whatsapp bt-icon-wpp"></i> Clicou no WhatsApp
+            {% elif r.tipo == 'click_afiliado' %}<i class="fa-solid fa-cart-shopping bt-icon-afiliado"></i> Clicou em afiliado{% if r.detalhe %} <span style="color:var(--adm-muted);">— {{ r.detalhe | truncate(40) }}</span>{% endif %}
+            {% elif r.tipo == 'click_interno' %}<i class="fa-solid fa-link bt-icon-interno"></i> Clicou em link interno
+            {% elif r.tipo == 'scroll_50' %}<i class="fa-solid fa-arrow-down-long"></i> Leu 50%
+            {% elif r.tipo == 'scroll_100' %}<i class="fa-solid fa-arrow-down-long"></i> Leu até o fim
+            {% else %}{{ r.tipo }}
+            {% endif %}
+          </td>
+          <td>{{ r.titulo | truncate(35) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="bt-empty">Nenhuma atividade registrada ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
