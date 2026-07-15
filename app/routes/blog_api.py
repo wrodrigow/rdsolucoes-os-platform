@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 
 from ..extensions import csrf, db, limiter
 from ..models.blog import BlogArticle, BlogLead, BlogSubscriber
+from ..models.traffic_event import TrafficEvent
 
 bp = Blueprint("blog_api", __name__)
 
@@ -75,6 +76,54 @@ def artigos():
     artigo.status = (dados.get("status") or "publicado").strip()
     db.session.commit()
     return jsonify({"ok": True, "id": artigo.id}), 201
+
+
+@bp.route("/estatisticas", methods=["GET", "OPTIONS"])
+@csrf.exempt
+@limiter.limit("30 per minute")
+def estatisticas():
+    """Diagnóstico de tráfego do blog (produto='blog' no TrafficEvent), pra
+    consulta pontual via curl/token — não é um endpoint de navegador, e não
+    tenta excluir teste automaticamente (a Function.func.count por IP é pra
+    isso: dá pra olhar e identificar visual/manualmente qual IP é teste)."""
+    if request.method == "OPTIONS":
+        return "", 204
+    if not _token_valido():
+        return jsonify({"erro": "não autorizado"}), 401
+
+    from sqlalchemy import func
+
+    views = TrafficEvent.query.filter_by(produto="blog", event_type="lp_view")
+
+    total = views.count()
+
+    por_ip = (views.with_entities(
+                  TrafficEvent.ip,
+                  func.count(TrafficEvent.id).label("n"),
+                  func.min(TrafficEvent.created_at).label("primeiro"),
+                  func.max(TrafficEvent.created_at).label("ultimo"))
+              .group_by(TrafficEvent.ip)
+              .order_by(func.count(TrafficEvent.id).desc())
+              .all())
+
+    por_slug = (views.with_entities(TrafficEvent.slug, func.count(TrafficEvent.id).label("n"))
+                .group_by(TrafficEvent.slug)
+                .order_by(func.count(TrafficEvent.id).desc())
+                .all())
+
+    return jsonify({
+        "total_lp_view": total,
+        "por_ip": [
+            {"ip": ip, "views": n, "primeiro": primeiro.isoformat() if primeiro else None,
+             "ultimo": ultimo.isoformat() if ultimo else None}
+            for ip, n, primeiro, ultimo in por_ip
+        ],
+        "por_slug": [{"slug": slug, "views": n} for slug, n in por_slug],
+        "outros_eventos": {
+            tipo: TrafficEvent.query.filter_by(produto="blog", event_type=tipo).count()
+            for tipo in ("whatsapp_click", "scroll_50", "scroll_100", "click_afiliado", "click_interno")
+        },
+    })
 
 
 @bp.route("/newsletter", methods=["POST", "OPTIONS"])
