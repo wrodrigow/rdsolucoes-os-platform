@@ -10,7 +10,7 @@ class TrafficEvent(db.Model):
     # Fonte única de produtos monitorados. Adicionar um produto novo no
     # futuro é só acrescentar uma linha aqui (chave = valor salvo na coluna
     # `produto`, usado também para validar o endpoint público de tracking).
-    PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas", "blog": "Blog"}
+    PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas", "blog": "Blog", "redes": "Certificação de Redes"}
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # lp_view | checkout_start | checkout_success | checkout_fail | post_view | click_afiliado | ...

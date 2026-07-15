@@ -23,6 +23,11 @@ EVENTOS_PERMITIDOS = {
     "rd_soldas": {
         "lp_view", "whatsapp_click", "scroll_50", "scroll_100", "faq_view",
     },
+    "redes": {
+        # LP de Certificação de Pontos de Rede (rdsolucoes.eco.br/redes/) —
+        # mesmo conjunto de eventos da LP principal (rd_soldas).
+        "lp_view", "whatsapp_click", "scroll_50", "scroll_100", "faq_view",
+    },
     "blog": {
         # lp_view = visualização de página (mesmo nome universal, pra reaproveitar
         # o gráfico/funil de 24h já pronto no admin sem duplicar lógica).
