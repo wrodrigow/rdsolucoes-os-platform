@@ -10,12 +10,41 @@ Rodar sempre da raiz do projeto (RDSolucoes-OS-Platform/), com o venv ativo.
 """
 import argparse
 import os
+import re
 import sqlite3
 import sys
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _resolver_destino():
+    """Define o DATABASE_URL do processo ANTES de importar o app.
+
+    A classe Config lê DATABASE_URL no momento do import (é atributo de
+    classe), então trocar a variável depois não teria efeito — o app abriria
+    o banco local mesmo tendo sido pedido produção.
+    """
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    destino = None
+    argv = sys.argv[1:]
+    for i, arg in enumerate(argv):
+        if arg == "--database-url" and i + 1 < len(argv):
+            destino = argv[i + 1]
+        elif arg.startswith("--database-url="):
+            destino = arg.split("=", 1)[1]
+    destino = destino or os.environ.get("PROD_DATABASE_URL")
+
+    if destino:
+        if destino.startswith("postgres://"):
+            destino = destino.replace("postgres://", "postgresql://", 1)
+        os.environ["DATABASE_URL"] = destino
+
+
+_resolver_destino()
 
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
@@ -28,6 +57,12 @@ TABELAS_ORDEM = [
     "empresa", "clientes", "catalogo_itens", "bancos", "cat_financeiras",
     "orcamentos", "itens_orcamento", "transacoes", "ordens_servico",
 ]
+
+
+def _uri_sem_senha(uri):
+    """Esconde a senha antes de imprimir a URI — o log da execução pode ser
+    colado em conversa, ticket ou histórico de terminal."""
+    return re.sub(r"://([^:/@]+):[^@]+@", r"://\1:***@", str(uri))
 
 
 def parse_date(raw):
@@ -54,7 +89,13 @@ def main():
     parser.add_argument("sqlite_path", help="Caminho do .db do app desktop (ou de um backup)")
     parser.add_argument("--dry-run", action="store_true", help="Só mostra as contagens da origem, não escreve nada")
     parser.add_argument("--wipe-first", action="store_true", help="Apaga os dados erp_* existentes antes de importar")
+    parser.add_argument(
+        "--database-url", default=None,
+        help="Banco de destino. Se omitido, usa PROD_DATABASE_URL do ambiente/.env; "
+             "se essa também não existir, usa o banco configurado normalmente (o local).",
+    )
     args = parser.parse_args()
+    # O destino já foi aplicado por _resolver_destino(), antes dos imports.
 
     if not os.path.isfile(args.sqlite_path):
         print(f"Arquivo não encontrado: {args.sqlite_path}")
@@ -73,7 +114,7 @@ def main():
         return
 
     app = create_app()
-    print(f"Banco de destino: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"Banco de destino: {_uri_sem_senha(app.config['SQLALCHEMY_DATABASE_URI'])}")
 
     with app.app_context():
         existentes = ErpOrcamento.query.count()
@@ -82,7 +123,7 @@ def main():
                   f"Rode com --wipe-first se quer substituir tudo.")
             sys.exit(1)
 
-        if args.wipe_first and existentes:
+        if args.wipe_first:
             print("Limpando tabelas erp_* existentes...")
             ErpTransacao.query.delete()
             ErpItemOrcamento.query.delete()
@@ -95,20 +136,27 @@ def main():
             ErpEmpresa.query.delete()
             db.session.commit()
 
-        # 1. empresa (singleton)
+        # 1. empresa (singleton) — atualiza se já existir, em vez de inserir.
+        # A linha id=1 é criada sozinha no primeiro acesso ao painel, então um
+        # insert cru falharia por chave duplicada.
         emp_rows = rows("empresa")
         if emp_rows:
             e = emp_rows[0]
-            db.session.add(ErpEmpresa(
-                id=1, nome=e["nome"] or "RD Soluções", email=e["email"], site=e["site"],
-                telefone=e["telefone"], cnpj=e["cnpj"],
-                forma_pagamento_padrao=e["forma_pagamento_padrao"],
-                validade_dias_padrao=e["validade_dias_padrao"] or 12,
-                garantia_dias_padrao=e["garantia_dias_padrao"] or 90,
-                proximo_numero=e["proximo_numero"] or 1,
-                proximo_os=e["proximo_os"] or 1,
-                tema=e["tema"] or "Teal Padrão",
-            ))
+            empresa = db.session.get(ErpEmpresa, 1)
+            if not empresa:
+                empresa = ErpEmpresa(id=1)
+                db.session.add(empresa)
+            empresa.nome = e["nome"] or "RD Soluções"
+            empresa.email = e["email"]
+            empresa.site = e["site"]
+            empresa.telefone = e["telefone"]
+            empresa.cnpj = e["cnpj"]
+            empresa.forma_pagamento_padrao = e["forma_pagamento_padrao"]
+            empresa.validade_dias_padrao = e["validade_dias_padrao"] or 12
+            empresa.garantia_dias_padrao = e["garantia_dias_padrao"] or 90
+            empresa.proximo_numero = e["proximo_numero"] or 1
+            empresa.proximo_os = e["proximo_os"] or 1
+            empresa.tema = e["tema"] or "Teal Padrão"
             db.session.commit()
         print(f"empresa: {len(emp_rows)} registro(s)")
 
