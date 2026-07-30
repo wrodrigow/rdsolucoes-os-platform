@@ -35,6 +35,7 @@ def create_app(env=None):
     from .routes.payment import bp as payment_bp
     from .routes.tracking import bp as tracking_bp
     from .routes.blog_api import bp as blog_api_bp
+    from .routes.gestao import bp as gestao_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -44,6 +45,7 @@ def create_app(env=None):
     app.register_blueprint(payment_bp, url_prefix="/payment")
     app.register_blueprint(tracking_bp, url_prefix="/api/tracking")
     app.register_blueprint(blog_api_bp, url_prefix="/api/blog")
+    app.register_blueprint(gestao_bp, url_prefix="/gestao")
 
     # Contexto global para templates
     @app.context_processor

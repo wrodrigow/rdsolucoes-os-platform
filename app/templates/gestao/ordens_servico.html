@@ -1,0 +1,210 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Ordens de Serviço — Gestão RD{% endblock %}
+{% block page_title %}Ordens de Serviço{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="gstAbrir('modal-nova-os')">
+  <i class="fa-solid fa-plus"></i> Nova OS
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" class="adm-input"
+           placeholder="Buscar por Nº ou cliente..." style="flex:1;min-width:220px;"/>
+    <select name="status" class="adm-input" style="width:180px;">
+      <option value="">Todos os status</option>
+      {% for s in status_lista %}
+      <option value="{{ s }}" {{ 'selected' if status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q or status %}
+    <a href="{{ url_for('gestao.ordens_servico') }}" class="adm-btn adm-btn-outline">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} ordem(ns) de serviço</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Nº</th>
+          <th>Emissão</th>
+          <th>Cliente</th>
+          <th>Status</th>
+          <th class="text-right">Valor</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in ordens %}
+        <tr class="{{ classe_status.get(o.status, '') }}">
+          <td class="fw-bold">{{ o.numero }}</td>
+          <td class="fs-sm nowrap">{{ o.data_emissao | data_br }}</td>
+          <td>
+            <div style="font-weight:600;font-size:0.87rem;">
+              {{ o.orcamento.cliente_nome if o.orcamento else '—' }}
+            </div>
+            {% if o.observacoes %}
+            <div class="fs-sm text-muted">{{ o.observacoes[:60] }}{% if o.observacoes|length > 60 %}…{% endif %}</div>
+            {% endif %}
+          </td>
+          <td class="nowrap">
+            <span class="adm-badge {{ badge_status.get(o.status, 'adm-badge-muted') }}">{{ o.status }}</span>
+          </td>
+          <td class="text-right fw-bold nowrap">
+            {{ o.orcamento.valor_total | moeda if o.orcamento else '—' }}
+          </td>
+          <td class="nowrap">
+            <a href="{{ url_for('gestao.os_pdf', ordem_id=o.id) }}" target="_blank"
+               class="adm-btn adm-btn-primary adm-btn-sm" title="Gerar PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+            </a>
+            <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+              onclick='abrirEditar({{ {"id": o.id, "numero": o.numero, "status": o.status, "data": o.data_emissao.isoformat() if o.data_emissao else "", "obs": o.observacoes or "", "cliente": (o.orcamento.cliente_nome if o.orcamento else "")} | tojson }})'>
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            {% if o.orcamento %}
+            <a href="{{ url_for('gestao.orcamento_editar', orcamento_id=o.orcamento_id) }}"
+               class="adm-btn adm-btn-outline adm-btn-sm" title="Ver orçamento Nº {{ o.orcamento.numero }}">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+            </a>
+            {% endif %}
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+              onclick="excluirOS({{ o.id }}, {{ o.numero }})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;" class="text-muted">
+          Nenhuma ordem de serviço encontrada.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% set filtros %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% endset %}
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}{{ filtros }}" class="adm-page-btn">‹</a>{% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="?page={{ p }}{{ filtros }}" class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}<span class="adm-page-btn" style="cursor:default;">…</span>{% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}{{ filtros }}" class="adm-page-btn">›</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Nova OS -->
+<div id="modal-nova-os" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title">Nova Ordem de Serviço</div>
+    <form method="POST" action="{{ url_for('gestao.os_nova') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Orçamento de origem *</label>
+          <select name="orcamento_id" class="adm-input" required>
+            <option value="">Selecione o orçamento...</option>
+            {% for o in disponiveis %}
+            <option value="{{ o.id }}">
+              Nº {{ o.numero }} — {{ o.cliente_nome or 'sem cliente' }} ({{ o.data_emissao | data_br }})
+            </option>
+            {% endfor %}
+          </select>
+          <div class="fs-sm text-muted mt-4">
+            A OS herda o número e os itens do orçamento. Orçamentos que já têm OS não aparecem na lista.
+          </div>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Data de emissão</label>
+            <input type="date" name="data_emissao" class="adm-input" value="{{ hoje.isoformat() }}"/>
+          </div>
+          <div>
+            <label class="adm-label">Status</label>
+            <select name="status" class="adm-input">
+              {% for s in status_lista %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="adm-label">Observações</label>
+          <textarea name="observacoes" class="adm-input" style="min-height:60px;"></textarea>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Criar OS</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-nova-os')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Editar OS -->
+<div id="modal-editar-os" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="editar-titulo">Editar OS</div>
+    <form id="form-editar-os" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Data de emissão</label>
+            <input type="date" name="data_emissao" id="ed-data" class="adm-input"/>
+          </div>
+          <div>
+            <label class="adm-label">Status</label>
+            <select name="status" id="ed-status" class="adm-input">
+              {% for s in status_lista %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="adm-label">Observações</label>
+          <textarea name="observacoes" id="ed-obs" class="adm-input" style="min-height:70px;"></textarea>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-editar-os')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-os" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirEditar(dados) {
+  document.getElementById('editar-titulo').textContent =
+    'OS Nº ' + dados.numero + (dados.cliente ? ' — ' + dados.cliente : '');
+  document.getElementById('ed-data').value = dados.data;
+  document.getElementById('ed-status').value = dados.status;
+  document.getElementById('ed-obs').value = dados.obs;
+  document.getElementById('form-editar-os').action = '/gestao/ordens-servico/' + dados.id + '/editar';
+  gstAbrir('modal-editar-os');
+}
+
+function excluirOS(id, numero) {
+  if (!confirm('Excluir a Ordem de Serviço Nº ' + numero + '? O orçamento de origem não é afetado.')) return;
+  const form = document.getElementById('form-excluir-os');
+  form.action = '/gestao/ordens-servico/' + id + '/excluir';
+  form.submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Categorias — Gestão RD{% endblock %}
+{% block page_title %}Categorias{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="abrirCategoria()">
+  <i class="fa-solid fa-plus"></i> Nova categoria
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ categorias | length }} categoria(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Categoria</th><th>Aplica-se a</th><th class="text-right">Lançamentos</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for c in categorias %}
+        <tr>
+          <td>
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ c.cor }};margin-right:8px;"></span>
+            <span style="font-weight:600;font-size:0.88rem;">{{ c.nome }}</span>
+          </td>
+          <td>
+            <span class="adm-badge adm-badge-{{ 'success' if c.tipo == 'Entrada' else 'danger' if c.tipo == 'Saída' else 'muted' }}">
+              {{ c.tipo }}
+            </span>
+          </td>
+          <td class="text-right fs-sm">
+            {% if usos[c.id] %}
+            <a href="{{ url_for('gestao.financeiro', categoria=c.nome) }}">{{ usos[c.id] }}</a>
+            {% else %}<span class="text-muted">0</span>{% endif %}
+          </td>
+          <td class="nowrap">
+            <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+              onclick='abrirCategoria({{ {"id": c.id, "nome": c.nome, "tipo": c.tipo, "cor": c.cor} | tojson }})'>
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+              onclick="excluirCategoria({{ c.id }}, '{{ c.nome | replace("'", "\\'") }}', {{ usos[c.id] }})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;padding:32px;" class="text-muted">Nenhuma categoria cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="adm-alert adm-alert-info">
+  <i class="fa-solid fa-circle-info"></i>
+  Ao renomear uma categoria, os lançamentos que já a usavam são atualizados junto.
+</div>
+
+<!-- Modal: Categoria -->
+<div id="modal-categoria" class="gst-modal">
+  <div class="gst-modal-box" style="max-width:460px;">
+    <div class="gst-modal-title" id="cat-titulo">Nova categoria</div>
+    <form id="form-categoria" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Nome *</label>
+          <input type="text" name="nome" id="cat-nome" class="adm-input" required/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Aplica-se a</label>
+            <select name="tipo" id="cat-tipo" class="adm-input">
+              {% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Cor</label>
+            <input type="color" name="cor" id="cat-cor" class="adm-input" value="#95a5a6" style="height:40px;padding:4px;"/>
+          </div>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-categoria')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-cat" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirCategoria(dados) {
+  document.getElementById('cat-nome').value = dados ? dados.nome : '';
+  document.getElementById('cat-tipo').value = dados ? dados.tipo : 'Ambos';
+  document.getElementById('cat-cor').value = dados ? dados.cor : '#95a5a6';
+  document.getElementById('cat-titulo').textContent = dados ? 'Editar categoria' : 'Nova categoria';
+  document.getElementById('form-categoria').action = dados
+    ? '/gestao/categorias/' + dados.id + '/editar'
+    : '/gestao/categorias/nova';
+  gstAbrir('modal-categoria');
+}
+
+function excluirCategoria(id, nome, usos) {
+  let msg = 'Excluir a categoria "' + nome + '"?';
+  if (usos > 0) {
+    msg += '\n\n' + usos + ' lançamento(s) usam ela e ficarão sem categoria.';
+  }
+  if (!confirm(msg)) return;
+  const form = document.getElementById('form-excluir-cat');
+  form.action = '/gestao/categorias/' + id + '/excluir';
+  form.submit();
+}
+</script>
+{% endblock %}

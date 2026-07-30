@@ -1,0 +1,154 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Configurações — Gestão RD{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="adm-grid-2">
+  <!-- Dados da empresa -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Dados da empresa</div>
+    </div>
+    <div class="adm-card-body">
+      <p class="fs-sm text-muted mb-16">
+        Estes dados aparecem no cabeçalho dos orçamentos e no rodapé das ordens de serviço.
+      </p>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="gst-form-grid">
+          <div>
+            <label class="adm-label">Nome / Razão social *</label>
+            <input type="text" name="nome" class="adm-input" required value="{{ empresa.nome or '' }}"/>
+          </div>
+          <div class="gst-form-row-2">
+            <div>
+              <label class="adm-label">CNPJ</label>
+              <input type="text" name="cnpj" class="adm-input" value="{{ empresa.cnpj or '' }}"
+                     placeholder="00.000.000/0000-00"/>
+              <div class="fs-sm text-muted mt-4">Sai no rodapé da OS.</div>
+            </div>
+            <div>
+              <label class="adm-label">Telefone</label>
+              <input type="text" name="telefone" class="adm-input" value="{{ empresa.telefone or '' }}"/>
+            </div>
+          </div>
+          <div class="gst-form-row-2">
+            <div>
+              <label class="adm-label">E-mail</label>
+              <input type="email" name="email" class="adm-input" value="{{ empresa.email or '' }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Site</label>
+              <input type="text" name="site" class="adm-input" value="{{ empresa.site or '' }}"/>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--adm-border);margin:6px 0;"/>
+
+          <div>
+            <label class="adm-label">Forma de pagamento padrão</label>
+            <input type="text" name="forma_pagamento_padrao" class="adm-input"
+                   value="{{ empresa.forma_pagamento_padrao or '' }}"/>
+            <div class="fs-sm text-muted mt-4">Já vem preenchida em todo orçamento novo.</div>
+          </div>
+          <div class="gst-form-row-3">
+            <div>
+              <label class="adm-label">Validade padrão (dias)</label>
+              <input type="number" name="validade_dias_padrao" class="adm-input" min="1"
+                     value="{{ empresa.validade_dias_padrao }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Garantia padrão (dias)</label>
+              <input type="number" name="garantia_dias_padrao" class="adm-input" min="1"
+                     value="{{ empresa.garantia_dias_padrao }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Próximo orçamento Nº</label>
+              <input type="number" name="proximo_numero" class="adm-input" min="1"
+                     value="{{ empresa.proximo_numero }}"/>
+              <div class="fs-sm text-muted mt-4">Maior existente: {{ maior_numero }}</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="adm-btn adm-btn-primary mt-24">
+          <i class="fa-solid fa-check"></i> Salvar configurações
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <!-- Logo -->
+    <div class="adm-card">
+      <div class="adm-card-header"><div class="adm-card-title">Logo</div></div>
+      <div class="adm-card-body">
+        <div style="display:flex;align-items:center;gap:18px;margin-bottom:18px;">
+          <img src="{{ url_for('gestao.logo') }}" alt="Logo atual"
+               style="width:88px;height:88px;object-fit:contain;border:1px solid var(--adm-border);
+                      border-radius:10px;padding:6px;background:#fff;"/>
+          <div class="fs-sm text-muted">
+            {% if tem_logo %}
+            Logo personalizado em uso.
+            {% else %}
+            Usando o logo padrão do sistema. Envie o seu para sair nos documentos.
+            {% endif %}
+          </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('gestao.configuracoes_logo') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="adm-label">Enviar novo logo</label>
+          <input type="file" name="logo" class="adm-input" accept="image/*" required/>
+          <div class="fs-sm text-muted mt-4 mb-16">PNG, JPG, WEBP ou GIF, até 2 MB. Ideal: imagem quadrada.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="submit" class="adm-btn adm-btn-primary">
+              <i class="fa-solid fa-upload"></i> Enviar logo
+            </button>
+          </div>
+        </form>
+
+        {% if tem_logo %}
+        <form method="POST" action="{{ url_for('gestao.configuracoes_logo_remover') }}" class="mt-16">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="adm-btn adm-btn-danger"
+                  onclick="return confirm('Remover o logo e voltar ao padrão do sistema?')">
+            <i class="fa-solid fa-trash"></i> Remover logo
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Resumo dos dados -->
+    <div class="adm-card">
+      <div class="adm-card-header"><div class="adm-card-title">O que existe no sistema</div></div>
+      <div class="adm-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="gst-total-item">
+            <span class="gst-total-label">Orçamentos</span>
+            <span class="gst-total-value">{{ contagens.orcamentos }}</span>
+          </div>
+          <div class="gst-total-item">
+            <span class="gst-total-label">Ordens de serviço</span>
+            <span class="gst-total-value">{{ contagens.ordens }}</span>
+          </div>
+          <div class="gst-total-item">
+            <span class="gst-total-label">Clientes</span>
+            <span class="gst-total-value">{{ contagens.clientes }}</span>
+          </div>
+          <div class="gst-total-item">
+            <span class="gst-total-label">Lançamentos</span>
+            <span class="gst-total-value">{{ contagens.transacoes }}</span>
+          </div>
+        </div>
+        <div class="adm-alert adm-alert-info mt-24" style="margin-bottom:0;">
+          <i class="fa-solid fa-cloud"></i>
+          Os dados ficam no banco na nuvem — dá pra acessar de qualquer computador ou celular,
+          e todo mundo vê a mesma informação atualizada.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

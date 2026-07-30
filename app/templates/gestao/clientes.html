@@ -1,0 +1,161 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Clientes — Gestão RD{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="abrirCliente()">
+  <i class="fa-solid fa-plus"></i> Novo Cliente
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" class="adm-input"
+           placeholder="Buscar por nome ou telefone..." style="flex:1;min-width:220px;"/>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q %}<a href="{{ url_for('gestao.clientes') }}" class="adm-btn adm-btn-outline">Limpar</a>{% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} cliente(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Endereço</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for c in clientes %}
+        <tr>
+          <td style="font-weight:600;font-size:0.88rem;">{{ c.nome }}</td>
+          <td class="fs-sm nowrap">{{ c.telefone or '—' }}</td>
+          <td class="fs-sm">{{ c.email or '—' }}</td>
+          <td class="fs-sm">{{ c.endereco or '—' }}</td>
+          <td class="nowrap">
+            <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+              onclick='abrirCliente({{ {"id": c.id, "nome": c.nome, "telefone": c.telefone or "", "email": c.email or "", "cep": c.cep or "", "endereco": c.endereco or "", "observacoes": c.observacoes or ""} | tojson }})'>
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+              onclick="excluirCliente({{ c.id }}, '{{ c.nome | replace("'", "\\'") }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:32px;" class="text-muted">Nenhum cliente encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% set filtros %}{% if q %}&q={{ q }}{% endif %}{% endset %}
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}{{ filtros }}" class="adm-page-btn">‹</a>{% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="?page={{ p }}{{ filtros }}" class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}<span class="adm-page-btn" style="cursor:default;">…</span>{% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}{{ filtros }}" class="adm-page-btn">›</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Cliente -->
+<div id="modal-cliente" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="modal-cliente-titulo">Novo Cliente</div>
+    <form id="form-cliente" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Nome *</label>
+          <input type="text" name="nome" id="c-nome" class="adm-input" required/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Telefone</label>
+            <input type="text" name="telefone" id="c-telefone" class="adm-input"/>
+          </div>
+          <div>
+            <label class="adm-label">E-mail</label>
+            <input type="email" name="email" id="c-email" class="adm-input"/>
+          </div>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">CEP</label>
+            <input type="text" name="cep" id="c-cep" class="adm-input" onblur="buscarCep()"/>
+            <div id="c-cep-status" class="fs-sm text-muted mt-4"></div>
+          </div>
+          <div></div>
+        </div>
+        <div>
+          <label class="adm-label">Endereço</label>
+          <input type="text" name="endereco" id="c-endereco" class="adm-input"/>
+        </div>
+        <div>
+          <label class="adm-label">Observações</label>
+          <textarea name="observacoes" id="c-observacoes" class="adm-input" style="min-height:60px;"></textarea>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-cliente')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-cliente" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirCliente(dados) {
+  document.getElementById('c-nome').value = dados ? dados.nome : '';
+  document.getElementById('c-telefone').value = dados ? dados.telefone : '';
+  document.getElementById('c-email').value = dados ? dados.email : '';
+  document.getElementById('c-cep').value = dados ? dados.cep : '';
+  document.getElementById('c-endereco').value = dados ? dados.endereco : '';
+  document.getElementById('c-observacoes').value = dados ? dados.observacoes : '';
+  document.getElementById('c-cep-status').textContent = '';
+  document.getElementById('modal-cliente-titulo').textContent = dados ? 'Editar Cliente' : 'Novo Cliente';
+  document.getElementById('form-cliente').action = dados
+    ? '/gestao/clientes/' + dados.id + '/editar'
+    : '/gestao/clientes/novo';
+  gstAbrir('modal-cliente');
+}
+
+function excluirCliente(id, nome) {
+  if (!confirm('Excluir o cliente "' + nome + '"?\n\nOs orçamentos dele continuam no sistema com os dados já gravados.')) return;
+  const form = document.getElementById('form-excluir-cliente');
+  form.action = '/gestao/clientes/' + id + '/excluir';
+  form.submit();
+}
+
+async function buscarCep() {
+  const cep = document.getElementById('c-cep').value.replace(/\D/g, '');
+  const status = document.getElementById('c-cep-status');
+  if (cep.length !== 8) return;
+  status.textContent = 'Buscando endereço...';
+  try {
+    const resp = await fetch('/gestao/api/cep/' + cep);
+    const d = await resp.json();
+    if (d.erro) { status.textContent = 'CEP não encontrado.'; return; }
+    const partes = [d.logradouro, d.bairro, d.localidade, d.uf].filter(Boolean);
+    document.getElementById('c-endereco').value = partes.join(', ');
+    status.textContent = 'Endereço preenchido.';
+  } catch (e) {
+    status.textContent = 'Não foi possível consultar o CEP.';
+  }
+}
+</script>
+{% endblock %}

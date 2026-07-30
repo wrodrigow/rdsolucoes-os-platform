@@ -1,0 +1,353 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Orçamento {{ orcamento.numero }} — Gestão RD{% endblock %}
+{% block page_title %}Orçamento Nº {{ orcamento.numero }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="adm-breadcrumb">
+  <a href="{{ url_for('gestao.orcamentos') }}">Orçamentos</a> ›
+  <span>{{ orcamento.cliente_nome or 'sem cliente' }}</span>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('gestao.orcamento_pdf', orcamento_id=orcamento.id) }}" target="_blank"
+   class="adm-btn adm-btn-primary">
+  <i class="fa-solid fa-file-pdf"></i> Gerar PDF
+</a>
+{% if ordem_existente %}
+<a href="{{ url_for('gestao.ordens_servico', q=ordem_existente.numero) }}" class="adm-btn adm-btn-outline">
+  <i class="fa-solid fa-screwdriver-wrench"></i> OS Nº {{ ordem_existente.numero }}
+</a>
+{% else %}
+<form method="POST" action="{{ url_for('gestao.gerar_os_do_orcamento', orcamento_id=orcamento.id) }}" style="display:inline;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <button type="submit" class="adm-btn adm-btn-outline">
+    <i class="fa-solid fa-screwdriver-wrench"></i> Gerar OS
+  </button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="adm-grid-2">
+  <!-- Dados do orçamento -->
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title">Dados do orçamento</div></div>
+    <div class="adm-card-body">
+      <form method="POST" action="{{ url_for('gestao.orcamento_salvar', orcamento_id=orcamento.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="cliente_id" id="e-cliente-id" value="{{ orcamento.cliente_id or '' }}"/>
+
+        <div class="gst-form-grid">
+          <div class="gst-form-row-2">
+            <div>
+              <label class="adm-label">Data de emissão</label>
+              <input type="date" name="data_emissao" class="adm-input"
+                     value="{{ orcamento.data_emissao.isoformat() if orcamento.data_emissao else '' }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Situação</label>
+              <select name="situacao" class="adm-input">
+                {% for s in situacoes %}
+                <option value="{{ s }}" {{ 'selected' if orcamento.situacao == s }}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="gst-autocomplete">
+            <label class="adm-label">Cliente *</label>
+            <input type="text" name="cliente_nome" id="e-cliente-nome" class="adm-input" required
+                   autocomplete="off" value="{{ orcamento.cliente_nome or '' }}"
+                   oninput="buscarClienteEdit(this.value)"/>
+            <div id="e-sugestoes" class="gst-suggestions"></div>
+            {% if orcamento.cliente_id %}
+            <div class="fs-sm text-muted mt-4">
+              <i class="fa-solid fa-link"></i> Vinculado ao cadastro de clientes
+            </div>
+            {% else %}
+            <div class="fs-sm text-muted mt-4" style="display:flex;align-items:center;gap:8px;">
+              <span>Não está no cadastro de clientes.</span>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="gst-form-row-2">
+            <div>
+              <label class="adm-label">Telefone</label>
+              <input type="text" name="cliente_telefone" id="e-cliente-telefone" class="adm-input"
+                     value="{{ orcamento.cliente_telefone or '' }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Forma de pagamento</label>
+              <input type="text" name="forma_pagamento" class="adm-input"
+                     value="{{ orcamento.forma_pagamento or '' }}"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="adm-label">Endereço</label>
+            <input type="text" name="cliente_endereco" id="e-cliente-endereco" class="adm-input"
+                   value="{{ orcamento.cliente_endereco or '' }}"/>
+          </div>
+
+          <div>
+            <label class="adm-label">Descrição do serviço</label>
+            <textarea name="descricao_servico" class="adm-input" style="min-height:64px;">{{ orcamento.descricao_servico or '' }}</textarea>
+          </div>
+
+          <div class="gst-form-row-2">
+            <div>
+              <label class="adm-label">Válido até</label>
+              <input type="date" name="validade" class="adm-input" value="{{ orcamento.validade or '' }}"/>
+            </div>
+            <div>
+              <label class="adm-label">Garantia até</label>
+              <input type="date" name="garantia" class="adm-input" value="{{ orcamento.garantia or '' }}"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="adm-label">Observações</label>
+            <textarea name="observacoes" class="adm-input" style="min-height:56px;">{{ orcamento.observacoes or '' }}</textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+          <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+          {% if not orcamento.cliente_id and orcamento.cliente_nome %}
+          <button type="button" class="adm-btn adm-btn-outline" onclick="gstAbrir('modal-cadastrar-cliente')">
+            <i class="fa-solid fa-user-plus"></i> Cadastrar este cliente
+          </button>
+          {% endif %}
+          <button type="button" class="adm-btn adm-btn-danger" onclick="gstAbrir('modal-excluir-orc')">
+            <i class="fa-solid fa-trash"></i> Excluir orçamento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Itens -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Itens ({{ orcamento.itens | length }})</div>
+      <button type="button" class="adm-btn adm-btn-primary adm-btn-sm" onclick="abrirItem()">
+        <i class="fa-solid fa-plus"></i> Adicionar item
+      </button>
+    </div>
+    <div class="adm-table-wrapper">
+      <table class="adm-table">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th class="text-right">Unitário</th>
+            <th class="text-right">Qtd</th>
+            <th class="text-right">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in orcamento.itens %}
+          <tr>
+            <td class="fs-sm">{{ item.descricao }}</td>
+            <td class="text-right fs-sm nowrap">{{ item.valor_unitario | moeda }}</td>
+            <td class="text-right fs-sm">{{ item.quantidade | numero_br(2) }}</td>
+            <td class="text-right fw-bold nowrap">{{ (item.valor_unitario * item.quantidade) | moeda }}</td>
+            <td class="nowrap">
+              <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+                onclick='abrirItem({{ {"id": item.id, "descricao": item.descricao, "valor_unitario": "%.2f"|format(item.valor_unitario), "quantidade": "%.2f"|format(item.quantidade)} | tojson }})'>
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Remover"
+                onclick="removerItem({{ item.id }}, '{{ item.descricao | replace("'", "\\'") }}')">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;padding:28px;" class="text-muted">
+            Nenhum item ainda. Clique em "Adicionar item".
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="gst-total-strip">
+      <div class="gst-total-item">
+        <span class="gst-total-label">Total do orçamento</span>
+        <span class="gst-total-value">{{ orcamento.valor_total | moeda }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: item -->
+<div id="modal-item" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="modal-item-titulo">Adicionar item</div>
+    <form id="form-item" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div class="gst-autocomplete">
+          <label class="adm-label">Descrição *</label>
+          <input type="text" name="descricao" id="i-descricao" class="adm-input" required
+                 autocomplete="off" placeholder="Digite ou escolha um item do catálogo..."
+                 oninput="buscarCatalogo(this.value)"/>
+          <div id="i-sugestoes" class="gst-suggestions"></div>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Valor unitário (R$)</label>
+            <input type="text" name="valor_unitario" id="i-valor" class="adm-input" placeholder="0,00"/>
+          </div>
+          <div>
+            <label class="adm-label">Quantidade</label>
+            <input type="text" name="quantidade" id="i-qtd" class="adm-input" value="1"/>
+          </div>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar item</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-item')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: confirmar exclusão do orçamento -->
+<div id="modal-excluir-orc" class="gst-modal">
+  <div class="gst-modal-box" style="max-width:440px;">
+    <div class="gst-modal-title">Excluir orçamento Nº {{ orcamento.numero }}?</div>
+    <p class="fs-sm text-muted">
+      Os {{ orcamento.itens | length }} item(ns) deste orçamento
+      {% if ordem_existente %}e a Ordem de Serviço Nº {{ ordem_existente.numero }} vinculada a ele{% endif %}
+      também serão excluídos. Não é possível desfazer.
+    </p>
+    <form method="POST" action="{{ url_for('gestao.orcamento_excluir', orcamento_id=orcamento.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-danger">Sim, excluir</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-excluir-orc')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if not orcamento.cliente_id and orcamento.cliente_nome %}
+<!-- Modal: cadastrar o cliente do orçamento -->
+<div id="modal-cadastrar-cliente" class="gst-modal">
+  <div class="gst-modal-box" style="max-width:440px;">
+    <div class="gst-modal-title">Cadastrar cliente</div>
+    <p class="fs-sm text-muted">
+      Vai criar <strong>{{ orcamento.cliente_nome }}</strong> no cadastro de Clientes e vincular
+      a este orçamento, usando o telefone e o endereço já preenchidos aqui.
+    </p>
+    <form method="POST" action="{{ url_for('gestao.salvar_como_cliente', orcamento_id=orcamento.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary">Cadastrar e vincular</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-cadastrar-cliente')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Form oculto de exclusão de item -->
+<form id="form-remover-item" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ORC_ID = {{ orcamento.id }};
+
+// ── Itens ────────────────────────────────────────────────────────────────
+function abrirItem(dados) {
+  document.getElementById('i-descricao').value = dados ? dados.descricao : '';
+  document.getElementById('i-valor').value = dados ? dados.valor_unitario.replace('.', ',') : '';
+  document.getElementById('i-qtd').value = dados ? dados.quantidade.replace('.', ',') : '1';
+  document.getElementById('modal-item-titulo').textContent = dados ? 'Editar item' : 'Adicionar item';
+  document.getElementById('form-item').action = dados
+    ? `/gestao/orcamentos/${ORC_ID}/itens/${dados.id}/editar`
+    : `/gestao/orcamentos/${ORC_ID}/itens/novo`;
+  document.getElementById('i-sugestoes').classList.remove('open');
+  gstAbrir('modal-item');
+}
+
+function removerItem(itemId, descricao) {
+  if (!confirm('Remover o item "' + descricao + '"?')) return;
+  const form = document.getElementById('form-remover-item');
+  form.action = `/gestao/orcamentos/${ORC_ID}/itens/${itemId}/excluir`;
+  form.submit();
+}
+
+// ── Autocomplete do catálogo ─────────────────────────────────────────────
+let catTimer = null;
+function buscarCatalogo(termo) {
+  clearTimeout(catTimer);
+  const caixa = document.getElementById('i-sugestoes');
+  if (!termo || termo.length < 2) { caixa.classList.remove('open'); return; }
+
+  catTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch('/gestao/api/catalogo/buscar?q=' + encodeURIComponent(termo));
+      const lista = await resp.json();
+      if (!lista.length) { caixa.classList.remove('open'); return; }
+      caixa.innerHTML = lista.map(i =>
+        `<div class="gst-suggestion" onclick='escolherItem(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
+           <div>${i.descricao}</div>
+           <div class="gst-suggestion-sub">R$ ${gstMoeda(i.valor_unitario)} / ${i.unidade}</div>
+         </div>`).join('');
+      caixa.classList.add('open');
+    } catch (e) { caixa.classList.remove('open'); }
+  }, 250);
+}
+
+function escolherItem(item) {
+  document.getElementById('i-descricao').value = item.descricao;
+  document.getElementById('i-valor').value = gstMoeda(item.valor_unitario);
+  document.getElementById('i-sugestoes').classList.remove('open');
+  document.getElementById('i-qtd').focus();
+}
+
+// ── Autocomplete de cliente (no cabeçalho) ───────────────────────────────
+let cliTimer = null;
+function buscarClienteEdit(termo) {
+  document.getElementById('e-cliente-id').value = '';
+  clearTimeout(cliTimer);
+  const caixa = document.getElementById('e-sugestoes');
+  if (!termo || termo.length < 2) { caixa.classList.remove('open'); return; }
+
+  cliTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch('/gestao/api/clientes/buscar?q=' + encodeURIComponent(termo));
+      const lista = await resp.json();
+      if (!lista.length) { caixa.classList.remove('open'); return; }
+      caixa.innerHTML = lista.map(c =>
+        `<div class="gst-suggestion" onclick='escolherClienteEdit(${JSON.stringify(c).replace(/'/g, "&apos;")})'>
+           <div>${c.nome}</div>
+           <div class="gst-suggestion-sub">${c.telefone || 'sem telefone'}</div>
+         </div>`).join('');
+      caixa.classList.add('open');
+    } catch (e) { caixa.classList.remove('open'); }
+  }, 250);
+}
+
+function escolherClienteEdit(c) {
+  document.getElementById('e-cliente-id').value = c.id;
+  document.getElementById('e-cliente-nome').value = c.nome;
+  document.getElementById('e-cliente-telefone').value = c.telefone || '';
+  document.getElementById('e-cliente-endereco').value = c.endereco || '';
+  document.getElementById('e-sugestoes').classList.remove('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.gst-autocomplete')) {
+    document.querySelectorAll('.gst-suggestions').forEach(s => s.classList.remove('open'));
+  }
+});
+</script>
+{% endblock %}

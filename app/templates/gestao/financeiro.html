@@ -1,0 +1,308 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Transações — Gestão RD{% endblock %}
+{% block page_title %}Transações{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-outline" onclick="gstAbrir('modal-importar')">
+  <i class="fa-solid fa-file-arrow-up"></i> Importar extrato
+</button>
+<button type="button" class="adm-btn adm-btn-primary" onclick="abrirLancamento()">
+  <i class="fa-solid fa-plus"></i> Novo lançamento
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Resumo -->
+<div class="adm-stats-grid">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-green"><i class="fa-solid fa-arrow-down"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.2rem;">{{ resumo.entradas | moeda }}</div>
+      <div class="adm-stat-label">Entradas no período</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-red"><i class="fa-solid fa-arrow-up"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.2rem;">{{ resumo.saidas | moeda }}</div>
+      <div class="adm-stat-label">Saídas no período</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon {{ 'icon-green' if resumo.resultado >= 0 else 'icon-red' }}">
+      <i class="fa-solid fa-scale-balanced"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.2rem;">{{ resumo.resultado | moeda }}</div>
+      <div class="adm-stat-label">Resultado do período</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-teal"><i class="fa-solid fa-wallet"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.2rem;">{{ saldo_geral | moeda }}</div>
+      <div class="adm-stat-label">Saldo atual (todas as contas)</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" class="adm-input"
+           placeholder="Buscar na descrição..." style="flex:1;min-width:180px;"/>
+    <select name="ano" class="adm-input" style="width:110px;">
+      <option value="">Todo período</option>
+      {% for a in anos %}<option value="{{ a }}" {{ 'selected' if ano == a }}>{{ a }}</option>{% endfor %}
+    </select>
+    <select name="mes" class="adm-input" style="width:130px;">
+      <option value="">Todos os meses</option>
+      {% for m in range(1, 13) %}
+      <option value="{{ m }}" {{ 'selected' if mes == m }}>
+        {{ ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m-1] }}
+      </option>
+      {% endfor %}
+    </select>
+    <select name="banco_id" class="adm-input" style="width:140px;">
+      <option value="">Todos os bancos</option>
+      {% for b in bancos %}<option value="{{ b.id }}" {{ 'selected' if banco_id == b.id }}>{{ b.nome }}</option>{% endfor %}
+    </select>
+    <select name="tipo" class="adm-input" style="width:120px;">
+      <option value="">Entrada e saída</option>
+      {% for t in tipos %}<option value="{{ t }}" {{ 'selected' if tipo == t }}>{{ t }}</option>{% endfor %}
+    </select>
+    <select name="categoria" class="adm-input" style="width:150px;">
+      <option value="">Todas categorias</option>
+      {% for c in categorias %}<option value="{{ c.nome }}" {{ 'selected' if categoria == c.nome }}>{{ c.nome }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
+    {% if q or ano or mes or banco_id or tipo or categoria %}
+    <a href="{{ url_for('gestao.financeiro') }}" class="adm-btn adm-btn-outline">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} lançamento(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th>Banco</th>
+          <th class="text-right">Valor</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transacoes %}
+        <tr>
+          <td class="fs-sm nowrap">{{ t.data | data_br }}</td>
+          <td class="fs-sm">
+            {{ t.descricao or '—' }}
+            {% if t.orcamento_id and t.orcamento %}
+            <a href="{{ url_for('gestao.orcamento_editar', orcamento_id=t.orcamento_id) }}"
+               class="adm-badge adm-badge-info" style="text-decoration:none;">Orç. {{ t.orcamento.numero }}</a>
+            {% endif %}
+          </td>
+          <td>
+            <!-- Categorização rápida direto na lista -->
+            <form method="POST" action="{{ url_for('gestao.transacao_categoria', transacao_id=t.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <select name="categoria" class="adm-input" style="padding:4px 8px;font-size:0.78rem;min-width:130px;"
+                      onchange="this.form.submit()">
+                <option value="">— sem categoria —</option>
+                {% for c in categorias %}
+                <option value="{{ c.nome }}" {{ 'selected' if t.categoria == c.nome }}>{{ c.nome }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+          <td class="fs-sm nowrap">
+            {% if t.banco %}
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ t.banco.cor }};"></span>
+            {{ t.banco.nome }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-right fw-bold nowrap {{ 'text-success' if t.tipo == 'Entrada' else 'text-danger' }}">
+            {{ '+' if t.tipo == 'Entrada' else '−' }} {{ t.valor | moeda }}
+          </td>
+          <td class="nowrap">
+            <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+              onclick='abrirLancamento({{ {"id": t.id, "data": t.data.isoformat() if t.data else "", "descricao": t.descricao or "", "tipo": t.tipo, "valor": "%.2f"|format(t.valor), "categoria": t.categoria or "", "banco_id": t.banco_id or "", "orcamento_id": t.orcamento_id or ""} | tojson }})'>
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+              onclick="excluirLancamento({{ t.id }})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;" class="text-muted">
+          Nenhum lançamento para estes filtros.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% set filtros %}{% if q %}&q={{ q }}{% endif %}{% if ano %}&ano={{ ano }}{% endif %}{% if mes %}&mes={{ mes }}{% endif %}{% if banco_id %}&banco_id={{ banco_id }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if categoria %}&categoria={{ categoria }}{% endif %}{% endset %}
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}{{ filtros }}" class="adm-page-btn">‹</a>{% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="?page={{ p }}{{ filtros }}" class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}<span class="adm-page-btn" style="cursor:default;">…</span>{% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}{{ filtros }}" class="adm-page-btn">›</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Lançamento -->
+<div id="modal-lancamento" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="lanc-titulo">Novo lançamento</div>
+    <form id="form-lancamento" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div class="gst-form-row-3">
+          <div>
+            <label class="adm-label">Data</label>
+            <input type="date" name="data" id="l-data" class="adm-input" value="{{ hoje.isoformat() }}"/>
+          </div>
+          <div>
+            <label class="adm-label">Tipo</label>
+            <select name="tipo" id="l-tipo" class="adm-input">
+              {% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Valor (R$) *</label>
+            <input type="text" name="valor" id="l-valor" class="adm-input" placeholder="0,00" required/>
+          </div>
+        </div>
+        <div>
+          <label class="adm-label">Descrição</label>
+          <input type="text" name="descricao" id="l-descricao" class="adm-input"/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Categoria</label>
+            <select name="categoria" id="l-categoria" class="adm-input">
+              <option value="">— sem categoria —</option>
+              {% for c in categorias %}<option value="{{ c.nome }}">{{ c.nome }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Banco</label>
+            <select name="banco_id" id="l-banco" class="adm-input">
+              <option value="">— não informado —</option>
+              {% for b in bancos %}<option value="{{ b.id }}">{{ b.nome }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="adm-label">Vincular a um orçamento <span class="text-muted">(opcional)</span></label>
+          <select name="orcamento_id" id="l-orcamento" class="adm-input">
+            <option value="">— nenhum —</option>
+            {% for o in orcamentos %}
+            <option value="{{ o.id }}">Nº {{ o.numero }} — {{ o.cliente_nome or 'sem cliente' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-lancamento')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Importar extrato -->
+<div id="modal-importar" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title">Importar extrato bancário</div>
+    <form method="POST" action="{{ url_for('gestao.importar_extrato') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Banco *</label>
+          <select name="banco_id" class="adm-input" required>
+            <option value="">Selecione o banco...</option>
+            {% for b in bancos %}<option value="{{ b.id }}">{{ b.nome }}</option>{% endfor %}
+          </select>
+          <div class="fs-sm text-muted mt-4">
+            Reconhece extratos do Banco Inter e do C6 Bank, no formato PDF baixado do app do banco.
+          </div>
+        </div>
+        <div>
+          <label class="adm-label">Arquivo PDF do extrato *</label>
+          <input type="file" name="extrato" class="adm-input" accept="application/pdf" required/>
+        </div>
+        <div>
+          <label class="adm-label">Senha do PDF <span class="text-muted">(só se o extrato for protegido)</span></label>
+          <input type="password" name="senha" class="adm-input" autocomplete="off"/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Saldo final do extrato <span class="text-muted">(opcional)</span></label>
+            <input type="text" name="saldo_final" class="adm-input" placeholder="0,00"/>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;">
+              <input type="checkbox" name="recalibrar" value="1" style="width:16px;height:16px;"/>
+              Ajustar saldo inicial para fechar com o extrato
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="adm-alert adm-alert-info" style="margin-top:16px;margin-bottom:0;">
+        <i class="fa-solid fa-circle-info"></i>
+        Lançamentos já importados antes são reconhecidos e ignorados — pode reenviar o mesmo extrato sem duplicar nada.
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-file-arrow-up"></i> Importar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-importar')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-lanc" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirLancamento(dados) {
+  document.getElementById('l-data').value = dados ? dados.data : '{{ hoje.isoformat() }}';
+  document.getElementById('l-tipo').value = dados ? dados.tipo : 'Entrada';
+  document.getElementById('l-valor').value = dados ? dados.valor.replace('.', ',') : '';
+  document.getElementById('l-descricao').value = dados ? dados.descricao : '';
+  document.getElementById('l-categoria').value = dados ? dados.categoria : '';
+  document.getElementById('l-banco').value = dados ? dados.banco_id : '';
+  document.getElementById('l-orcamento').value = dados ? dados.orcamento_id : '';
+  document.getElementById('lanc-titulo').textContent = dados ? 'Editar lançamento' : 'Novo lançamento';
+  document.getElementById('form-lancamento').action = dados
+    ? '/gestao/financeiro/' + dados.id + '/editar'
+    : '/gestao/financeiro/nova';
+  gstAbrir('modal-lancamento');
+}
+
+function excluirLancamento(id) {
+  if (!confirm('Excluir este lançamento?')) return;
+  const form = document.getElementById('form-excluir-lanc');
+  form.action = '/gestao/financeiro/' + id + '/excluir';
+  form.submit();
+}
+</script>
+{% endblock %}

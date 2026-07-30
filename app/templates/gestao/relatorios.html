@@ -1,0 +1,248 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Relatórios — Gestão RD{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Impressão: some com a navegação e os controles, sobra só o relatório.
+   O usuário usa "Salvar como PDF" no diálogo de impressão do navegador. */
+@media print {
+  .adm-sidebar, .adm-topbar, .nao-imprimir { display: none !important; }
+  .adm-main { margin-left: 0 !important; }
+  .adm-content { padding: 0 !important; }
+  .adm-card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
+  .imprimir-cabecalho { display: block !important; }
+  body { background: #fff !important; }
+  .adm-table { font-size: 0.72rem; }
+  .adm-table th { background: #eee !important; }
+}
+.imprimir-cabecalho { display: none; }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="window.print()">
+  <i class="fa-solid fa-print"></i> Imprimir / Salvar PDF
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho que só aparece no papel/PDF -->
+<div class="imprimir-cabecalho" style="margin-bottom:18px;border-bottom:2px solid #333;padding-bottom:10px;">
+  <div style="font-size:1.2rem;font-weight:800;">{{ empresa.nome }}</div>
+  <div style="font-size:0.8rem;">
+    {% if empresa.cnpj %}CNPJ: {{ empresa.cnpj }} · {% endif %}
+    {{ empresa.telefone or '' }} {% if empresa.email %}· {{ empresa.email }}{% endif %}
+  </div>
+  <div style="font-size:0.95rem;font-weight:700;margin-top:8px;">
+    Relatório Financeiro — {{ periodo }}{% if banco %} · {{ banco.nome }}{% endif %}
+  </div>
+  <div style="font-size:0.75rem;color:#666;">Gerado em {{ gerado_em | data_br }}</div>
+</div>
+
+<!-- Filtros -->
+<div class="adm-card nao-imprimir" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <select name="ano" class="adm-input" style="width:120px;">
+      {% for a in anos %}<option value="{{ a }}" {{ 'selected' if ano == a }}>{{ a }}</option>{% endfor %}
+    </select>
+    <select name="mes" class="adm-input" style="width:150px;">
+      <option value="">Ano inteiro</option>
+      {% for m in range(1, 13) %}
+      <option value="{{ m }}" {{ 'selected' if mes == m }}>
+        {{ ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m-1] }}
+      </option>
+      {% endfor %}
+    </select>
+    <select name="banco_id" class="adm-input" style="width:160px;">
+      <option value="">Todas as contas</option>
+      {% for b in bancos %}<option value="{{ b.id }}" {{ 'selected' if banco_id == b.id }}>{{ b.nome }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-filter"></i> Aplicar</button>
+  </form>
+</div>
+
+<!-- Resumo -->
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Resumo do período — {{ periodo }}{% if banco %} · {{ banco.nome }}{% endif %}</div>
+  </div>
+  <div class="adm-card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;">
+      <div class="gst-total-item">
+        <span class="gst-total-label">Entradas</span>
+        <span class="gst-total-value text-success">{{ resumo.entradas | moeda }}</span>
+        <span class="fs-sm text-muted">{{ qtd_entradas }} lançamento(s)</span>
+      </div>
+      <div class="gst-total-item">
+        <span class="gst-total-label">Saídas</span>
+        <span class="gst-total-value text-danger">{{ resumo.saidas | moeda }}</span>
+        <span class="fs-sm text-muted">{{ qtd_saidas }} lançamento(s)</span>
+      </div>
+      <div class="gst-total-item">
+        <span class="gst-total-label">Resultado</span>
+        <span class="gst-total-value {{ 'text-success' if resumo.resultado >= 0 else 'text-danger' }}">
+          {{ resumo.resultado | moeda }}
+        </span>
+      </div>
+      <div class="gst-total-item">
+        <span class="gst-total-label">Ticket médio (entradas)</span>
+        <span class="gst-total-value">{{ ticket_medio | moeda }}</span>
+      </div>
+      <div class="gst-total-item">
+        <span class="gst-total-label">Saldo atual {{ 'da conta' if banco else '(todas as contas)' }}</span>
+        <span class="gst-total-value {{ 'text-success' if saldo_conta >= 0 else 'text-danger' }}">
+          {{ saldo_conta | moeda }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fluxo de caixa mensal -->
+<div class="adm-card">
+  <div class="adm-card-header"><div class="adm-card-title">Fluxo de caixa mês a mês — {{ ano }}</div></div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Mês</th>
+          <th class="text-right">Entradas</th>
+          <th class="text-right">Saídas</th>
+          <th class="text-right">Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set ns = namespace(te=0, ts=0) %}
+        {% for i in range(12) %}
+        {% set ns.te = ns.te + serie.entradas[i] %}
+        {% set ns.ts = ns.ts + serie.saidas[i] %}
+        <tr>
+          <td class="fw-bold">{{ serie.labels[i] }}</td>
+          <td class="text-right text-success">{{ serie.entradas[i] | moeda }}</td>
+          <td class="text-right text-danger">{{ serie.saidas[i] | moeda }}</td>
+          <td class="text-right fw-bold {{ 'text-success' if (serie.entradas[i] - serie.saidas[i]) >= 0 else 'text-danger' }}">
+            {{ (serie.entradas[i] - serie.saidas[i]) | moeda }}
+          </td>
+        </tr>
+        {% endfor %}
+        <tr style="background:var(--adm-bg);">
+          <td class="fw-bold">Total do ano</td>
+          <td class="text-right fw-bold text-success">{{ ns.te | moeda }}</td>
+          <td class="text-right fw-bold text-danger">{{ ns.ts | moeda }}</td>
+          <td class="text-right fw-bold {{ 'text-success' if (ns.te - ns.ts) >= 0 else 'text-danger' }}">
+            {{ (ns.te - ns.ts) | moeda }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Por categoria -->
+<div class="adm-grid-2">
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title">Entradas por categoria</div></div>
+    <div class="adm-table-wrapper">
+      <table class="adm-table">
+        <thead><tr><th>Categoria</th><th class="text-right">Total</th><th class="text-right">%</th></tr></thead>
+        <tbody>
+          {% for linha in entradas_cat %}
+          <tr>
+            <td class="fs-sm">{{ linha.categoria }} <span class="text-muted">({{ linha.qtd }})</span></td>
+            <td class="text-right fw-bold">{{ linha.total | moeda }}</td>
+            <td class="text-right fs-sm">{{ linha.pct }}%</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:22px;" class="text-muted">Sem entradas no período.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title">Saídas por categoria</div></div>
+    <div class="adm-table-wrapper">
+      <table class="adm-table">
+        <thead><tr><th>Categoria</th><th class="text-right">Total</th><th class="text-right">%</th></tr></thead>
+        <tbody>
+          {% for linha in saidas_cat %}
+          <tr>
+            <td class="fs-sm">{{ linha.categoria }} <span class="text-muted">({{ linha.qtd }})</span></td>
+            <td class="text-right fw-bold">{{ linha.total | moeda }}</td>
+            <td class="text-right fs-sm">{{ linha.pct }}%</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:22px;" class="text-muted">Sem saídas no período.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Saldo por conta -->
+<div class="adm-card">
+  <div class="adm-card-header"><div class="adm-card-title">Saldo por conta</div></div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Conta</th>
+          <th class="text-right">Saldo inicial</th>
+          <th class="text-right">Entradas</th>
+          <th class="text-right">Saídas</th>
+          <th class="text-right">Saldo atual</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in saldos %}
+        <tr>
+          <td class="fw-bold fs-sm">{{ item.banco.nome }}</td>
+          <td class="text-right fs-sm">{{ item.banco.saldo_inicial | moeda }}</td>
+          <td class="text-right fs-sm text-success">{{ item.entradas | moeda }}</td>
+          <td class="text-right fs-sm text-danger">{{ item.saidas | moeda }}</td>
+          <td class="text-right fw-bold {{ 'text-success' if item.saldo >= 0 else 'text-danger' }}">
+            {{ item.saldo | moeda }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:22px;" class="text-muted">Nenhuma conta cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Extrato detalhado -->
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Extrato detalhado — {{ lancamentos | length }} lançamento(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Conta</th><th class="text-right">Valor</th></tr>
+      </thead>
+      <tbody>
+        {% for t in lancamentos %}
+        <tr>
+          <td class="fs-sm nowrap">{{ t.data | data_br }}</td>
+          <td class="fs-sm">{{ t.descricao or '—' }}</td>
+          <td class="fs-sm">{{ t.categoria or '—' }}</td>
+          <td class="fs-sm">{{ t.banco.nome if t.banco else '—' }}</td>
+          <td class="text-right fw-bold nowrap {{ 'text-success' if t.tipo == 'Entrada' else 'text-danger' }}">
+            {{ '+' if t.tipo == 'Entrada' else '−' }} {{ t.valor | moeda }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:28px;" class="text-muted">
+          Nenhum lançamento no período selecionado.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

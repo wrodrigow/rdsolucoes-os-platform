@@ -1,0 +1,128 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Itens — Gestão RD{% endblock %}
+{% block page_title %}Itens{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="abrirItem()">
+  <i class="fa-solid fa-plus"></i> Novo Item
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-alert adm-alert-info">
+  <i class="fa-solid fa-circle-info"></i>
+  Os itens cadastrados aqui aparecem como sugestão ao montar um orçamento, já com o valor preenchido.
+</div>
+
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" class="adm-input"
+           placeholder="Buscar por descrição..." style="flex:1;min-width:220px;"/>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q %}<a href="{{ url_for('gestao.catalogo') }}" class="adm-btn adm-btn-outline">Limpar</a>{% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} item(ns)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Descrição</th><th>Unidade</th><th class="text-right">Valor unitário</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for item in itens %}
+        <tr>
+          <td style="font-weight:600;font-size:0.88rem;">{{ item.descricao }}</td>
+          <td class="fs-sm">{{ item.unidade }}</td>
+          <td class="text-right fw-bold nowrap">{{ item.valor_unitario | moeda }}</td>
+          <td class="nowrap">
+            <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+              onclick='abrirItem({{ {"id": item.id, "descricao": item.descricao, "unidade": item.unidade, "valor_unitario": "%.2f"|format(item.valor_unitario)} | tojson }})'>
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+              onclick="excluirItem({{ item.id }}, '{{ item.descricao | replace("'", "\\'") }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;padding:32px;" class="text-muted">Nenhum item cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% set filtros %}{% if q %}&q={{ q }}{% endif %}{% endset %}
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}{{ filtros }}" class="adm-page-btn">‹</a>{% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="?page={{ p }}{{ filtros }}" class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}<span class="adm-page-btn" style="cursor:default;">…</span>{% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}{{ filtros }}" class="adm-page-btn">›</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Item -->
+<div id="modal-item" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="modal-item-titulo">Novo Item</div>
+    <form id="form-item" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Descrição *</label>
+          <input type="text" name="descricao" id="i-descricao" class="adm-input" required/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Valor unitário (R$)</label>
+            <input type="text" name="valor_unitario" id="i-valor" class="adm-input" placeholder="0,00"/>
+          </div>
+          <div>
+            <label class="adm-label">Unidade</label>
+            <input type="text" name="unidade" id="i-unidade" class="adm-input" value="unid"/>
+          </div>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-item')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-item" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirItem(dados) {
+  document.getElementById('i-descricao').value = dados ? dados.descricao : '';
+  document.getElementById('i-valor').value = dados ? dados.valor_unitario.replace('.', ',') : '';
+  document.getElementById('i-unidade').value = dados ? dados.unidade : 'unid';
+  document.getElementById('modal-item-titulo').textContent = dados ? 'Editar Item' : 'Novo Item';
+  document.getElementById('form-item').action = dados
+    ? '/gestao/catalogo/' + dados.id + '/editar'
+    : '/gestao/catalogo/novo';
+  gstAbrir('modal-item');
+}
+
+function excluirItem(id, descricao) {
+  if (!confirm('Excluir o item "' + descricao + '" do catálogo?')) return;
+  const form = document.getElementById('form-excluir-item');
+  form.action = '/gestao/catalogo/' + id + '/excluir';
+  form.submit();
+}
+</script>
+{% endblock %}

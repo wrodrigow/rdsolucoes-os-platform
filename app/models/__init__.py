@@ -7,3 +7,7 @@ from .log import Log
 from .site_config import SiteConfig
 from .traffic_event import TrafficEvent
 from .blog import BlogArticle, BlogSubscriber, BlogLead
+from .erp import (
+    ErpEmpresa, ErpCliente, ErpCatalogoItem, ErpOrcamento, ErpItemOrcamento,
+    ErpOrdemServico, ErpBanco, ErpCategoriaFinanceira, ErpTransacao,
+)

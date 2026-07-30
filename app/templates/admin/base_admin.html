@@ -29,6 +29,12 @@
         </a>
       </div>
       <div class="adm-nav-section">
+        <div class="adm-nav-section-title">Sistema de Gestão</div>
+        <a href="{{ url_for('gestao.dashboard') }}" class="adm-nav-link">
+          <i class="fa-solid fa-briefcase adm-nav-icon"></i> Abrir Gestão
+        </a>
+      </div>
+      <div class="adm-nav-section">
         <div class="adm-nav-section-title">Vendas</div>
         <a href="{{ url_for('admin.pedidos') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.pedidos' }}">
           <i class="fa-solid fa-bag-shopping adm-nav-icon"></i> Pedidos

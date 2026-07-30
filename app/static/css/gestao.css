@@ -1,0 +1,133 @@
+/* ═══════════════════════════════════════════════════════════════
+   Gestão RD — sistema de Orçamentos/OS/Financeiro
+   Reaproveita todo o design system do admin.css (classes .adm-*) e
+   só retematiza as cores, pra a Gestão ficar visualmente separada do
+   painel de vendas/blog. Paleta = theme.py do app desktop ("Teal Padrão").
+   ═══════════════════════════════════════════════════════════════ */
+
+body.gestao-area {
+  --adm-primary:        #0d7d8c;  /* TEAL */
+  --adm-secondary:      #1a5fa8;  /* AZUL */
+  --adm-sidebar-bg:     #0c3b46;  /* TEAL_ESCURO */
+  --adm-sidebar-active: rgba(255,255,255,0.10);
+}
+
+body.gestao-area .adm-nav-link.active { background: rgba(13,125,140,0.35); }
+body.gestao-area .adm-nav-link.active::before { background: #34d399; }
+body.gestao-area .adm-btn-primary:hover { background: #0a6472; }
+body.gestao-area .adm-page-btn.active { background: var(--adm-primary); border-color: var(--adm-primary); }
+body.gestao-area .adm-input:focus,
+body.gestao-area .adm-search-input:focus { border-color: var(--adm-primary); box-shadow: 0 0 0 3px rgba(13,125,140,0.12); }
+body.gestao-area .adm-chart-bar-fill { background: linear-gradient(180deg, var(--adm-primary), #0c3b46); }
+
+/* ── Modal (padrão reutilizado por todas as telas da Gestão) ───── */
+.gst-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15,23,42,0.55);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.gst-modal.open { display: flex; }
+.gst-modal-box {
+  background: var(--adm-white);
+  border: 1px solid var(--adm-border);
+  border-radius: 14px;
+  padding: 26px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+}
+.gst-modal-box.wide { max-width: 760px; }
+.gst-modal-title { font-size: 1rem; font-weight: 700; color: var(--adm-text); margin-bottom: 18px; }
+.gst-modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.gst-modal-actions .adm-btn { flex: 1; justify-content: center; }
+
+/* ── Grid de formulário ───────────────────────────────────────── */
+.gst-form-grid { display: grid; gap: 14px; }
+.gst-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gst-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) {
+  .gst-form-row-2, .gst-form-row-3 { grid-template-columns: 1fr; }
+}
+
+/* ── Situação / status coloridos (igual ao app desktop) ────────── */
+.gst-row-aguardando { background: rgba(245,158,11,0.07); }
+.gst-row-cancelado  { background: rgba(239,68,68,0.06); }
+.gst-row-andamento  { background: rgba(59,130,246,0.06); }
+
+/* ── Totais / valores ─────────────────────────────────────────── */
+.gst-total-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 16px 24px;
+  background: var(--adm-bg);
+  border-top: 1px solid var(--adm-border);
+}
+.gst-total-item { display: flex; flex-direction: column; gap: 2px; }
+.gst-total-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--adm-muted); font-weight: 700; }
+.gst-total-value { font-size: 1.15rem; font-weight: 800; color: var(--adm-text); }
+
+/* ── Barra de saldo por banco ─────────────────────────────────── */
+.gst-banco-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-white);
+}
+.gst-banco-dot { width: 12px; height: 40px; border-radius: 6px; flex-shrink: 0; }
+
+/* ── Lista de itens do orçamento ──────────────────────────────── */
+.gst-item-line { display: grid; grid-template-columns: 1fr 130px 100px 130px 44px; gap: 10px; align-items: center; }
+@media (max-width: 860px) {
+  .gst-item-line { grid-template-columns: 1fr; }
+}
+
+/* ── Celular estreito ─────────────────────────────────────────── */
+/* Abaixo de 520px duas colunas apertam os valores em reais (que são longos,
+   tipo "R$ 131.611,46"); uma coluna só fica confortável de ler no celular. */
+@media (max-width: 520px) {
+  body.gestao-area .adm-stats-grid { grid-template-columns: 1fr; }
+  body.gestao-area .adm-stat-value { font-size: 1.4rem; }
+  body.gestao-area .adm-topbar { padding: 0 14px; }
+  body.gestao-area .adm-topbar-right { gap: 6px; }
+  /* Botões de ação da topbar viram só ícone pra caber ao lado do título */
+  body.gestao-area .adm-topbar-right .adm-btn { padding: 8px 10px; }
+  body.gestao-area .gst-modal { padding: 10px; }
+  body.gestao-area .gst-modal-box { padding: 18px; }
+  body.gestao-area .gst-modal-actions { flex-direction: column; }
+}
+
+/* ── Autocomplete simples ─────────────────────────────────────── */
+.gst-autocomplete { position: relative; }
+.gst-suggestions {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  background: var(--adm-white);
+  border: 1px solid var(--adm-border);
+  border-radius: 8px;
+  box-shadow: var(--adm-shadow-md);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 20;
+  display: none;
+}
+.gst-suggestions.open { display: block; }
+.gst-suggestion {
+  padding: 9px 13px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--adm-border);
+}
+.gst-suggestion:last-child { border-bottom: none; }
+.gst-suggestion:hover { background: var(--adm-bg); }
+.gst-suggestion-sub { font-size: 0.76rem; color: var(--adm-muted); }

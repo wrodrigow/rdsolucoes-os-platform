@@ -1,0 +1,242 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Orçamentos — Gestão RD{% endblock %}
+{% block page_title %}Orçamentos{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="gstAbrir('modal-novo')">
+  <i class="fa-solid fa-plus"></i> Novo Orçamento
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="margin-bottom:20px;padding:16px 20px;">
+  <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q or '' }}" class="adm-input"
+           placeholder="Buscar por Nº, cliente ou serviço..." style="flex:1;min-width:220px;"/>
+    <select name="situacao" class="adm-input" style="width:190px;">
+      <option value="">Todas as situações</option>
+      {% for s in situacoes %}
+      <option value="{{ s }}" {{ 'selected' if situacao == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if q or situacao %}
+    <a href="{{ url_for('gestao.orcamentos') }}" class="adm-btn adm-btn-outline">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">{{ pagination.total }} orçamento(s)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Nº</th>
+          <th>Emissão</th>
+          <th>Cliente</th>
+          <th>Situação</th>
+          <th>Validade</th>
+          <th class="text-right">Total</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orcamentos %}
+        <tr class="{{ classe_situacao.get(o.situacao, '') }}">
+          <td class="fw-bold">{{ o.numero }}</td>
+          <td class="fs-sm nowrap">{{ o.data_emissao | data_br }}</td>
+          <td>
+            <div style="font-weight:600;font-size:0.87rem;">{{ o.cliente_nome or '—' }}</div>
+            {% if o.descricao_servico %}
+            <div class="fs-sm text-muted">{{ o.descricao_servico[:60] }}{% if o.descricao_servico|length > 60 %}…{% endif %}</div>
+            {% endif %}
+          </td>
+          <td class="nowrap">
+            <span class="adm-badge adm-badge-{{ 'warning' if o.situacao == 'Aguardando Retorno' else 'success' if o.situacao == 'Concluído' else 'info' if o.situacao == 'Aprovado' else 'muted' }}">
+              {{ o.situacao }}
+            </span>
+            {% if o.id in com_os %}<span class="adm-badge adm-badge-info" title="Já tem Ordem de Serviço">OS</span>{% endif %}
+          </td>
+          <td class="fs-sm nowrap">{{ o.validade | data_br }}</td>
+          <td class="text-right fw-bold nowrap">{{ o.valor_total | moeda }}</td>
+          <td class="nowrap">
+            <a href="{{ url_for('gestao.orcamento_editar', orcamento_id=o.id) }}"
+               class="adm-btn adm-btn-primary adm-btn-sm" title="Abrir">
+              <i class="fa-solid fa-folder-open"></i>
+            </a>
+            <a href="{{ url_for('gestao.orcamento_pdf', orcamento_id=o.id) }}" target="_blank"
+               class="adm-btn adm-btn-outline adm-btn-sm" title="Gerar PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;padding:32px;" class="text-muted">
+          Nenhum orçamento encontrado.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="adm-pagination">
+    {% set filtros %}{% if q %}&q={{ q }}{% endif %}{% if situacao %}&situacao={{ situacao }}{% endif %}{% endset %}
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}{{ filtros }}" class="adm-page-btn">‹</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="?page={{ p }}{{ filtros }}" class="adm-page-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}
+      <span class="adm-page-btn" style="cursor:default;">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}{{ filtros }}" class="adm-page-btn">›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Novo Orçamento -->
+<div id="modal-novo" class="gst-modal">
+  <div class="gst-modal-box wide">
+    <div class="gst-modal-title">Novo Orçamento</div>
+    <form method="POST" action="{{ url_for('gestao.orcamento_novo') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="cliente_id" id="n-cliente-id"/>
+
+      <div class="gst-form-grid">
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Data de emissão</label>
+            <input type="date" name="data_emissao" class="adm-input" value="{{ hoje.isoformat() }}"/>
+          </div>
+          <div>
+            <label class="adm-label">Situação</label>
+            <select name="situacao" class="adm-input">
+              {% for s in situacoes %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="gst-autocomplete">
+          <label class="adm-label">Cliente *</label>
+          <input type="text" name="cliente_nome" id="n-cliente-nome" class="adm-input" required
+                 autocomplete="off" placeholder="Digite para buscar um cliente já cadastrado..."
+                 oninput="buscarCliente(this.value)"/>
+          <div id="n-sugestoes" class="gst-suggestions"></div>
+        </div>
+
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Telefone</label>
+            <input type="text" name="cliente_telefone" id="n-cliente-telefone" class="adm-input"/>
+          </div>
+          <div>
+            <label class="adm-label">CEP <span class="text-muted">(preenche o endereço)</span></label>
+            <input type="text" name="cep_busca" id="n-cep" class="adm-input" onblur="buscarCepNovo()"/>
+          </div>
+        </div>
+
+        <div>
+          <label class="adm-label">Endereço</label>
+          <input type="text" name="cliente_endereco" id="n-cliente-endereco" class="adm-input"/>
+        </div>
+
+        <div>
+          <label class="adm-label">Descrição do serviço</label>
+          <textarea name="descricao_servico" class="adm-input" style="min-height:60px;"></textarea>
+        </div>
+
+        <div class="gst-form-row-3">
+          <div>
+            <label class="adm-label">Válido até</label>
+            <input type="date" name="validade" class="adm-input"/>
+            <div class="fs-sm text-muted mt-4">Vazio = {{ empresa.validade_dias_padrao }} dias</div>
+          </div>
+          <div>
+            <label class="adm-label">Garantia até</label>
+            <input type="date" name="garantia" class="adm-input"/>
+            <div class="fs-sm text-muted mt-4">Vazio = {{ empresa.garantia_dias_padrao }} dias</div>
+          </div>
+          <div>
+            <label class="adm-label">Forma de pagamento</label>
+            <input type="text" name="forma_pagamento" class="adm-input"
+                   value="{{ empresa.forma_pagamento_padrao or '' }}"/>
+          </div>
+        </div>
+
+        <div>
+          <label class="adm-label">Observações</label>
+          <textarea name="observacoes" class="adm-input" style="min-height:56px;"></textarea>
+        </div>
+      </div>
+
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary">
+          <i class="fa-solid fa-check"></i> Criar e adicionar itens
+        </button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-novo')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let buscaTimer = null;
+
+function buscarCliente(termo) {
+  document.getElementById('n-cliente-id').value = '';  // digitar solta o vínculo
+  clearTimeout(buscaTimer);
+  const caixa = document.getElementById('n-sugestoes');
+  if (!termo || termo.length < 2) { caixa.classList.remove('open'); return; }
+
+  buscaTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch('/gestao/api/clientes/buscar?q=' + encodeURIComponent(termo));
+      const lista = await resp.json();
+      if (!lista.length) { caixa.classList.remove('open'); return; }
+      caixa.innerHTML = lista.map(c =>
+        `<div class="gst-suggestion" onclick='escolherCliente(${JSON.stringify(c).replace(/'/g, "&apos;")})'>
+           <div>${c.nome}</div>
+           <div class="gst-suggestion-sub">${c.telefone || 'sem telefone'}${c.endereco ? ' · ' + c.endereco : ''}</div>
+         </div>`).join('');
+      caixa.classList.add('open');
+    } catch (e) { caixa.classList.remove('open'); }
+  }, 250);
+}
+
+function escolherCliente(c) {
+  document.getElementById('n-cliente-id').value = c.id;
+  document.getElementById('n-cliente-nome').value = c.nome;
+  document.getElementById('n-cliente-telefone').value = c.telefone || '';
+  document.getElementById('n-cliente-endereco').value = c.endereco || '';
+  document.getElementById('n-sugestoes').classList.remove('open');
+}
+
+async function buscarCepNovo() {
+  const cep = document.getElementById('n-cep').value.replace(/\D/g, '');
+  if (cep.length !== 8) return;
+  try {
+    const resp = await fetch('/gestao/api/cep/' + cep);
+    const d = await resp.json();
+    if (d.erro) return;
+    const partes = [d.logradouro, d.bairro, d.localidade, d.uf].filter(Boolean);
+    document.getElementById('n-cliente-endereco').value = partes.join(', ');
+  } catch (e) { /* silencioso: o usuário pode digitar o endereço na mão */ }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.gst-autocomplete')) {
+    document.getElementById('n-sugestoes').classList.remove('open');
+  }
+});
+</script>
+{% endblock %}

@@ -52,6 +52,11 @@ class Config:
     MAX_LOGIN_ATTEMPTS = int(os.environ.get("MAX_LOGIN_ATTEMPTS", 5))
     LOGIN_LOCKOUT_MINUTES = int(os.environ.get("LOGIN_LOCKOUT_MINUTES", 30))
 
+    # Gestão (módulo de Orçamentos/OS/Financeiro)
+    # Senha dos extratos PDF do C6 Bank — sai do código-fonte pra cá porque
+    # este repositório é compartilhado/deployado.
+    C6_STATEMENT_PASSWORD = os.environ.get("C6_STATEMENT_PASSWORD", "")
+
     # Upload
     MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500 MB para .exe
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "static", "downloads")

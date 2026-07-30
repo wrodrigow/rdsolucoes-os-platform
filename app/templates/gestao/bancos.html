@@ -1,0 +1,139 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Bancos — Gestão RD{% endblock %}
+{% block page_title %}Bancos{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="adm-btn adm-btn-primary" onclick="abrirBanco()">
+  <i class="fa-solid fa-plus"></i> Nova conta
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Saldo consolidado</div>
+    <div style="font-size:1.3rem;font-weight:800;" class="{{ 'text-success' if saldo_geral >= 0 else 'text-danger' }}">
+      {{ saldo_geral | moeda }}
+    </div>
+  </div>
+  <div class="adm-card-body" style="display:flex;flex-direction:column;gap:14px;">
+    {% for item in saldos %}
+    <div class="gst-banco-card">
+      <div class="gst-banco-dot" style="background:{{ item.banco.cor }};"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:0.95rem;">{{ item.banco.nome }}</div>
+        <div class="fs-sm text-muted">
+          {% if item.banco.agencia or item.banco.conta %}
+          Ag. {{ item.banco.agencia or '—' }} · C/C {{ item.banco.conta or '—' }} ·
+          {% endif %}
+          Saldo inicial {{ item.banco.saldo_inicial | moeda }}
+        </div>
+        <div class="fs-sm text-muted mt-4">
+          <span class="text-success">↓ {{ item.entradas | moeda }}</span> ·
+          <span class="text-danger">↑ {{ item.saidas | moeda }}</span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800;font-size:1.1rem;"
+             class="{{ 'text-success' if item.saldo >= 0 else 'text-danger' }}">
+          {{ item.saldo | moeda }}
+        </div>
+        <div style="margin-top:8px;" class="nowrap">
+          <a href="{{ url_for('gestao.financeiro', banco_id=item.banco.id) }}"
+             class="adm-btn adm-btn-outline adm-btn-sm" title="Ver lançamentos">
+            <i class="fa-solid fa-list"></i>
+          </a>
+          <button type="button" class="adm-btn adm-btn-outline adm-btn-sm" title="Editar"
+            onclick='abrirBanco({{ {"id": item.banco.id, "nome": item.banco.nome, "agencia": item.banco.agencia or "", "conta": item.banco.conta or "", "cor": item.banco.cor, "saldo_inicial": "%.2f"|format(item.banco.saldo_inicial)} | tojson }})'>
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button type="button" class="adm-btn adm-btn-danger adm-btn-sm" title="Excluir"
+            onclick="excluirBanco({{ item.banco.id }}, '{{ item.banco.nome | replace("'", "\\'") }}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted fs-sm">
+      Nenhuma conta cadastrada. Cadastre os bancos para poder importar extratos e acompanhar saldos.
+    </p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="adm-alert adm-alert-info">
+  <i class="fa-solid fa-circle-info"></i>
+  O saldo de cada conta é o saldo inicial mais as entradas, menos as saídas. Se o valor não bater com o
+  extrato do banco, ajuste o saldo inicial aqui — ou marque a opção de ajuste automático ao importar o extrato.
+</div>
+
+<!-- Modal: Banco -->
+<div id="modal-banco" class="gst-modal">
+  <div class="gst-modal-box">
+    <div class="gst-modal-title" id="banco-titulo">Nova conta</div>
+    <form id="form-banco" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="gst-form-grid">
+        <div>
+          <label class="adm-label">Nome do banco *</label>
+          <input type="text" name="nome" id="b-nome" class="adm-input" required
+                 placeholder="Ex.: Banco Inter, C6 Bank"/>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Agência</label>
+            <input type="text" name="agencia" id="b-agencia" class="adm-input"/>
+          </div>
+          <div>
+            <label class="adm-label">Conta</label>
+            <input type="text" name="conta" id="b-conta" class="adm-input"/>
+          </div>
+        </div>
+        <div class="gst-form-row-2">
+          <div>
+            <label class="adm-label">Saldo inicial (R$)</label>
+            <input type="text" name="saldo_inicial" id="b-saldo" class="adm-input" placeholder="0,00"/>
+          </div>
+          <div>
+            <label class="adm-label">Cor de identificação</label>
+            <input type="color" name="cor" id="b-cor" class="adm-input" value="#1a5fa8" style="height:40px;padding:4px;"/>
+          </div>
+        </div>
+      </div>
+      <div class="gst-modal-actions">
+        <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+        <button type="button" class="adm-btn adm-btn-outline" onclick="gstFechar('modal-banco')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<form id="form-excluir-banco" method="POST" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function abrirBanco(dados) {
+  document.getElementById('b-nome').value = dados ? dados.nome : '';
+  document.getElementById('b-agencia').value = dados ? dados.agencia : '';
+  document.getElementById('b-conta').value = dados ? dados.conta : '';
+  document.getElementById('b-saldo').value = dados ? dados.saldo_inicial.replace('.', ',') : '';
+  document.getElementById('b-cor').value = dados ? dados.cor : '#1a5fa8';
+  document.getElementById('banco-titulo').textContent = dados ? 'Editar conta' : 'Nova conta';
+  document.getElementById('form-banco').action = dados
+    ? '/gestao/bancos/' + dados.id + '/editar'
+    : '/gestao/bancos/novo';
+  gstAbrir('modal-banco');
+}
+
+function excluirBanco(id, nome) {
+  if (!confirm('Excluir a conta "' + nome + '"?')) return;
+  const form = document.getElementById('form-excluir-banco');
+  form.action = '/gestao/bancos/' + id + '/excluir';
+  form.submit();
+}
+</script>
+{% endblock %}

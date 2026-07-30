@@ -1,0 +1,177 @@
+{% extends "gestao/base_gestao.html" %}
+{% block title %}Painel — Gestão RD{% endblock %}
+{% block page_title %}Painel{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('gestao.orcamentos') }}" class="adm-btn adm-btn-primary">
+  <i class="fa-solid fa-plus"></i> Novo Orçamento
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="adm-stats-grid">
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-blue"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.orcamentos_mes }}</div>
+      <div class="adm-stat-label">Orçamentos este mês · {{ stats.valor_mes | moeda }}</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-orange"><i class="fa-solid fa-hourglass-half"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.aguardando }}</div>
+      <div class="adm-stat-label">Aguardando retorno</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon icon-teal"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value">{{ stats.os_abertas }}</div>
+      <div class="adm-stat-label">OS em aberto</div>
+    </div>
+  </div>
+  <div class="adm-stat-card">
+    <div class="adm-stat-icon {{ 'icon-green' if stats.saldo_total >= 0 else 'icon-red' }}">
+      <i class="fa-solid fa-wallet"></i>
+    </div>
+    <div class="adm-stat-info">
+      <div class="adm-stat-value" style="font-size:1.25rem;">{{ stats.saldo_total | moeda }}</div>
+      <div class="adm-stat-label">Saldo em conta</div>
+    </div>
+  </div>
+</div>
+
+<div class="adm-grid-2">
+  <!-- Movimento do mês -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Movimento do mês</div>
+      <a href="{{ url_for('gestao.financeiro') }}" class="adm-btn adm-btn-outline adm-btn-sm">Ver lançamentos</a>
+    </div>
+    <div class="adm-card-body">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div class="gst-total-item">
+          <span class="gst-total-label">Entradas</span>
+          <span class="gst-total-value text-success">{{ stats.entradas_mes | moeda }}</span>
+        </div>
+        <div class="gst-total-item">
+          <span class="gst-total-label">Saídas</span>
+          <span class="gst-total-value text-danger">{{ stats.saidas_mes | moeda }}</span>
+        </div>
+        <div class="gst-total-item">
+          <span class="gst-total-label">Resultado</span>
+          <span class="gst-total-value {{ 'text-success' if (stats.entradas_mes - stats.saidas_mes) >= 0 else 'text-danger' }}">
+            {{ (stats.entradas_mes - stats.saidas_mes) | moeda }}
+          </span>
+        </div>
+      </div>
+
+      {% if top_saidas %}
+      <div style="margin-top:22px;">
+        <div class="gst-total-label" style="margin-bottom:10px;">Maiores saídas do mês</div>
+        {% for linha in top_saidas %}
+        <div style="margin-bottom:9px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:3px;">
+            <span>{{ linha.categoria }}</span>
+            <span class="fw-bold">{{ linha.total | moeda }}</span>
+          </div>
+          <div style="height:6px;background:var(--adm-bg);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{{ linha.pct }}%;background:var(--adm-primary);"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Saldo por banco -->
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title">Contas</div>
+      <a href="{{ url_for('gestao.bancos') }}" class="adm-btn adm-btn-outline adm-btn-sm">Gerenciar</a>
+    </div>
+    <div class="adm-card-body" style="display:flex;flex-direction:column;gap:12px;">
+      {% for item in saldos %}
+      <div class="gst-banco-card">
+        <div class="gst-banco-dot" style="background:{{ item.banco.cor }};"></div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:0.9rem;">{{ item.banco.nome }}</div>
+          <div style="font-size:0.76rem;color:var(--adm-muted);">
+            Entradas {{ item.entradas | moeda }} · Saídas {{ item.saidas | moeda }}
+          </div>
+        </div>
+        <div style="text-align:right;font-weight:800;font-size:1rem;"
+             class="{{ 'text-success' if item.saldo >= 0 else 'text-danger' }}">
+          {{ item.saldo | moeda }}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted fs-sm">Nenhuma conta cadastrada ainda.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Entradas x saídas no ano -->
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Entradas e saídas em {{ ano }}</div>
+  </div>
+  <div class="adm-card-body">
+    <div style="display:flex;align-items:flex-end;gap:6px;height:180px;">
+      {% set maximo = ([serie.entradas | max, serie.saidas | max] | max) or 1 %}
+      {% for i in range(12) %}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;">
+        <div style="display:flex;gap:2px;align-items:flex-end;width:100%;height:100%;">
+          <div style="flex:1;background:var(--adm-success);border-radius:3px 3px 0 0;
+                      height:{{ (serie.entradas[i] / maximo * 100) | round(1) }}%;min-height:2px;"
+               title="Entradas {{ serie.entradas[i] | moeda }}"></div>
+          <div style="flex:1;background:var(--adm-danger);border-radius:3px 3px 0 0;
+                      height:{{ (serie.saidas[i] / maximo * 100) | round(1) }}%;min-height:2px;"
+               title="Saídas {{ serie.saidas[i] | moeda }}"></div>
+        </div>
+        <div style="font-size:0.65rem;color:var(--adm-muted);">{{ serie.labels[i] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:18px;margin-top:14px;font-size:0.78rem;color:var(--adm-muted);">
+      <span><i class="fa-solid fa-square" style="color:var(--adm-success);"></i> Entradas</span>
+      <span><i class="fa-solid fa-square" style="color:var(--adm-danger);"></i> Saídas</span>
+    </div>
+  </div>
+</div>
+
+<!-- Últimos orçamentos -->
+<div class="adm-card">
+  <div class="adm-card-header">
+    <div class="adm-card-title">Últimos orçamentos</div>
+    <a href="{{ url_for('gestao.orcamentos') }}" class="adm-btn adm-btn-outline adm-btn-sm">Ver todos</a>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead>
+        <tr><th>Nº</th><th>Emissão</th><th>Cliente</th><th>Situação</th><th class="text-right">Total</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for o in ultimos_orcamentos %}
+        <tr>
+          <td class="fw-bold">{{ o.numero }}</td>
+          <td class="fs-sm">{{ o.data_emissao | data_br }}</td>
+          <td class="fs-sm">{{ o.cliente_nome or '—' }}</td>
+          <td><span class="adm-badge adm-badge-{{ 'warning' if o.situacao == 'Aguardando Retorno' else 'success' if o.situacao == 'Concluído' else 'muted' }}">{{ o.situacao }}</span></td>
+          <td class="text-right fw-bold">{{ o.valor_total | moeda }}</td>
+          <td>
+            <a href="{{ url_for('gestao.orcamento_editar', orcamento_id=o.id) }}"
+               class="adm-btn adm-btn-outline adm-btn-sm">Abrir</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:28px;" class="text-muted">Nenhum orçamento ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

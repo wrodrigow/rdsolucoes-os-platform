@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Gestão RD{% endblock %}</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gestao.css') }}"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="admin-area gestao-area">
+
+<div class="adm-layout">
+  <aside class="adm-sidebar" id="adm-sidebar">
+    <div class="adm-sidebar-header">
+      <img src="{{ url_for('gestao.logo') }}" alt="Logo"
+           style="height:38px;width:38px;object-fit:contain;background:#fff;border-radius:8px;padding:3px;flex-shrink:0;">
+      <div>
+        <div class="adm-brand-name">{{ empresa_nome or 'Gestão RD' }}</div>
+        <div class="adm-brand-sub">Orçamentos e Serviços</div>
+      </div>
+    </div>
+
+    <nav class="adm-nav">
+      <div class="adm-nav-section">
+        <div class="adm-nav-section-title">Operação</div>
+        <a href="{{ url_for('gestao.dashboard') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.dashboard' }}">
+          <i class="fa-solid fa-gauge-high adm-nav-icon"></i> Painel
+        </a>
+        <a href="{{ url_for('gestao.orcamentos') }}" class="adm-nav-link {{ 'active' if request.endpoint in ('gestao.orcamentos', 'gestao.orcamento_editar') }}">
+          <i class="fa-solid fa-file-invoice-dollar adm-nav-icon"></i> Orçamentos
+        </a>
+        <a href="{{ url_for('gestao.ordens_servico') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.ordens_servico' }}">
+          <i class="fa-solid fa-screwdriver-wrench adm-nav-icon"></i> Ordens de Serviço
+        </a>
+      </div>
+
+      <div class="adm-nav-section">
+        <div class="adm-nav-section-title">Cadastros</div>
+        <a href="{{ url_for('gestao.clientes') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.clientes' }}">
+          <i class="fa-solid fa-address-book adm-nav-icon"></i> Clientes
+        </a>
+        <a href="{{ url_for('gestao.catalogo') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.catalogo' }}">
+          <i class="fa-solid fa-boxes-stacked adm-nav-icon"></i> Itens
+        </a>
+      </div>
+
+      <div class="adm-nav-section">
+        <div class="adm-nav-section-title">Financeiro</div>
+        <a href="{{ url_for('gestao.financeiro') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.financeiro' }}">
+          <i class="fa-solid fa-coins adm-nav-icon"></i> Transações
+        </a>
+        <a href="{{ url_for('gestao.bancos') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.bancos' }}">
+          <i class="fa-solid fa-building-columns adm-nav-icon"></i> Bancos
+        </a>
+        <a href="{{ url_for('gestao.categorias') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.categorias' }}">
+          <i class="fa-solid fa-tags adm-nav-icon"></i> Categorias
+        </a>
+        <a href="{{ url_for('gestao.relatorios') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.relatorios' }}">
+          <i class="fa-solid fa-chart-pie adm-nav-icon"></i> Relatórios
+        </a>
+      </div>
+
+      <div class="adm-nav-section">
+        <div class="adm-nav-section-title">Sistema</div>
+        <a href="{{ url_for('gestao.configuracoes') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'gestao.configuracoes' }}">
+          <i class="fa-solid fa-gear adm-nav-icon"></i> Configurações
+        </a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="adm-nav-link">
+          <i class="fa-solid fa-arrow-right-arrow-left adm-nav-icon"></i> Painel de Vendas
+        </a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <div class="adm-sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="adm-nav-link" style="color:rgba(239,68,68,0.75);">
+        <i class="fa-solid fa-right-from-bracket adm-nav-icon"></i> Sair
+      </a>
+    </div>
+  </aside>
+
+  <div class="adm-main">
+    <header class="adm-topbar">
+      <div class="adm-topbar-left">
+        <button id="adm-sidebar-toggle" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--adm-text);padding:4px;" aria-label="Abrir menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div>
+          <div class="adm-page-title">{% block page_title %}Painel{% endblock %}</div>
+          {% block breadcrumb %}{% endblock %}
+        </div>
+      </div>
+      <div class="adm-topbar-right">
+        <span style="font-size:0.82rem;color:var(--adm-muted);">{{ current_user.nome }}</span>
+        {% block topbar_actions %}{% endblock %}
+      </div>
+    </header>
+
+    <main class="adm-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="adm-alert adm-alert-{{ 'danger' if cat == 'error' else cat }} auto-dismiss">
+            <i class="fa-solid {{ 'fa-check-circle' if cat=='success' else 'fa-triangle-exclamation' if cat=='warning' else 'fa-circle-info' }}"></i> {{ msg }}
+          </div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+<script>
+// Helpers de modal usados por todas as telas da Gestão
+function gstAbrir(id)  { document.getElementById(id).classList.add('open'); }
+function gstFechar(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', function (e) {
+  if (e.target.classList && e.target.classList.contains('gst-modal')) e.target.classList.remove('open');
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') document.querySelectorAll('.gst-modal.open').forEach(m => m.classList.remove('open'));
+});
+// Formata número no padrão brasileiro (1234.5 -> "1.234,50")
+function gstMoeda(v) {
+  return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
