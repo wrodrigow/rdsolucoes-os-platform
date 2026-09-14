@@ -1,3 +1,4 @@
+import ipaddress
 from datetime import datetime, timezone
 from ..extensions import db
 
@@ -40,6 +41,43 @@ class TrafficEvent(db.Model):
             return False
         return len(gclid) >= 20 and not gclid.isdigit()
 
+    @staticmethod
+    def _ip_cliente(request):
+        """IP real do visitante.
+
+        Por que não usar request.remote_addr: a app já roda com
+        ProxyFix(x_for=1), que pega o item MAIS À DIREITA do X-Forwarded-For.
+        Na Render existe um hop interno depois da borda, então a cadeia chega
+        como "cliente_real, 10.x" e o item da direita é o 10.x — foi isso que
+        gravou o mesmo IP de rede interna pra todo visitante e inutilizou a
+        deduplicação por IP.
+
+        Também não serve pegar cegamente o primeiro item: esse é o único que o
+        cliente consegue forjar mandando o header na mão.
+
+        Solução: varrer a cadeia da direita pra esquerda e devolver o primeiro
+        endereço público. Os hops internos (privados) são descartados, e um IP
+        forjado à esquerda só seria usado se não houvesse nenhum público real
+        depois dele — o que não acontece, porque a borda acrescenta o verdadeiro.
+        """
+        def publico(ip):
+            try:
+                return not ipaddress.ip_address(ip).is_private
+            except ValueError:
+                return False
+
+        xff = request.headers.get("X-Forwarded-For", "") or ""
+        partes = [p.strip() for p in xff.split(",") if p.strip()]
+        for ip in reversed(partes):
+            if publico(ip):
+                return ip[:45]
+
+        real = (request.headers.get("X-Real-IP") or "").strip()
+        if publico(real):
+            return real[:45]
+        # nada público (ex.: acesso local/dev): guarda o que houver, só pra não perder o registro
+        return ((partes[0] if partes else None) or real or request.remote_addr or "")[:45] or None
+
     @classmethod
     def _identificar_canal(cls, gclid, fbclid):
         if cls._parece_gclid_real(gclid):
@@ -78,7 +116,7 @@ class TrafficEvent(db.Model):
             produto=produto if produto in cls.PRODUTOS else "rd_os",
             is_bot=is_bot,
             device=device,
-            ip=request.remote_addr,
+            ip=cls._ip_cliente(request),
             order_id=order_id,
             slug=(slug or "")[:200] or None,
             detalhe=(detalhe or "")[:300] or None,
