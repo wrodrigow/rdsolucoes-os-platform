@@ -30,7 +30,7 @@
   {% set imagens = {'antes-e-depois': 'ferramentas/pro-gratis.jpg', 'orcamento': 'ferramentas/doc-orcamento.png', 'ordem-de-servico': 'ferramentas/doc-os.png'} %}
   {% for chave, nome, texto, cta in d.cartoes %}
   <article class="cartao-ferramenta">
-    <a class="miniatura" href="{{ destinos[chave] }}" tabindex="-1" aria-hidden="true">
+    <a class="miniatura{{ '' if chave == 'antes-e-depois' else ' doc' }}" href="{{ destinos[chave] }}" tabindex="-1" aria-hidden="true">
       <img src="{{ url_for('static', filename=imagens[chave]) }}?v={{ versao_estatico(imagens[chave].split('/')[-1]) }}" alt="" width="600" height="600" loading="{{ 'eager' if loop.first else 'lazy' }}">
     </a>
     <div class="corpo-cartao">

@@ -468,3 +468,9 @@ h1, h2, h3 { font-family: var(--fonte-tit); line-height: 1.2; text-wrap: balance
 .barra-total b { display: block; font: 800 20px/1.1 var(--fonte-tit); color: var(--texto); font-variant-numeric: tabular-nums; }
 @media (min-width: 1000px) { .barra-total { display: none; } }
 .pdf-pronto .acoes .botao[hidden] + .botao { grid-column: 1 / -1; }
+
+/* campos lado a lado alinhados pela base (rótulo com "(opcional)" quebra linha) */
+.campos.duplo, .campos.triplo { align-items: end; }
+/* cartões do orçamento e da OS: a folha aparece sobre fundo tingido, como documento */
+.cartao-ferramenta .miniatura.doc { padding: 16px 22px 0; background: linear-gradient(160deg, var(--cartao-2), color-mix(in srgb, var(--tinta) 10%, var(--cartao-2))); }
+.cartao-ferramenta .miniatura.doc img { border-radius: 6px 6px 0 0; box-shadow: 0 8px 24px rgba(12, 35, 64, .18); background: #fff; }
