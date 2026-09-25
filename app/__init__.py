@@ -118,7 +118,18 @@ def _ensure_schema_upgrades():
     aqui manualmente — idempotente, seguro rodar em todo boot."""
     from sqlalchemy import inspect, text
     inspector = inspect(db.engine)
-    if "traffic_events" not in inspector.get_table_names():
+    tabelas = inspector.get_table_names()
+
+    # ferr_marcas: dados da empresa para o orçamento e a OS das ferramentas (Pro)
+    if "ferr_marcas" in tabelas:
+        existentes = {c["name"] for c in inspector.get_columns("ferr_marcas")}
+        novas = {"cnpj": "VARCHAR(30)", "email": "VARCHAR(120)", "endereco": "VARCHAR(200)", "condicoes": "TEXT"}
+        with db.engine.begin() as conn:
+            for coluna, tipo in novas.items():
+                if coluna not in existentes:
+                    conn.execute(text(f"ALTER TABLE ferr_marcas ADD COLUMN {coluna} {tipo}"))
+
+    if "traffic_events" not in tabelas:
         return
     colunas_existentes = {c["name"] for c in inspector.get_columns("traffic_events")}
     with db.engine.begin() as conn:

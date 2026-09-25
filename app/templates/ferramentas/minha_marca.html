@@ -7,7 +7,7 @@
 <section class="abertura envoltorio pagina-estreita">
   <p class="olho">RD OS Pro</p>
   <h1>Minha marca</h1>
-  <p class="lead">O que você salvar aqui entra no rodapé de todas as suas artes de antes e depois. Dá para mudar quando quiser.</p>
+  <p class="lead">O que você salvar aqui entra nas suas artes de antes e depois e no cabeçalho do orçamento e da ordem de serviço. Dá para mudar quando quiser.</p>
 </section>
 
 <section class="envoltorio pagina-estreita">
@@ -44,6 +44,22 @@
       </label>
     </div>
 
+    <h2 style="margin-top:10px">Para o orçamento e a ordem de serviço</h2>
+    <div class="campos duplo">
+      <label class="campo" for="mm-cnpj">CNPJ ou CPF
+        <input type="text" id="mm-cnpj" name="cnpj" maxlength="30" value="{{ marca.cnpj if marca and marca.cnpj else '' }}" inputmode="numeric" placeholder="00.000.000/0001-00">
+      </label>
+      <label class="campo" for="mm-email">E-mail
+        <input type="email" id="mm-email" name="email" maxlength="120" value="{{ marca.email if marca and marca.email else '' }}" autocomplete="email" placeholder="contato@suaempresa.com.br">
+      </label>
+    </div>
+    <label class="campo" for="mm-endereco">Endereço
+      <input type="text" id="mm-endereco" name="endereco" maxlength="200" value="{{ marca.endereco if marca and marca.endereco else '' }}" autocomplete="street-address">
+    </label>
+    <label class="campo" for="mm-condicoes">Condições padrão do orçamento <span class="ajuda">(saem num quadro em todo orçamento)</span>
+      <textarea id="mm-condicoes" name="condicoes" rows="4" maxlength="3000" placeholder="Ex.: O serviço é feito no local. Pagamento: 50% na aprovação e 50% na entrega.">{{ marca.condicoes if marca and marca.condicoes else '' }}</textarea>
+    </label>
+
     <h2 style="margin-top:10px">Cores</h2>
     <div class="cores">
       <label class="cor" for="mm-cor-primaria"><input type="color" id="mm-cor-primaria" name="cor_primaria" value="{{ cor_primaria }}">Cor das faixas</label>
@@ -63,7 +79,7 @@
 
     <div class="botoes" style="justify-content:flex-start;margin-top:6px">
       <button type="submit" class="botao principal">Salvar minha marca</button>
-      <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Abrir o gerador</a>
+      <a class="botao secundario" href="{{ url_for('ferramentas.inicio') }}">Abrir as ferramentas</a>
     </div>
   </form>
 </section>

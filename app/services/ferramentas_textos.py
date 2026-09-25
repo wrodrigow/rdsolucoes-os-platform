@@ -92,6 +92,7 @@ TEXTOS = {
             "Sem a marca d'água da RD Soluções",
             "As cores da sua empresa",
             "Vídeo de 7 segundos para Reels e Status",
+            "Orçamento e ordem de serviço em PDF com a sua marca",
         ],
         "upsell_preco": "{preco}",
         "upsell_preco_nota": "pagamento único, sem mensalidade",
@@ -117,6 +118,7 @@ TEXTOS = {
             ("Seu logotipo, nome e contato", False, True),
             ("Cores da sua empresa", False, True),
             ("Vídeo para Reels e Status", False, True),
+            ("Orçamento e OS em PDF com a sua logomarca", False, True),
         ],
         "planos_preco_gratis": "R$ 0",
         "planos_preco_pro": "{preco} · pagamento único",
@@ -450,5 +452,89 @@ TEXTOS = {
             "videoInterrompido": "Recording stopped because you left the page. Record again with the page open.",
             "videoArteMudou": "The image changed while recording. Please record the video again.",
         },
+    },
+}
+
+
+# ---------------------------------------------------------------------- orçamento, OS e página única (só pt)
+PRIVACIDADE_DOC = ("O rascunho fica salvo só no seu aparelho. Os dados vão ao servidor apenas para montar o PDF "
+                   "e não ficam guardados.")
+
+DOCS = {
+    "hub": {
+        "title": "Ferramentas Grátis para Prestador de Serviço | RD OS",
+        "description": "Antes e depois, orçamento e ordem de serviço em PDF, pelo celular e sem instalar app. "
+                       "Grátis; no Pro, tudo com a sua logomarca por um pagamento único.",
+        "eyebrow": "Grátis · funciona no celular · sem instalar app",
+        "h1": "Ferramentas grátis para quem presta serviço",
+        "lead": "Mostre o resultado do serviço, mande o orçamento e registre a ordem de serviço — tudo pelo celular, "
+                "em poucos minutos.",
+        "cartoes": [
+            ("antes-e-depois", "Antes e depois", "Junte a foto do antes e a do depois numa arte pronta para o "
+             "Instagram e o WhatsApp.", "Montar antes e depois"),
+            ("orcamento", "Orçamento", "Itens, valores, desconto, validade e forma de pagamento. Sai em PDF para "
+             "mandar ao cliente.", "Fazer orçamento"),
+            ("ordem-de-servico", "Ordem de serviço", "Serviço executado, peças, horários e campos de assinatura. "
+             "Sai em PDF para o cliente assinar.", "Fazer ordem de serviço"),
+        ],
+        "pro_titulo": "Pro: tudo com a SUA marca",
+        "pro_itens": [
+            "Sua logomarca, nome da empresa, CNPJ e contato no orçamento e na OS",
+            "Antes e depois com a sua marca no lugar da marca d'água",
+            "Cores da sua empresa e condições do orçamento já salvas",
+            "Vídeo de antes e depois para Reels e Status",
+        ],
+        "pro_nota": "pagamento único, vale para as três ferramentas",
+        "faq": [
+            ("É grátis mesmo?", "Sim. As três ferramentas funcionam sem pagar e sem cadastro. No grátis, os "
+             "documentos e as artes saem com a marca RD OS."),
+            ("Precisa instalar aplicativo?", "Não. Funciona no navegador do celular e do computador."),
+            ("O que o Pro libera?", "A sua logomarca, o nome da empresa, o CNPJ e o contato no orçamento, na OS e no "
+             "antes e depois, sem a marca RD OS, com as cores da sua empresa. Pagamento único, sem mensalidade."),
+        ],
+    },
+    "orcamento": {
+        "nome": "Gerador de orçamento",
+        "title": "Gerador de Orçamento Grátis em PDF pelo Celular | RD OS",
+        "description": "Faça o orçamento do serviço pelo celular e mande em PDF no WhatsApp. Grátis, sem cadastro. "
+                       "No Pro, com a sua logomarca e os dados da empresa.",
+        "eyebrow": "Orçamento grátis em PDF",
+        "h1": "Faça o orçamento do seu serviço em PDF, direto no celular",
+        "lead": "Preencha o cliente e os itens, confira o total e gere o PDF para mandar no WhatsApp ou por e-mail.",
+        "titulo_doc": "Orçamento",
+        "faq": [
+            ("É grátis mesmo?", "Sim. Você faz quantos orçamentos quiser, sem cadastro. No grátis, o PDF sai com a "
+             "marca RD OS e sem os dados da sua empresa no cabeçalho."),
+            ("Como mando o orçamento pelo WhatsApp?", "Toque em Gerar PDF e depois em Compartilhar: o celular abre a "
+             "lista de apps e você escolhe o WhatsApp. No computador, baixe o PDF e anexe na conversa."),
+            ("Dá para colocar desconto, validade e forma de pagamento?", "Sim. Tem campo para desconto em reais, "
+             "validade em dias (a data sai calculada no PDF), prazo de execução, forma de pagamento e garantia."),
+            ("O que muda no Pro?", "O PDF sai com a sua logomarca, o nome da empresa, CNPJ, telefone, e-mail e "
+             "endereço no cabeçalho, nas cores da sua marca, sem a marca RD OS e com as suas condições padrão."),
+            ("Meus orçamentos ficam salvos?", PRIVACIDADE_DOC + " Guarde o PDF no celular ou na conversa com o cliente."),
+        ],
+    },
+    "ordem-de-servico": {
+        "nome": "Ordem de serviço",
+        "title": "Ordem de Serviço Online Grátis em PDF | RD OS",
+        "description": "Preencha a ordem de serviço pelo celular e gere o PDF para o cliente assinar. Grátis, sem "
+                       "cadastro. No Pro, com a sua logomarca e os dados da empresa.",
+        "eyebrow": "Ordem de serviço grátis em PDF",
+        "h1": "Ordem de serviço em PDF, pronta para o cliente assinar",
+        "lead": "Registre o que foi pedido, o que foi feito, as peças usadas e os horários. O PDF sai com os campos "
+                "de assinatura do técnico e do cliente.",
+        "titulo_doc": "Ordem de serviço",
+        "faq": [
+            ("É grátis mesmo?", "Sim. Você faz quantas ordens de serviço quiser, sem cadastro. No grátis, o PDF sai "
+             "com a marca RD OS e sem os dados da sua empresa no cabeçalho."),
+            ("Serve para qualquer tipo de serviço?", "Serve para manutenção, instalação, reparo e assistência "
+             "técnica: tem campos para equipamento ou local, defeito relatado, serviço executado, peças, mão de "
+             "obra e garantia."),
+            ("Como o cliente assina?", "O PDF tem linhas de assinatura do técnico e do cliente. Imprima e leve ao "
+             "local, ou mande o PDF para o cliente conferir."),
+            ("O que muda no Pro?", "O PDF sai com a sua logomarca, o nome da empresa, CNPJ e contato no cabeçalho, "
+             "nas cores da sua marca e sem a marca RD OS."),
+            ("Minhas ordens de serviço ficam salvas?", PRIVACIDADE_DOC),
+        ],
     },
 }

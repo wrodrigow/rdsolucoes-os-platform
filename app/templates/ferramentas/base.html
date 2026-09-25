@@ -20,7 +20,7 @@
 {% set idioma_atual = idioma|default('pt') %}
 <header class="topo">
   <div class="envoltorio">
-    <a class="marca-topo" href="{{ url_for(meta_idioma.endpoint if meta_idioma else 'ferramentas.antes_depois_pt') }}">
+    <a class="marca-topo" href="{{ url_for('ferramentas.inicio') if idioma_atual == 'pt' else url_for(meta_idioma.endpoint) }}">
       <img src="{{ url_for('static', filename='ferramentas/rd-icone.png') }}" alt="" width="34" height="31">
       <span><b>RD OS</b><small>{{ t.nav_ferramenta }}</small></span>
     </a>
@@ -52,6 +52,28 @@
     </nav>
   </div>
 </header>
+{% if idioma_atual == 'pt' and abas_ferramentas %}
+<nav class="abas-ferramentas" aria-label="Ferramentas">
+  <div class="envoltorio">
+    {% for chave, nome, url in abas_ferramentas %}
+    <a href="{{ url }}"{% if chave == aba_atual %} aria-current="page"{% endif %}>{{ nome }}</a>
+    {% endfor %}
+  </div>
+</nav>
+{% endif %}
+{% if admin_ferramentas %}
+<div class="barra-admin" role="note">
+  <div class="envoltorio">
+    {% if admin_testando_pro %}
+      <span><b>Modo administrador:</b> você está testando a versão <b>Pro</b>. Visitantes veem a versão grátis.</span>
+      <a href="{{ url_for('ferramentas.admin_modo', pro=0, volta=request.full_path) }}">Voltar para a versão grátis</a>
+    {% else %}
+      <span><b>Modo administrador:</b> você está vendo a versão <b>grátis</b>, igual aos visitantes.</span>
+      <a href="{{ url_for('ferramentas.admin_modo', pro=1, volta=request.full_path) }}">Testar a versão Pro</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <main id="conteudo">
   {% with mensagens = get_flashed_messages(with_categories=true) %}

@@ -1,7 +1,9 @@
-"""Ferramentas online do RD OS: gerador de antes e depois (grátis e Pro).
+"""Ferramentas online do RD OS: antes e depois, orçamento e ordem de serviço.
 
-A montagem das artes acontece toda no navegador (static/ferramentas/antes-depois.js);
-o servidor só entrega as páginas, vende o Pro e guarda a marca de quem comprou.
+A arte de antes e depois é montada no navegador (static/ferramentas/antes-depois.js).
+O orçamento e a OS são preenchidos no navegador (static/ferramentas/documentos.js) e o
+PDF é montado aqui, em memória, sem guardar nada (services/ferramentas_pdf.py) — assim
+a regra do Pro (logotipo, dados da empresa, sem marca d'água) é decidida pelo servidor.
 """
 import os
 import re
@@ -9,8 +11,8 @@ import secrets
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from flask import (Blueprint, Response, abort, current_app, flash, make_response,
-                   redirect, render_template, request, session, url_for)
+from flask import (Blueprint, Response, abort, current_app, flash, jsonify, make_response,
+                   redirect, render_template, request, send_file, session, url_for)
 from flask_login import current_user, login_required, login_user
 
 from ..extensions import csrf, db, limiter
@@ -18,7 +20,7 @@ from ..models.ferramentas import FerrListaEspera, FerrMarca, FerrPedidoPro
 from ..models.order import Order
 from ..models.site_config import SiteConfig
 from ..services import ferramentas_service as fs
-from ..services.ferramentas_textos import IDIOMAS, META_IDIOMA, textos_para
+from ..services.ferramentas_textos import DOCS, IDIOMAS, META_IDIOMA, textos_para
 
 bp = Blueprint("ferramentas", __name__)
 
@@ -53,6 +55,14 @@ def _contexto_ferramentas():
         "meta_idioma": META_IDIOMA["pt"],
         "idioma": "pt",
         "alternativas": _alternativas(),
+        "abas_ferramentas": [
+            ("antes-e-depois", "Antes e depois", url_for("ferramentas.antes_depois_pt")),
+            ("orcamento", "Orçamento", url_for("ferramentas.orcamento")),
+            ("ordem-de-servico", "Ordem de serviço", url_for("ferramentas.ordem_servico")),
+        ],
+        "aba_atual": None,
+        "admin_ferramentas": bool(getattr(current_user, "is_admin", False)),
+        "admin_testando_pro": fs.admin_testando_pro(),
     }
 
 
@@ -178,6 +188,7 @@ def _pagina_antes_depois(idioma):
         json_ld=_json_ld(idioma, t, _url_absoluta(META_IDIOMA[idioma]["endpoint"]), fs.preco_pro()),
         lista_ok=request.args.get("lista") == "ok",
         lista_erro=request.args.get("lista") == "erro",
+        aba_atual="antes-e-depois" if idioma == "pt" else None,
     ))
     # a página muda conforme quem está logado (Pro, marca): não pode ir para cache compartilhado
     return _sem_cache(resp) if current_user.is_authenticated else resp
@@ -201,8 +212,195 @@ def antes_depois_en():
 @bp.route("/ferramentas")
 @bp.route("/ferramentas/")
 def inicio():
-    # por enquanto só existe o antes e depois; orçamento e OS entram aqui depois
-    return redirect(url_for("ferramentas.antes_depois_pt"))
+    """Página única com as três ferramentas."""
+    _registrar("lp_view", "ferramentas", "pt")
+    d = DOCS["hub"]
+    resp = make_response(render_template(
+        "ferramentas/hub.html", d=d, preco_fmt=fs.preco_pro_formatado(),
+        canonical=_url_absoluta("ferramentas.inicio"),
+        og_image=_url_absoluta("static", filename="ferramentas/og-antes-depois-pt.jpg"),
+        json_ld=_json_ld_doc(d, _url_absoluta("ferramentas.inicio"), "Ferramentas para prestador de serviço"),
+        aba_atual=None,
+    ))
+    return _sem_cache(resp) if current_user.is_authenticated else resp
+
+
+# ---------------------------------------------------------------------- orçamento e ordem de serviço
+LIMITE_ITENS = 60
+
+
+def _json_ld_doc(d, url, nome):
+    ofertas = [{"@type": "Offer", "name": "Grátis", "price": "0", "priceCurrency": "BRL"},
+               {"@type": "Offer", "name": "Pro — pagamento único", "price": f"{fs.preco_pro():.2f}",
+                "priceCurrency": "BRL", "url": _url_absoluta("ferramentas.pro")}]
+    return [
+        {"@context": "https://schema.org", "@type": "WebApplication", "name": f"RD OS — {nome}", "url": url,
+         "description": d["description"], "inLanguage": "pt-BR", "applicationCategory": "BusinessApplication",
+         "operatingSystem": "Android, iOS, Windows, macOS (no navegador)", "isAccessibleForFree": True,
+         "offers": ofertas, "publisher": {"@type": "Organization", "name": "RD Soluções", "url": "https://rdsolucoes.eco.br/"}},
+        {"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": "pt-BR",
+         "mainEntity": [{"@type": "Question", "name": p, "acceptedAnswer": {"@type": "Answer", "text": r}}
+                        for p, r in d["faq"]]},
+    ]
+
+
+def _marca_doc():
+    """Dados da empresa para a prévia do documento (só Pro)."""
+    m = fs.marca_do_usuario(current_user)
+    if not m:
+        return {}
+    return {"empresa": m.empresa or "", "cnpj": m.cnpj or "", "telefone": m.telefone or "", "email": m.email or "",
+            "site": m.site or "", "endereco": m.endereco or "", "condicoes": m.condicoes or "",
+            "corPrimaria": m.cor_primaria or "#0c2340", "corDestaque": m.cor_destaque or "#f97316",
+            "logo": _url_logo(m) if m.logo else None}
+
+
+def _pagina_documento(tipo):
+    d = DOCS[tipo]
+    pro = fs.tem_pro(current_user)
+    _registrar("lp_view", tipo, "pt")
+    endpoint = "ferramentas.orcamento" if tipo == "orcamento" else "ferramentas.ordem_servico"
+    cfg = {
+        "tipo": tipo,
+        "pro": pro,
+        "marca": _marca_doc() if pro else None,
+        "urlPdf": url_for("ferramentas.documento_pdf", tipo=tipo),
+        "urlPro": url_for("ferramentas.pro"),
+        "rastreio": {"url": url_for("tracking.evento"), "ativo": not getattr(current_user, "is_admin", False)},
+    }
+    resp = make_response(render_template(
+        "ferramentas/documento.html", d=d, tipo=tipo, cfg=cfg, pro=pro, preco_fmt=fs.preco_pro_formatado(),
+        canonical=_url_absoluta(endpoint),
+        og_image=_url_absoluta("static", filename="ferramentas/og-antes-depois-pt.jpg"),
+        json_ld=_json_ld_doc(d, _url_absoluta(endpoint), d["nome"]),
+        aba_atual=tipo, alternativas=None,
+    ))
+    return _sem_cache(resp) if current_user.is_authenticated else resp
+
+
+@bp.route("/orcamento")
+def orcamento():
+    return _pagina_documento("orcamento")
+
+
+@bp.route("/ordem-de-servico")
+def ordem_servico():
+    return _pagina_documento("ordem-de-servico")
+
+
+def _texto(dados, chave, limite):
+    return str(dados.get(chave) or "").strip()[:limite]
+
+
+def _numero(valor, minimo=0.0, maximo=1e8, padrao=0.0):
+    from ..services.gestao.formatos import parse_decimal
+    try:
+        v = float(parse_decimal(valor, str(padrao)))
+    except Exception:
+        v = padrao
+    return max(minimo, min(maximo, v))
+
+
+def _dados_documento(tipo, dados):
+    """Valida o que veio do formulário. Tudo com limite de tamanho: o texto vai
+    para dentro do PDF e o servidor é pequeno."""
+    from ..services.gestao.formatos import parse_data
+    from datetime import date
+    itens = []
+    for bruto in (dados.get("itens") or [])[:LIMITE_ITENS]:
+        if not isinstance(bruto, dict):
+            continue
+        descricao = str(bruto.get("descricao") or "").strip()[:300]
+        if not descricao:
+            continue
+        itens.append({"descricao": descricao,
+                      "quantidade": _numero(bruto.get("quantidade"), 0.001, 1e6, 1.0) if str(bruto.get("quantidade") or "").strip() else 1.0,
+                      "valor": _numero(bruto.get("valor"))})
+    comum = {
+        "numero": _texto(dados, "numero", 20),
+        "data": parse_data(dados.get("data")) or date.today(),
+        "cliente_nome": _texto(dados, "cliente_nome", 120),
+        "cliente_telefone": _texto(dados, "cliente_telefone", 40),
+        "cliente_documento": _texto(dados, "cliente_documento", 30),
+        "cliente_endereco": _texto(dados, "cliente_endereco", 200),
+        "garantia": _texto(dados, "garantia", 120),
+        "observacoes": _texto(dados, "observacoes", 2000),
+        "itens": itens,
+    }
+    if tipo == "orcamento":
+        try:
+            validade = int(float(str(dados.get("validade_dias") or 0).replace(",", ".")))
+        except ValueError:
+            validade = 0
+        comum.update({
+            "descricao": _texto(dados, "descricao", 2000),
+            "desconto": _numero(dados.get("desconto")),
+            "validade_dias": max(0, min(365, validade)),
+            "prazo": _texto(dados, "prazo", 120),
+            "pagamento": _texto(dados, "pagamento", 200),
+        })
+    else:
+        comum.update({
+            "responsavel": _texto(dados, "responsavel", 120),
+            "equipamento": _texto(dados, "equipamento", 3000),
+            "solicitado": _texto(dados, "solicitado", 3000),
+            "executado": _texto(dados, "executado", 3000),
+            "mao_de_obra": _numero(dados.get("mao_de_obra")),
+            "entrada": _texto(dados, "entrada", 40),
+            "saida": _texto(dados, "saida", 40),
+            "tecnico": _texto(dados, "tecnico", 120),
+            "linhas_manuais": bool(dados.get("linhas_manuais")),
+        })
+    return comum
+
+
+@bp.route("/ferramentas/<tipo>/pdf", methods=["POST"])
+@limiter.limit("60 per hour;10 per minute")
+def documento_pdf(tipo):
+    """Monta o PDF do orçamento ou da OS. O token CSRF vem no cabeçalho X-CSRFToken."""
+    if tipo not in ("orcamento", "ordem-de-servico"):
+        abort(404)
+    if (request.content_length or 0) > 200_000:
+        return jsonify({"erro": "Documento grande demais."}), 413
+    dados = request.get_json(silent=True)
+    if not isinstance(dados, dict):
+        return jsonify({"erro": "Não recebi os dados do documento. Recarregue a página e tente de novo."}), 400
+
+    from ..services.ferramentas_pdf import gerar_orcamento, gerar_ordem_servico
+    pro = fs.tem_pro(current_user)
+    marca = fs.marca_do_usuario(current_user) if pro else None
+    if pro and marca is None:
+        from ..models.ferramentas import FerrMarca
+        marca = FerrMarca(user_id=current_user.id)          # Pro sem marca salva: sem marca d'água, cabeçalho vazio
+    d = _dados_documento(tipo, dados)
+    try:
+        pdf = (gerar_orcamento if tipo == "orcamento" else gerar_ordem_servico)(d, marca)
+    except Exception as e:
+        current_app.logger.error(f"PDF de {tipo} falhou: {e}")
+        return jsonify({"erro": "Não consegui montar o PDF. Confira os campos e tente de novo."}), 500
+
+    _registrar("gerou_pdf", tipo, "pro" if pro else "gratis")
+    base_nome = "orcamento" if tipo == "orcamento" else "ordem-de-servico"
+    numero = re.sub(r"[^0-9A-Za-z-]", "", d["numero"])[:20]
+    resp = send_file(pdf, mimetype="application/pdf", as_attachment=False,
+                     download_name=f"{base_nome}{'-' + numero if numero else ''}.pdf")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+# ---------------------------------------------------------------------- modo de teste do administrador
+@bp.route("/ferramentas/admin/modo")
+@login_required
+def admin_modo():
+    """Administrador alterna entre ver a versão grátis (padrão) e testar o Pro."""
+    if not getattr(current_user, "is_admin", False):
+        abort(404)
+    if request.args.get("pro") == "1":
+        session["ferr_admin_pro"] = True
+    else:
+        session.pop("ferr_admin_pro", None)
+    from .auth import _next_seguro
+    return redirect(_next_seguro(request.args.get("volta")) or url_for("ferramentas.inicio"))
 
 
 # ---------------------------------------------------------------------- venda do Pro (só Brasil)
@@ -436,6 +634,10 @@ def minha_marca():
         marca.empresa = (request.form.get("empresa") or "").strip()[:80] or None
         marca.telefone = (request.form.get("telefone") or "").strip()[:30] or None
         marca.site = (request.form.get("site") or "").strip()[:120] or None
+        marca.cnpj = (request.form.get("cnpj") or "").strip()[:30] or None
+        marca.email = (request.form.get("email") or "").strip()[:120] or None
+        marca.endereco = (request.form.get("endereco") or "").strip()[:200] or None
+        marca.condicoes = (request.form.get("condicoes") or "").strip()[:3000] or None
         marca.cor_primaria = fs.cor_valida(request.form.get("cor_primaria"), marca.cor_primaria or "#0c2340")
         marca.cor_destaque = fs.cor_valida(request.form.get("cor_destaque"), marca.cor_destaque or "#f97316")
 
@@ -503,6 +705,9 @@ def _csrf_vencido(e):
     """Página aberta por muito tempo (token vencido): volta ao formulário com um
     aviso, em vez da página crua "400 Bad Request" em inglês."""
     ep = request.endpoint or ""
+    if ep == "ferramentas.documento_pdf":        # pedido do JavaScript: responde em JSON
+        return jsonify({"erro": "A página ficou aberta por muito tempo. Recarregue a página e gere o PDF de novo "
+                                "(o que você preencheu continua salvo)."}), 400
     if ep == "ferramentas.lista_espera":
         idioma = request.form.get("idioma") if request.form.get("idioma") in ("es", "en") else "en"
         return redirect(url_for(META_IDIOMA[idioma]["endpoint"]) + "?lista=erro#pro")

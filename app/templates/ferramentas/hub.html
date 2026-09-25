@@ -1,0 +1,69 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}{{ d.title }}{% endblock %}
+{% block description %}{{ d.description }}{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RD OS">
+<meta property="og:title" content="{{ d.title }}">
+<meta property="og:description" content="{{ d.description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+{% for bloco in json_ld %}
+<script type="application/ld+json">{{ bloco|tojson }}</script>
+{% endfor %}
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio">
+  <p class="olho">{{ d.eyebrow }}</p>
+  <h1>{{ d.h1 }}</h1>
+  <p class="lead">{{ d.lead }}</p>
+</section>
+
+<section class="envoltorio cartoes-ferramentas" aria-label="Ferramentas">
+  {% set destinos = {'antes-e-depois': url_for('ferramentas.antes_depois_pt'), 'orcamento': url_for('ferramentas.orcamento'), 'ordem-de-servico': url_for('ferramentas.ordem_servico')} %}
+  {% set imagens = {'antes-e-depois': 'ferramentas/pro-gratis.jpg', 'orcamento': 'ferramentas/doc-orcamento.png', 'ordem-de-servico': 'ferramentas/doc-os.png'} %}
+  {% for chave, nome, texto, cta in d.cartoes %}
+  <article class="cartao-ferramenta">
+    <a class="miniatura" href="{{ destinos[chave] }}" tabindex="-1" aria-hidden="true">
+      <img src="{{ url_for('static', filename=imagens[chave]) }}?v={{ versao_estatico(imagens[chave].split('/')[-1]) }}" alt="" width="600" height="600" loading="{{ 'eager' if loop.first else 'lazy' }}">
+    </a>
+    <div class="corpo-cartao">
+      <h2>{{ nome }}</h2>
+      <p>{{ texto }}</p>
+      <a class="botao principal" href="{{ destinos[chave] }}">{{ cta }}</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+{% if not tem_pro_atual %}
+<section class="envoltorio secao">
+  <aside class="upsell" id="pro">
+    <h2>{{ d.pro_titulo }}</h2>
+    <ul>{% for item in d.pro_itens %}<li>{{ item }}</li>{% endfor %}</ul>
+    <p class="preco"><b>{{ preco_fmt }}</b><span>{{ d.pro_nota }}</span></p>
+    <div class="linha-cta">
+      <a class="botao principal js-pro" data-origem="hub" href="{{ url_for('ferramentas.pro') }}">Quero o Pro</a>
+      {% if not current_user.is_authenticated %}
+      <a class="link-claro" href="{{ url_for('auth.login', next=request.path) }}">Já comprei — entrar</a>
+      {% endif %}
+    </div>
+  </aside>
+</section>
+{% endif %}
+
+<section class="secao envoltorio" aria-labelledby="faq-titulo">
+  <h2 id="faq-titulo">Perguntas frequentes</h2>
+  <div class="faq">
+    {% for pergunta, resposta in d.faq %}
+    <details><summary>{{ pergunta }}</summary><p>{{ resposta }}</p></details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

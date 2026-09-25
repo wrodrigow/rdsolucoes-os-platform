@@ -1,4 +1,4 @@
-"""Ferramentas online do RD OS (antes e depois; depois orçamento e OS).
+"""Ferramentas online do RD OS: antes e depois, orçamento e ordem de serviço.
 
 Plano grátis (com marca d'água RD Soluções) e Pro por pagamento único.
 
@@ -46,6 +46,12 @@ class FerrMarca(db.Model):
     empresa = db.Column(db.String(80), nullable=True)
     telefone = db.Column(db.String(30), nullable=True)
     site = db.Column(db.String(120), nullable=True)          # site ou @instagram
+    # usados no cabeçalho do orçamento e da OS (Pro). Colunas criadas em
+    # _ensure_schema_upgrades para a tabela que já existe em produção.
+    cnpj = db.Column(db.String(30), nullable=True)            # CNPJ ou CPF
+    email = db.Column(db.String(120), nullable=True)
+    endereco = db.Column(db.String(200), nullable=True)
+    condicoes = db.Column(db.Text, nullable=True)            # texto padrão do orçamento
     cor_primaria = db.Column(db.String(7), nullable=False, default="#0c2340")
     cor_destaque = db.Column(db.String(7), nullable=False, default="#f97316")
     # Logo já normalizado pelo servidor: PNG, no máximo 600 px no lado maior.

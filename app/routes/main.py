@@ -138,7 +138,8 @@ def robots():
 def sitemap():
     from flask import Response
     base = current_app.config["BASE_URL"]
-    pages = ["", "/recursos", "/como-funciona", "/planos", "/faq", "/contato", "/ferramentas/pro"]
+    pages = ["", "/recursos", "/como-funciona", "/planos", "/faq", "/contato", "/ferramentas/pro",
+             "/ferramentas", "/orcamento", "/ordem-de-servico"]
     urls = "\n".join(f"  <url><loc>{base}{p}</loc></url>" for p in pages)
 
     # Gerador de antes e depois: as três versões apontam umas para as outras (hreflang)

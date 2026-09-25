@@ -38,6 +38,8 @@ EVENTOS_PERMITIDOS = {
         # Gerador de antes e depois (rdos.rdsolucoes.eco.br/antes-e-depois).
         # A visita (lp_view) é gravada pelo servidor; estes vêm do antes-depois.js.
         "gerou_arte", "baixou", "compartilhou", "gerou_video", "clicou_pro",
+        # orçamento e OS (o "gerou_pdf" é gravado pelo servidor)
+        "baixou_pdf", "compartilhou_pdf",
     },
 }
 

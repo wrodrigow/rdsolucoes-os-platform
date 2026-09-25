@@ -33,8 +33,16 @@ def tem_pro(user) -> bool:
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if getattr(user, "is_admin", False):
-        return True
+        # Administrador vê a versão grátis, igual a qualquer visitante, e só
+        # vê o Pro quando liga o modo de teste (evita achar que o grátis
+        # "libera" recursos do Pro).
+        return admin_testando_pro()
     return db.session.get(FerrAcessoPro, user.id) is not None
+
+
+def admin_testando_pro() -> bool:
+    from flask import has_request_context, session
+    return bool(has_request_context() and session.get("ferr_admin_pro"))
 
 
 def liberar_pro(order):

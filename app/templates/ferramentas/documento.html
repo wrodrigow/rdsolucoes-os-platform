@@ -1,0 +1,238 @@
+{% extends "ferramentas/base.html" %}
+{% set e_orc = tipo == 'orcamento' %}
+
+{% block title %}{{ d.title }}{% endblock %}
+{% block description %}{{ d.description }}{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RD OS">
+<meta property="og:title" content="{{ d.title }}">
+<meta property="og:description" content="{{ d.description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+{% for bloco in json_ld %}
+<script type="application/ld+json">{{ bloco|tojson }}</script>
+{% endfor %}
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio">
+  <p class="olho">{{ d.eyebrow }}</p>
+  <h1>{{ d.h1 }}</h1>
+  <p class="lead">{{ d.lead }}</p>
+</section>
+
+<section class="envoltorio documento" aria-label="{{ d.nome }}">
+  <form class="controles" id="dc-form" novalidate autocomplete="off" onsubmit="return false">
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">1</span>{{ d.titulo_doc }}</legend>
+      <div class="campos {{ 'triplo' if e_orc else 'duplo' }}">
+        <label class="campo" for="dc-numero">Número
+          <input type="text" id="dc-numero" data-campo="numero" maxlength="20" inputmode="numeric" placeholder="0001">
+        </label>
+        <label class="campo" for="dc-data">Data
+          <input type="date" id="dc-data" data-campo="data">
+        </label>
+        {% if e_orc %}
+        <label class="campo" for="dc-validade">Validade (dias)
+          <input type="number" id="dc-validade" data-campo="validade_dias" min="0" max="365" step="1" value="15" inputmode="numeric">
+        </label>
+        {% endif %}
+      </div>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">2</span>Cliente</legend>
+      <div class="campos">
+        <label class="campo" for="dc-cliente-nome">Nome do cliente ou empresa
+          <input type="text" id="dc-cliente-nome" data-campo="cliente_nome" maxlength="120" autocomplete="off" placeholder="Ex.: Condomínio Jardim das Flores">
+        </label>
+        <div class="campos duplo">
+          <label class="campo" for="dc-cliente-telefone">Telefone / WhatsApp
+            <input type="tel" id="dc-cliente-telefone" data-campo="cliente_telefone" maxlength="40" inputmode="tel" placeholder="(11) 90000-0000">
+          </label>
+          <label class="campo" for="dc-cliente-documento">CPF ou CNPJ <span class="ajuda">(opcional)</span>
+            <input type="text" id="dc-cliente-documento" data-campo="cliente_documento" maxlength="30" inputmode="numeric">
+          </label>
+        </div>
+        <label class="campo" for="dc-cliente-endereco">Endereço <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-cliente-endereco" data-campo="cliente_endereco" maxlength="200">
+        </label>
+        {% if not e_orc %}
+        <label class="campo" for="dc-responsavel">Responsável no local <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-responsavel" data-campo="responsavel" maxlength="120" placeholder="Ex.: Sr. Carlos (zelador)">
+        </label>
+        {% endif %}
+      </div>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">3</span>Serviço</legend>
+      <div class="campos">
+        {% if e_orc %}
+        <label class="campo" for="dc-descricao">Descrição do serviço <span class="ajuda">(opcional)</span>
+          <textarea id="dc-descricao" data-campo="descricao" rows="3" maxlength="2000" placeholder="Ex.: Reparo com solda plástica em 3 contentores de lixo de 1000 L."></textarea>
+        </label>
+        {% else %}
+        <label class="campo" for="dc-equipamento">Equipamento ou local <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-equipamento" data-campo="equipamento" maxlength="300" placeholder="Ex.: Ar-condicionado split 12.000 BTUs — sala">
+        </label>
+        <label class="campo" for="dc-solicitado">Serviço solicitado / defeito relatado
+          <textarea id="dc-solicitado" data-campo="solicitado" rows="2" maxlength="3000"></textarea>
+        </label>
+        <label class="campo" for="dc-executado">Serviço executado
+          <textarea id="dc-executado" data-campo="executado" rows="3" maxlength="3000"></textarea>
+        </label>
+        {% endif %}
+      </div>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">4</span>{{ 'Itens e valores' if e_orc else 'Peças, materiais e valores' }}</legend>
+      <div id="dc-itens" class="itens"></div>
+      <button type="button" class="botao secundario pequeno" id="dc-add-item">+ Adicionar {{ 'item' if e_orc else 'peça ou material' }}</button>
+      <div class="campos duplo" style="margin-top:12px">
+        {% if e_orc %}
+        <label class="campo" for="dc-desconto">Desconto em R$ <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-desconto" data-campo="desconto" inputmode="decimal" placeholder="0,00">
+        </label>
+        {% else %}
+        <label class="campo" for="dc-mao">Mão de obra em R$ <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-mao" data-campo="mao_de_obra" inputmode="decimal" placeholder="0,00">
+        </label>
+        {% endif %}
+        <div class="total-bloco" aria-live="polite"><span>Total</span><b id="dc-total">R$ 0,00</b></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">5</span>{{ 'Condições' if e_orc else 'Execução' }}</legend>
+      <div class="campos duplo">
+        {% if e_orc %}
+        <label class="campo" for="dc-prazo">Prazo de execução
+          <input type="text" id="dc-prazo" data-campo="prazo" maxlength="120" placeholder="Ex.: 2 dias úteis">
+        </label>
+        <label class="campo" for="dc-pagamento">Forma de pagamento
+          <input type="text" id="dc-pagamento" data-campo="pagamento" maxlength="200" list="dc-pagamentos" placeholder="Ex.: Pix ou cartão">
+          <datalist id="dc-pagamentos">
+            <option value="Pix ou cartão"><option value="50% na aprovação e 50% na entrega"><option value="À vista no Pix"><option value="Cartão em até 3x">
+          </datalist>
+        </label>
+        {% else %}
+        <label class="campo" for="dc-entrada">Entrada (data e hora)
+          <input type="text" id="dc-entrada" data-campo="entrada" maxlength="40" placeholder="25/09/2026 08:30">
+        </label>
+        <label class="campo" for="dc-saida">Saída (data e hora)
+          <input type="text" id="dc-saida" data-campo="saida" maxlength="40" placeholder="25/09/2026 11:45">
+        </label>
+        <label class="campo" for="dc-tecnico">Técnico responsável
+          <input type="text" id="dc-tecnico" data-campo="tecnico" maxlength="120">
+        </label>
+        {% endif %}
+        <label class="campo" for="dc-garantia">Garantia <span class="ajuda">(opcional)</span>
+          <input type="text" id="dc-garantia" data-campo="garantia" maxlength="120" placeholder="Ex.: 90 dias">
+        </label>
+      </div>
+      {% if not e_orc %}
+      <label class="chave" for="dc-linhas"><input type="checkbox" id="dc-linhas" data-campo="linhas_manuais">Incluir linhas para anotar à mão</label>
+      {% endif %}
+      <label class="campo" for="dc-observacoes" style="margin-top:12px">Observações <span class="ajuda">(opcional)</span>
+        <textarea id="dc-observacoes" data-campo="observacoes" rows="3" maxlength="2000"></textarea>
+      </label>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">6</span>Sua marca</legend>
+      {% if pro %}
+        {% if cfg.marca and (cfg.marca.empresa or cfg.marca.logo) %}
+        <div class="kit">
+          {% if cfg.marca.logo %}<img src="{{ cfg.marca.logo }}" alt="" width="56" height="56">{% endif %}
+          <div><b>{{ cfg.marca.empresa or '—' }}</b><span>{{ [cfg.marca.cnpj, cfg.marca.telefone]|select|join(' · ') }}</span></div>
+        </div>
+        <p class="letra-miuda">O cabeçalho do PDF sai com a sua marca, sem a marca RD OS. <a href="{{ url_for('ferramentas.minha_marca') }}">Editar dados da empresa</a></p>
+        {% else %}
+        <p class="aviso-ferramenta">Você ainda não cadastrou os dados da empresa. <a href="{{ url_for('ferramentas.minha_marca') }}">Configurar minha marca</a></p>
+        {% endif %}
+      {% else %}
+        <div class="upsell compacto">
+          <h3>No Pro, o documento sai com a SUA marca</h3>
+          <ul>
+            <li>Logomarca, nome da empresa, CNPJ e contato no cabeçalho</li>
+            <li>Sem a marca RD OS e nas cores da sua empresa</li>
+            <li>Vale também para o antes e depois</li>
+          </ul>
+          <p class="preco"><b>{{ preco_fmt }}</b><span>pagamento único</span></p>
+          <div class="linha-cta">
+            <a class="botao principal js-pro" data-origem="{{ tipo }}" href="{{ url_for('ferramentas.pro') }}">Quero o Pro</a>
+            {% if not current_user.is_authenticated %}<a class="link-claro" href="{{ url_for('auth.login', next=request.path) }}">Já comprei — entrar</a>{% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </fieldset>
+
+    <div class="acoes-doc">
+      <button type="button" class="botao principal largo" id="dc-gerar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+        <span id="dc-gerar-rotulo">Gerar PDF</span>
+      </button>
+      <div id="dc-pronto" class="pdf-pronto" hidden>
+        <p class="nota-palco">PDF pronto.</p>
+        <div class="acoes">
+          <button type="button" class="botao secundario" id="dc-compartilhar">Compartilhar</button>
+          <button type="button" class="botao secundario" id="dc-baixar">Baixar</button>
+          <button type="button" class="botao secundario largo" id="dc-abrir">Abrir o PDF</button>
+        </div>
+      </div>
+      <p id="dc-aviso" class="aviso-ferramenta" role="status" hidden></p>
+      <div class="linha-secundaria">
+        <button type="button" class="botao-texto" id="dc-novo">Novo {{ 'orçamento' if e_orc else 'documento' }}</button>
+        <button type="button" class="botao-texto" id="dc-limpar">Limpar tudo</button>
+      </div>
+      <p class="privacidade">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        O rascunho fica salvo só neste aparelho. Os dados vão ao servidor apenas para montar o PDF e não ficam guardados.
+      </p>
+    </div>
+  </form>
+
+  <aside class="previa-doc" aria-label="Prévia do documento">
+    <p class="rotulo-previa">Prévia</p>
+    <div class="papel" id="dc-previa"></div>
+  </aside>
+</section>
+
+<div class="barra-total" id="dc-barra" aria-hidden="true">
+  <span>Total <b id="dc-total-barra">R$ 0,00</b></span>
+  <button type="button" class="botao principal" id="dc-gerar-barra" tabindex="-1">Gerar PDF</button>
+</div>
+
+<template id="dc-item-modelo">
+  <div class="item-linha">
+    <label class="campo desc">Descrição<input type="text" class="it-desc" maxlength="300"></label>
+    <label class="campo qtd">Qtd.<input type="text" class="it-qtd" inputmode="decimal" value="1"></label>
+    <label class="campo valor">{{ 'Valor unit.' if e_orc else 'Valor (opcional)' }}<input type="text" class="it-valor" inputmode="decimal" placeholder="0,00"></label>
+    <span class="it-total">R$ 0,00</span>
+    <button type="button" class="it-remover" aria-label="Remover item">×</button>
+  </div>
+</template>
+
+<section class="secao envoltorio" aria-labelledby="faq-titulo">
+  <h2 id="faq-titulo">Perguntas frequentes</h2>
+  <div class="faq">
+    {% for pergunta, resposta in d.faq %}
+    <details><summary>{{ pergunta }}</summary><p>{{ resposta }}</p></details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>window.RD_DOC = {{ cfg|tojson }};</script>
+<script src="{{ url_for('static', filename='ferramentas/documentos.js') }}?v={{ versao_estatico('documentos.js') }}" defer></script>
+{% endblock %}
