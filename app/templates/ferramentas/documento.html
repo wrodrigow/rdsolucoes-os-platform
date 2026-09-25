@@ -96,6 +96,7 @@
     <fieldset class="bloco">
       <legend><span class="num" aria-hidden="true">4</span>{{ 'Itens e valores' if e_orc else 'Peças, materiais e valores' }}</legend>
       <div id="dc-itens" class="itens"></div>
+      <p id="dc-dica-numeros" class="letra-miuda" hidden>Nos campos de quantidade e valor, use só números (ex.: 1.234,56). O cálculo usa o primeiro número digitado.</p>
       <button type="button" class="botao secundario pequeno" id="dc-add-item">+ Adicionar {{ 'item' if e_orc else 'peça ou material' }}</button>
       <div class="campos duplo" style="margin-top:12px">
         {% if e_orc %}
@@ -189,7 +190,7 @@
           <button type="button" class="botao secundario largo" id="dc-abrir">Abrir o PDF</button>
         </div>
       </div>
-      <p id="dc-aviso" class="aviso-ferramenta" role="status" hidden></p>
+      <p id="dc-aviso" class="aviso-ferramenta" role="status" aria-live="polite"></p>
       <div class="linha-secundaria">
         <button type="button" class="botao-texto" id="dc-novo">Novo {{ 'orçamento' if e_orc else 'documento' }}</button>
         <button type="button" class="botao-texto" id="dc-limpar">Limpar tudo</button>

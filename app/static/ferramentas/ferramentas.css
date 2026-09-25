@@ -195,7 +195,7 @@ h1, h2, h3 { font-family: var(--fonte-tit); line-height: 1.2; text-wrap: balance
 .ajuste label { display: grid; gap: 2px; }
 .ajuste input[type="range"] { width: 100%; accent-color: var(--laranja); }
 .botao-texto {
-  background: none; border: 0; padding: 6px 0; color: var(--link); font: 600 14px/1.2 var(--fonte-txt);
+  background: none; border: 0; padding: 6px 0; min-height: 44px; color: var(--link); font: 600 14px/1.2 var(--fonte-txt);
   cursor: pointer; text-align: left; justify-self: start;
 }
 .botao-texto:disabled { color: var(--suave); opacity: .6; cursor: default; }
@@ -382,7 +382,7 @@ h1, h2, h3 { font-family: var(--fonte-tit); line-height: 1.2; text-wrap: balance
 .cartao-ferramenta .botao { justify-self: start; margin-top: 6px; }
 
 /* ------------------------------------------------------------------ orçamento e OS */
-.documento { display: grid; gap: 16px; padding-block: 14px 8px; }
+.documento { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-block: 14px 8px; }
 @media (min-width: 1000px) {
   .documento { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); align-items: start; gap: 28px; }
   .previa-doc { position: sticky; top: 16px; }
@@ -427,6 +427,10 @@ h1, h2, h3 { font-family: var(--fonte-tit); line-height: 1.2; text-wrap: balance
   box-shadow: var(--sombra); padding: 22px 20px 40px; font: 400 12.5px/1.45 var(--fonte-txt); min-height: 420px;
 }
 .papel p { margin: 0 0 3px; }
+.papel, .papel td, .papel p { overflow-wrap: anywhere; }
+.campo input[aria-invalid="true"] { border-color: var(--antes); background: var(--erro-bg); }
+.aviso-ferramenta:empty { display: none; }
+@media (max-width: 999px) { body:has(.barra-total) { padding-bottom: 84px; } }
 .papel h4 { margin: 12px 0 4px; font: 700 13px/1.3 var(--fonte-tit); color: #0c2340; }
 .papel .vazio { color: #9aa5b1; font-style: italic; }
 .papel-cab { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 2px solid #0c2340; }

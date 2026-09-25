@@ -489,8 +489,10 @@ DOCS = {
             ("É grátis mesmo?", "Sim. As três ferramentas funcionam sem pagar e sem cadastro. No grátis, os "
              "documentos e as artes saem com a marca RD OS."),
             ("Precisa instalar aplicativo?", "Não. Funciona no navegador do celular e do computador."),
-            ("O que o Pro libera?", "A sua logomarca, o nome da empresa, o CNPJ e o contato no orçamento, na OS e no "
-             "antes e depois, sem a marca RD OS, com as cores da sua empresa. Pagamento único, sem mensalidade."),
+            ("O que o Pro libera?", "No orçamento e na OS, a sua logomarca, o nome da empresa, o CNPJ, o contato e o "
+             "endereço no cabeçalho, sem a marca RD OS. No antes e depois, a sua logomarca, o nome e o contato no lugar "
+             "da marca d'água, e o vídeo para Reels e Status. Tudo nas cores da sua empresa. Pagamento único, sem "
+             "mensalidade."),
         ],
     },
     "orcamento": {

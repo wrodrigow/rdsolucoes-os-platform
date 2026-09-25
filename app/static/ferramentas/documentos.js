@@ -18,14 +18,33 @@
 
   var brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // "1.234,56" | "1234,56" | "1234.56" | "R$ 50" → número
-  function numero(txt) {
-    var s = String(txt == null ? '' : txt).replace(/R\$|\s| /g, '');
-    if (!s) return 0;
+  // Mesma regra do servidor (routes/ferramentas.numero_br): o primeiro número do
+  // campo. "R$ 1.234,56" → 1234.56 · "3 m²" → 3 · "0,5" → 0.5 · vazio/inválido → null
+  function numeroOuNulo(txt) {
+    var m = /[0-9][0-9.,]*/.exec(String(txt == null ? '' : txt));
+    if (!m) return null;
+    var s = m[0];
     if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
     else if (/\.\d{3}$/.test(s)) s = s.replace(/\./g, '');
     var n = parseFloat(s);
-    return isFinite(n) && n > 0 ? n : 0;
+    return isFinite(n) ? n : null;
+  }
+  function numero(txt, casas) {
+    var n = numeroOuNulo(txt);
+    if (n === null || n < 0) return 0;
+    var f = Math.pow(10, casas == null ? 2 : casas);
+    return Math.round((Math.min(n, 1e8) + Number.EPSILON) * f) / f;      // "meio para cima", igual ao servidor
+  }
+  // quantidade vazia = 1; zero fica zero (igual ao servidor)
+  function qtd(txt) {
+    return String(txt == null ? '' : txt).trim() === '' ? 1 : Math.min(numero(txt, 3), 1e6);
+  }
+  // campo de valor com letras ou % é marcado (o cálculo usa só o número)
+  function marcarInvalido(el) {
+    var ruim = /[^0-9.,\sR$\u00a0]/.test(el.value);
+    el.setAttribute('aria-invalid', ruim ? 'true' : 'false');
+    el.title = ruim ? 'Use só números, por exemplo 1.234,56' : '';
+    return ruim;
   }
 
   function esc(v) {
@@ -42,11 +61,15 @@
   function avisar(msg) {
     var el = $('dc-aviso');
     if (!el) { alert(msg); return; }
-    el.textContent = msg;
-    el.hidden = false;
+    el.textContent = msg;                       // região viva sempre na página: o leitor de tela anuncia
+    var r = el.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > (window.innerHeight || 800) - 90) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     clearTimeout(avisar.t);
-    avisar.t = setTimeout(function () { el.hidden = true; }, 7000);
+    avisar.t = setTimeout(function () { el.textContent = ''; }, 9000);
   }
+  var armazenamentoOk = (function () {
+    try { localStorage.setItem('rdos-teste', '1'); localStorage.removeItem('rdos-teste'); return true; } catch (e) { return false; }
+  })();
 
   function rastrear(tipo, detalhe) {
     var r = CFG.rastreio || {};
@@ -72,8 +95,11 @@
       linha.querySelector('.it-valor').value = item.valor || '';
     }
     linha.querySelector('.it-remover').addEventListener('click', function () {
+      var vizinha = linha.nextElementSibling || linha.previousElementSibling;
       linha.remove();
-      if (!lista.children.length) novaLinha();
+      if (!lista.children.length) vizinha = novaLinha();
+      if (vizinha) vizinha.querySelector('.it-desc').focus();
+      else $('dc-add-item').focus();
       atualizar();
     });
     lista.appendChild(linha);
@@ -100,9 +126,11 @@
     return d;
   }
 
+  function totalLinha(i) { return Math.round(qtd(i.quantidade) * numero(i.valor) * 100) / 100; }
+
   function totais(d) {
     var pecas = 0;
-    d.itens.forEach(function (i) { pecas += (numero(i.quantidade) || (i.quantidade ? 0 : 1)) * numero(i.valor); });
+    d.itens.forEach(function (i) { pecas += totalLinha(i); });
     if (E_ORC) {
       var desc = numero(d.desconto);
       return { subtotal: pecas, desconto: Math.min(desc, pecas), total: Math.max(0, pecas - desc) };
@@ -154,8 +182,8 @@
     if (d.itens.length) {
       h += '<table><thead style="background:' + esc(cor) + '"><tr><th>Descrição</th><th>Qtd.</th><th>Total</th></tr></thead><tbody>';
       d.itens.forEach(function (i) {
-        var q = numero(i.quantidade) || 1;
-        h += '<tr><td>' + esc(i.descricao) + '</td><td>' + esc(String(q).replace('.', ',')) + '</td><td>' + brl.format(q * numero(i.valor)) + '</td></tr>';
+        h += '<tr><td>' + esc(i.descricao) + '</td><td>' + esc(String(qtd(i.quantidade)).replace('.', ',')) + '</td><td>' +
+          brl.format(totalLinha(i)) + '</td></tr>';
       });
       h += '</tbody></table>';
     }
@@ -181,10 +209,14 @@
     var total = brl.format(t.total);
     $('dc-total').textContent = total;
     var tb = $('dc-total-barra'); if (tb) tb.textContent = total;
+    var algumInvalido = false;
     lista.querySelectorAll('.item-linha').forEach(function (l) {
-      var q = numero(l.querySelector('.it-qtd').value) || 1;
-      l.querySelector('.it-total').textContent = brl.format(q * numero(l.querySelector('.it-valor').value));
+      var q = l.querySelector('.it-qtd'), v = l.querySelector('.it-valor');
+      algumInvalido = marcarInvalido(q) | marcarInvalido(v) || algumInvalido;
+      l.querySelector('.it-total').textContent = brl.format(totalLinha({ quantidade: q.value, valor: v.value }));
     });
+    ['dc-desconto', 'dc-mao'].forEach(function (id) { var el = $(id); if (el) algumInvalido = marcarInvalido(el) || algumInvalido; });
+    var dica = $('dc-dica-numeros'); if (dica) dica.hidden = !algumInvalido;
   }
 
   // ------------------------------------------------------------------ rascunho
@@ -213,11 +245,18 @@
     var dt = new Date();
     return dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
   }
-  function proximoNumero() {
-    var ultimo = parseInt(ler(CHAVE_NUM) || '0', 10) || 0;
-    return ('000' + (ultimo + 1)).slice(-4);
+  // "0009" → "0010" · "9999" → "10000" · "2026-001" → "2026-002" · "OS-7" → "OS-8"
+  function seguinte(numeroTxt) {
+    var s = String(numeroTxt || '').trim();
+    var m = /^(.*?)(\d+)(\D*)$/.exec(s);
+    if (!m) return s ? s + '-2' : '0001';
+    var n = String(parseInt(m[2], 10) + 1);
+    while (n.length < m[2].length) n = '0' + n;
+    return m[1] + n + m[3];
   }
+  function proximoNumero() { return seguinte(ler(CHAVE_NUM) || '0000'); }
 
+  var editadoDepoisDoPdf = false;
   function documentoNovo(manterCliente) {
     var atual = dados();
     var base = { numero: proximoNumero(), data: hojeIso(), itens: [] };
@@ -259,23 +298,34 @@
       avisar('Preencha pelo menos o cliente ou um item antes de gerar o PDF.');
       return;
     }
-    var token = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    var tokenPagina = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
     gerando = true;
     var botoes = [$('dc-gerar'), $('dc-gerar-barra')];
     botoes.forEach(function (b) { if (b) b.disabled = true; });
     var rotulo = $('dc-gerar-rotulo'); var original = rotulo ? rotulo.textContent : '';
     if (rotulo) rotulo.textContent = 'Gerando o PDF…';
-    fetch(CFG.urlPdf, {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
-      body: JSON.stringify(d)
-    }).then(function (r) {
-      if (!r.ok) {
+    var gb = $('dc-gerar-barra'); if (gb) gb.textContent = 'Gerando…';
+    function erroNosso(msg) { var e = new Error(msg); e.nosso = true; return e; }
+    // token novo a cada PDF: a OS costuma ficar aberta o atendimento inteiro e o token vence em 1 h
+    fetch(CFG.urlToken || '/ferramentas/token', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .catch(function () { return {}; })
+      .then(function (j) {
+        return fetch(CFG.urlPdf, {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': j.token || tokenPagina },
+          body: JSON.stringify(d)
+        });
+      }).then(function (r) {
+      var tipoResp = r.headers.get('Content-Type') || '';
+      if (!r.ok || tipoResp.indexOf('application/pdf') < 0) {
         return r.json().catch(function () { return {}; }).then(function (j) {
-          var msg = j.erro || (r.status === 400 ? 'A página ficou aberta muito tempo. Recarregue e tente de novo.'
+          var salvo = armazenamentoOk ? ' O que você preencheu continua salvo.' : '';
+          var msg = j.erro || (r.status === 400 ? 'Não consegui confirmar a página. Recarregue e gere o PDF de novo.' + salvo
             : r.status === 429 ? 'Muitos PDFs em pouco tempo. Espere um minuto e tente de novo.'
             : 'Não consegui gerar o PDF agora. Tente de novo.');
-          throw new Error(msg);
+          if (j.erro && /continua salvo/.test(j.erro) && !armazenamentoOk) msg = 'Não consegui confirmar a página. Recarregue e gere o PDF de novo.';
+          throw erroNosso(msg);
         });
       }
       return r.blob();
@@ -289,22 +339,23 @@
       if (bt) bt.hidden = !podeCompartilhar(arquivo);
       $('dc-pronto').hidden = false;
       $('dc-pronto').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      var n = parseInt(num, 10);
-      if (n && n > (parseInt(ler(CHAVE_NUM) || '0', 10) || 0)) gravar(CHAVE_NUM, String(n));
+      if (d.numero) gravar(CHAVE_NUM, String(d.numero).trim());
+      editadoDepoisDoPdf = false;
     }).catch(function (e) {
-      avisar(e.message || 'Não consegui gerar o PDF agora. Tente de novo.');
+      avisar(e && e.nosso ? e.message : 'Sem conexão com a internet. Confira o sinal e toque em Gerar PDF de novo.');
     }).then(function () {
       gerando = false;
       botoes.forEach(function (b) { if (b) b.disabled = false; });
       if (rotulo) rotulo.textContent = original;
+      var gb2 = $('dc-gerar-barra'); if (gb2) gb2.textContent = 'Gerar PDF';
     });
   }
 
   // ------------------------------------------------------------------ ligações
   function atualizar() { renderPrevia(); salvarRascunho(); }
 
-  form.addEventListener('input', function () { esconderPronto(); atualizar(); });
-  form.addEventListener('change', function () { esconderPronto(); atualizar(); });
+  form.addEventListener('input', function () { editadoDepoisDoPdf = true; esconderPronto(); atualizar(); });
+  form.addEventListener('change', function () { editadoDepoisDoPdf = true; esconderPronto(); atualizar(); });
   $('dc-add-item').addEventListener('click', function () {
     var l = novaLinha();
     l.querySelector('.it-desc').focus();
@@ -329,7 +380,13 @@
     if (!pdfPronto) return;
     window.open(pdfPronto.url, '_blank', 'noopener');
   });
-  $('dc-novo').addEventListener('click', function () { documentoNovo(true); });
+  $('dc-novo').addEventListener('click', function () {
+    var d = dados();
+    var temConteudo = d.cliente_nome || d.itens.length || d.descricao || d.executado || d.solicitado;
+    if (temConteudo && editadoDepoisDoPdf &&
+        !confirm('Começar um documento novo? O que está preenchido agora ainda não virou PDF e será apagado.')) return;
+    documentoNovo(true);
+  });
   $('dc-limpar').addEventListener('click', function () {
     if (!confirm('Apagar tudo o que foi preenchido neste documento?')) return;
     apagar(CHAVE);

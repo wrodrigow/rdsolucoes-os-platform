@@ -209,8 +209,12 @@ def antes_depois_en():
     return _pagina_antes_depois("en")
 
 
-@bp.route("/ferramentas")
 @bp.route("/ferramentas/")
+def inicio_barra():
+    return redirect(url_for("ferramentas.inicio"), code=301)
+
+
+@bp.route("/ferramentas")
 def inicio():
     """Página única com as três ferramentas."""
     _registrar("lp_view", "ferramentas", "pt")
@@ -227,6 +231,8 @@ def inicio():
 
 # ---------------------------------------------------------------------- orçamento e ordem de serviço
 LIMITE_ITENS = 60
+LIMITE_LINHAS = 40            # por campo de texto: quebras de linha viram páginas no PDF
+PADRAO_NUMERO = re.compile(r"[0-9][0-9.,]*")
 
 
 def _json_ld_doc(d, url, nome):
@@ -265,6 +271,7 @@ def _pagina_documento(tipo):
         "pro": pro,
         "marca": _marca_doc() if pro else None,
         "urlPdf": url_for("ferramentas.documento_pdf", tipo=tipo),
+        "urlToken": url_for("ferramentas.token_csrf"),
         "urlPro": url_for("ferramentas.pro"),
         "rastreio": {"url": url_for("tracking.evento"), "ativo": not getattr(current_user, "is_admin", False)},
     }
@@ -288,17 +295,50 @@ def ordem_servico():
     return _pagina_documento("ordem-de-servico")
 
 
-def _texto(dados, chave, limite):
-    return str(dados.get(chave) or "").strip()[:limite]
+def _texto(dados, chave, limite, linhas=LIMITE_LINHAS):
+    valor = dados.get(chave)
+    s = valor.strip() if isinstance(valor, str) else ""
+    s = re.sub(r"\r\n?", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    partes = s.split("\n")
+    if len(partes) > linhas:                    # o que passar do limite vira uma linha só
+        s = "\n".join(partes[:linhas - 1] + [" ".join(p for p in partes[linhas - 1:] if p.strip())])
+    return s[:limite]
 
 
-def _numero(valor, minimo=0.0, maximo=1e8, padrao=0.0):
-    from ..services.gestao.formatos import parse_decimal
-    try:
-        v = float(parse_decimal(valor, str(padrao)))
-    except Exception:
+def numero_br(valor):
+    """Mesma regra do documentos.js: pega o primeiro número ("3 m²" → 3,
+    "R$ 1.234,56" → 1234.56, "50 reais" → 50). Vazio ou inválido → None."""
+    if isinstance(valor, bool) or valor is None:
+        return None
+    if isinstance(valor, (int, float)):
+        v = float(valor)
+    else:
+        m = PADRAO_NUMERO.search(str(valor).replace("\u00a0", " "))
+        if not m:
+            return None
+        s = m.group(0)
+        if "," in s:
+            s = s.replace(".", "").replace(",", ".")
+        elif re.search(r"\.\d{3}$", s):
+            s = s.replace(".", "")
+        inicio = re.match(r"\d+(?:\.\d+)?", s)          # como o parseFloat do JS: "1.5.6" → 1.5
+        if not inicio:
+            return None
+        v = float(inicio.group(0))
+    if v != v or v in (float("inf"), float("-inf")):
+        return None
+    return v
+
+
+def _numero(valor, minimo=0.0, maximo=1e8, padrao=0.0, casas=2):
+    """Arredonda "meio para cima", igual ao documentos.js (0,125 → 0,13)."""
+    from decimal import ROUND_HALF_UP, Decimal
+    v = numero_br(valor)
+    if v is None:
         v = padrao
-    return max(minimo, min(maximo, v))
+    v = max(minimo, min(maximo, v))
+    return float(Decimal(repr(v)).quantize(Decimal(1).scaleb(-casas), rounding=ROUND_HALF_UP))
 
 
 def _dados_documento(tipo, dados):
@@ -307,18 +347,25 @@ def _dados_documento(tipo, dados):
     from ..services.gestao.formatos import parse_data
     from datetime import date
     itens = []
-    for bruto in (dados.get("itens") or [])[:LIMITE_ITENS]:
+    brutos = dados.get("itens")
+    for bruto in (brutos if isinstance(brutos, list) else [])[:LIMITE_ITENS]:
         if not isinstance(bruto, dict):
             continue
-        descricao = str(bruto.get("descricao") or "").strip()[:300]
+        descricao = _texto(bruto, "descricao", 300, linhas=6)
         if not descricao:
             continue
+        qtd_bruta = bruto.get("quantidade")
+        vazia = qtd_bruta is None or (isinstance(qtd_bruta, str) and not qtd_bruta.strip())
         itens.append({"descricao": descricao,
-                      "quantidade": _numero(bruto.get("quantidade"), 0.001, 1e6, 1.0) if str(bruto.get("quantidade") or "").strip() else 1.0,
+                      # vazia = 1 (igual à tela); zero fica zero
+                      "quantidade": 1.0 if vazia else _numero(qtd_bruta, 0.0, 1e6, 0.0, casas=3),
                       "valor": _numero(bruto.get("valor"))})
+    data = parse_data(dados.get("data")) if isinstance(dados.get("data"), str) else None
+    if data is None or not (2000 <= data.year <= 2100):
+        data = date.today()
     comum = {
-        "numero": _texto(dados, "numero", 20),
-        "data": parse_data(dados.get("data")) or date.today(),
+        "numero": _texto(dados, "numero", 20, linhas=1),
+        "data": data,
         "cliente_nome": _texto(dados, "cliente_nome", 120),
         "cliente_telefone": _texto(dados, "cliente_telefone", 40),
         "cliente_documento": _texto(dados, "cliente_documento", 30),
@@ -328,10 +375,7 @@ def _dados_documento(tipo, dados):
         "itens": itens,
     }
     if tipo == "orcamento":
-        try:
-            validade = int(float(str(dados.get("validade_dias") or 0).replace(",", ".")))
-        except ValueError:
-            validade = 0
+        validade = int(_numero(dados.get("validade_dias"), 0, 365, 0, casas=0))
         comum.update({
             "descricao": _texto(dados, "descricao", 2000),
             "desconto": _numero(dados.get("desconto")),
@@ -360,7 +404,7 @@ def documento_pdf(tipo):
     """Monta o PDF do orçamento ou da OS. O token CSRF vem no cabeçalho X-CSRFToken."""
     if tipo not in ("orcamento", "ordem-de-servico"):
         abort(404)
-    if (request.content_length or 0) > 200_000:
+    if request.content_length is None or request.content_length > 200_000:
         return jsonify({"erro": "Documento grande demais."}), 413
     dados = request.get_json(silent=True)
     if not isinstance(dados, dict):
@@ -373,8 +417,11 @@ def documento_pdf(tipo):
         from ..models.ferramentas import FerrMarca
         marca = FerrMarca(user_id=current_user.id)          # Pro sem marca salva: sem marca d'água, cabeçalho vazio
     d = _dados_documento(tipo, dados)
+    from ..services.ferramentas_pdf import DocumentoLongo
     try:
         pdf = (gerar_orcamento if tipo == "orcamento" else gerar_ordem_servico)(d, marca)
+    except DocumentoLongo:
+        return jsonify({"erro": "O documento ficou longo demais (mais de 12 páginas). Divida em dois ou encurte os textos."}), 413
     except Exception as e:
         current_app.logger.error(f"PDF de {tipo} falhou: {e}")
         return jsonify({"erro": "Não consegui montar o PDF. Confira os campos e tente de novo."}), 500
@@ -384,6 +431,17 @@ def documento_pdf(tipo):
     numero = re.sub(r"[^0-9A-Za-z-]", "", d["numero"])[:20]
     resp = send_file(pdf, mimetype="application/pdf", as_attachment=False,
                      download_name=f"{base_nome}{'-' + numero if numero else ''}.pdf")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@bp.route("/ferramentas/token")
+@limiter.limit("60 per hour")
+def token_csrf():
+    """Token CSRF novo, pedido pelo documentos.js antes de gerar o PDF (a OS
+    costuma ficar aberta durante todo o atendimento, e o token vence em 1 h)."""
+    from flask_wtf.csrf import generate_csrf
+    resp = jsonify({"token": generate_csrf()})
     resp.headers["Cache-Control"] = "no-store"
     return resp
 

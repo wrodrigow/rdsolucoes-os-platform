@@ -17,6 +17,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (HRFlowable, Image, KeepTogether, Paragraph, SimpleDocTemplate,
                                 Spacer, Table, TableStyle)
 
@@ -29,6 +30,19 @@ CINZA_LINHA = colors.HexColor("#dde4ec")
 CINZA_FUNDO = colors.HexColor("#f3f6f9")
 CINZA_TEXTO = colors.HexColor("#4b5563")
 LARGURA = A4[0] - 3.6 * cm
+MAX_PAGINAS = 12
+
+
+class DocumentoLongo(Exception):
+    """Mais de MAX_PAGINAS páginas: a rota responde 413 em vez de prender o servidor."""
+
+
+def limpo(valor, limite=None):
+    """Texto cru (sem escape) só com o que a fonte padrão desenha (Windows-1252)."""
+    s = str(valor or "").strip().replace("\u2212", "-")
+    if limite:
+        s = s[:limite]
+    return s.encode("cp1252", "ignore").decode("cp1252")
 
 
 def txt(valor, limite=None):
@@ -37,6 +51,10 @@ def txt(valor, limite=None):
     s = str(valor or "").strip()
     if limite:
         s = s[:limite]
+    # A fonte padrão do PDF (Helvetica) só desenha o conjunto Windows-1252:
+    # emoji e símbolos fora dele virariam quadradinhos, então saem do PDF.
+    s = s.replace("−", "-")
+    s = s.encode("cp1252", "ignore").decode("cp1252")
     return escape(s).replace("\n", "<br/>")
 
 
@@ -81,7 +99,7 @@ def _identidade(marca):
     if contato:
         linhas.append(contato)
     if marca.site:
-        linhas.append(txt(marca.site, 120))
+        linhas.append(txt(str(marca.site).split("?")[0], 120))       # sem o "?igsh=..." de link colado
     if marca.endereco:
         linhas.append(txt(marca.endereco, 200))
     return "<br/>".join(linhas)
@@ -114,7 +132,9 @@ def _cabecalho(titulo, numero, data_emissao, marca, cor):
 
 
 def _secao(titulo, cor):
-    return Paragraph(titulo, _estilo("sec", fontName="Helvetica-Bold", fontSize=10.5, textColor=cor, spaceAfter=4))
+    # keepWithNext: o título nunca fica sozinho no pé da página
+    return Paragraph(titulo, _estilo("sec", fontName="Helvetica-Bold", fontSize=10.5, textColor=cor, spaceAfter=4,
+                                     keepWithNext=1))
 
 
 def _pares(pares, colunas=2):
@@ -168,20 +188,23 @@ def _tabela_itens(itens, cor, com_valores=True, desconto=0.0, mostrar_total=True
     if com_valores and mostrar_total:
         s_l = _estilo("tl", fontSize=9.5, alignment=TA_RIGHT)
         s_lb = _estilo("tlb", fontName="Helvetica-Bold", fontSize=11, alignment=TA_RIGHT, textColor=cor)
+        desconto = min(desconto, subtotal)
         if desconto > 0:
-            total_geral = max(0.0, subtotal - desconto)
+            total_geral = subtotal - desconto
             dados.append(["", "", Paragraph("Subtotal", s_l), Paragraph(moeda(subtotal), s_l)])
             dados.append(["", "", Paragraph("Desconto", s_l), Paragraph("- " + moeda(desconto), s_l)])
         dados.append(["", "", Paragraph("<b>Total</b>", s_lb), Paragraph(f"<b>{moeda(total_geral)}</b>", s_lb)])
         estilo.append(("LINEABOVE", (2, n_itens), (-1, n_itens), 1, cor))
-    t = Table(dados, colWidths=larguras, repeatRows=1)
+    t = Table(dados, colWidths=larguras, repeatRows=1, splitInRow=1)
     t.setStyle(TableStyle(estilo))
     return t, total_geral
 
 
-def _rodape_e_selo(marca):
-    """Desenha em toda página: rodapé e, no grátis, o selo diagonal."""
+def _rodape_e_selo(marca, identificacao=""):
+    """Desenha em toda página: rodapé (com o nº do documento) e, no grátis, o selo diagonal."""
     def desenhar(canv, doc):
+        if doc.page > MAX_PAGINAS:
+            raise DocumentoLongo()
         canv.saveState()
         largura, altura = A4
         if marca is None:
@@ -196,12 +219,18 @@ def _rodape_e_selo(marca):
             canv.setFillAlpha(1)
             texto = f"Gerado grátis com RD OS · {SITE} · com o Pro, sai com a sua logomarca"
         else:
-            partes = [marca.empresa or "", f"CNPJ/CPF {marca.cnpj}" if marca.cnpj else "", marca.site or ""]
+            site = limpo(marca.site, 120).split("?")[0]
+            partes = [limpo(marca.empresa, 80), f"CNPJ/CPF {limpo(marca.cnpj, 30)}" if marca.cnpj else "", site]
             texto = "  |  ".join(p for p in partes if p)
+        pagina = f"{identificacao} · pág. {doc.page}" if identificacao else f"pág. {doc.page}"
         canv.setFont("Helvetica", 7.5)
         canv.setFillColor(CINZA_TEXTO)
-        canv.drawCentredString(largura / 2, 0.8 * cm, texto[:160])
-        canv.drawRightString(largura - 1.8 * cm, 0.8 * cm, f"pág. {doc.page}")
+        esquerda, direita = 1.8 * cm, largura - 1.8 * cm
+        espaco = direita - esquerda - stringWidth(pagina, "Helvetica", 7.5) - 12
+        while texto and stringWidth(texto, "Helvetica", 7.5) > espaco:     # nunca invade o "pág. N"
+            texto = texto[:-2].rstrip() + "…"
+        canv.drawString(esquerda, 0.8 * cm, texto)
+        canv.drawRightString(direita, 0.8 * cm, pagina)
         canv.restoreState()
     return desenhar
 
@@ -212,12 +241,14 @@ def _doc(buffer, titulo):
 
 
 def _assinaturas(esquerda, direita):
+    """Duas linhas de assinatura separadas (coluna do meio vazia)."""
     s = _estilo("ass", fontSize=9, alignment=TA_CENTER, textColor=CINZA_TEXTO)
-    t = Table([["", ""], [Paragraph(esquerda, s), Paragraph(direita, s)]],
-              colWidths=[LARGURA / 2, LARGURA / 2], rowHeights=[1.3 * cm, None])
+    meio = 1.6 * cm
+    lado = (LARGURA - meio) / 2
+    t = Table([["", "", ""], [Paragraph(esquerda, s), "", Paragraph(direita, s)]],
+              colWidths=[lado, meio, lado], rowHeights=[1.3 * cm, None])
     t.setStyle(TableStyle([("LINEABOVE", (0, 1), (0, 1), 0.6, colors.black),
-                           ("LINEABOVE", (1, 1), (1, 1), 0.6, colors.black),
-                           ("LEFTPADDING", (0, 0), (-1, -1), 14), ("RIGHTPADDING", (0, 0), (-1, -1), 14)]))
+                           ("LINEABOVE", (2, 1), (2, 1), 0.6, colors.black)]))
     return t
 
 
@@ -230,12 +261,12 @@ def gerar_orcamento(d, marca=None):
     s = _estilo("corpo", fontSize=9.5, leading=13.5)
     story = _cabecalho("ORÇAMENTO", d["numero"], d["data"], marca, cor)
 
-    story.append(_secao("Cliente", cor))
     pares = _pares([("Nome", txt(d["cliente_nome"], 120)), ("Telefone", txt(d["cliente_telefone"], 40)),
                     ("CPF/CNPJ", txt(d["cliente_documento"], 30)), ("Endereço", txt(d["cliente_endereco"], 200))])
     if pares:
+        story.append(_secao("Cliente", cor))
         story.append(pares)
-    story.append(Spacer(1, 0.3 * cm))
+        story.append(Spacer(1, 0.3 * cm))
 
     if d["descricao"]:
         story.append(_secao("Serviço", cor))
@@ -262,7 +293,7 @@ def gerar_orcamento(d, marca=None):
 
     if marca is not None and (marca.condicoes or "").strip():
         caixa = Table([[Paragraph(txt(marca.condicoes, 3000), _estilo("cond", fontSize=8.5, leading=12))]],
-                      colWidths=[LARGURA])
+                      colWidths=[LARGURA], splitInRow=1)
         caixa.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), CINZA_FUNDO),
                                    ("BOX", (0, 0), (-1, -1), 0.5, cor),
                                    ("LEFTPADDING", (0, 0), (-1, -1), 8), ("RIGHTPADDING", (0, 0), (-1, -1), 8),
@@ -272,7 +303,8 @@ def gerar_orcamento(d, marca=None):
 
     story.append(Spacer(1, 0.6 * cm))
     story.append(KeepTogether([_assinaturas("Aprovação do cliente", "Data: ____/____/________")]))
-    doc.build(story, onFirstPage=_rodape_e_selo(marca), onLaterPages=_rodape_e_selo(marca))
+    ident = f"Orçamento {limpo(d['numero'], 20)}".strip()
+    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident), onLaterPages=_rodape_e_selo(marca, ident))
     buffer.seek(0)
     return buffer
 
@@ -285,13 +317,13 @@ def gerar_ordem_servico(d, marca=None):
     s = _estilo("corpo", fontSize=9.5, leading=13.5)
     story = _cabecalho("ORDEM DE SERVIÇO", d["numero"], d["data"], marca, cor)
 
-    story.append(_secao("Cliente", cor))
     pares = _pares([("Nome", txt(d["cliente_nome"], 120)), ("Telefone", txt(d["cliente_telefone"], 40)),
                     ("Responsável no local", txt(d["responsavel"], 120)), ("CPF/CNPJ", txt(d["cliente_documento"], 30)),
                     ("Endereço", txt(d["cliente_endereco"], 200))])
     if pares:
+        story.append(_secao("Cliente", cor))
         story.append(pares)
-    story.append(Spacer(1, 0.3 * cm))
+        story.append(Spacer(1, 0.3 * cm))
 
     blocos = [("Equipamento / local", d["equipamento"]), ("Serviço solicitado / defeito relatado", d["solicitado"]),
               ("Serviço executado", d["executado"])]
@@ -337,13 +369,14 @@ def gerar_ordem_servico(d, marca=None):
 
     if d["linhas_manuais"]:
         story.append(_secao("Anotações", cor))
-        s_lin = _estilo("lin", fontSize=8, leading=16, textColor=colors.HexColor("#bbbbbb"))
         for _ in range(5):
-            story.append(Paragraph("_" * 110, s_lin))
+            story.append(Spacer(1, 0.55 * cm))
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#bbbbbb")))
         story.append(Spacer(1, 0.3 * cm))
 
     story.append(Spacer(1, 0.6 * cm))
     story.append(KeepTogether([_assinaturas("Técnico responsável", "Cliente / responsável")]))
-    doc.build(story, onFirstPage=_rodape_e_selo(marca), onLaterPages=_rodape_e_selo(marca))
+    ident = f"OS {limpo(d['numero'], 20)}".strip()
+    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident), onLaterPages=_rodape_e_selo(marca, ident))
     buffer.seek(0)
     return buffer

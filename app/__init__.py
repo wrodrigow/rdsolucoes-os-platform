@@ -4,9 +4,28 @@ from .config import config
 from .extensions import db, login_manager, mail, csrf, migrate, limiter
 
 
+from flask import Request as _RequestFlask
+
+
+class _Requisicao(_RequestFlask):
+    """Limites de corpo da requisição. O padrão do site era 500 MB (por causa do
+    instalador do RD OS), o que deixava qualquer rota ler um corpo enorme na
+    memória (inclusive enviado em partes, sem Content-Length) e derrubar a
+    instância de 512 MB — com a Gestão junto. Agora só o upload do instalador
+    aceita arquivo grande."""
+    max_form_memory_size = 2 * 1024 * 1024          # campos de formulário (não arquivos)
+
+    @property
+    def max_content_length(self):
+        if self.endpoint == "admin.nova_versao":
+            return 500 * 1024 * 1024
+        return 20 * 1024 * 1024
+
+
 def create_app(env=None):
     env = env or os.environ.get("FLASK_ENV", "default")
     app = Flask(__name__, instance_relative_config=True)
+    app.request_class = _Requisicao
     app.config.from_object(config[env])
 
     # ProxyFix: necessário para funcionar atrás de proxy reverso (Passenger/nginx)
@@ -111,6 +130,20 @@ def create_app(env=None):
     return app
 
 
+def _adicionar_coluna(tabela, coluna, tipo):
+    """ALTER TABLE ... ADD COLUMN seguro com os 2 workers do gunicorn subindo
+    juntos: no Postgres usa IF NOT EXISTS; em outro banco, ignora "já existe"."""
+    from sqlalchemy import text
+    postgres = db.engine.dialect.name == "postgresql"
+    sql = f"ALTER TABLE {tabela} ADD COLUMN {'IF NOT EXISTS ' if postgres else ''}{coluna} {tipo}"
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(text(sql))
+    except Exception as e:
+        if "duplicate" not in str(e).lower() and "already exists" not in str(e).lower():
+            raise
+
+
 def _ensure_schema_upgrades():
     """Adiciona colunas novas em tabelas já existentes em produção.
     Não há Alembic configurado (só create_all, que não altera tabelas
@@ -124,10 +157,9 @@ def _ensure_schema_upgrades():
     if "ferr_marcas" in tabelas:
         existentes = {c["name"] for c in inspector.get_columns("ferr_marcas")}
         novas = {"cnpj": "VARCHAR(30)", "email": "VARCHAR(120)", "endereco": "VARCHAR(200)", "condicoes": "TEXT"}
-        with db.engine.begin() as conn:
-            for coluna, tipo in novas.items():
-                if coluna not in existentes:
-                    conn.execute(text(f"ALTER TABLE ferr_marcas ADD COLUMN {coluna} {tipo}"))
+        for coluna, tipo in novas.items():
+            if coluna not in existentes:
+                _adicionar_coluna("ferr_marcas", coluna, tipo)
 
     if "traffic_events" not in tabelas:
         return
