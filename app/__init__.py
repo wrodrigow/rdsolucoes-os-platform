@@ -36,6 +36,7 @@ def create_app(env=None):
     from .routes.tracking import bp as tracking_bp
     from .routes.blog_api import bp as blog_api_bp
     from .routes.gestao import bp as gestao_bp
+    from .routes.ferramentas import bp as ferramentas_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -46,6 +47,7 @@ def create_app(env=None):
     app.register_blueprint(tracking_bp, url_prefix="/api/tracking")
     app.register_blueprint(blog_api_bp, url_prefix="/api/blog")
     app.register_blueprint(gestao_bp, url_prefix="/gestao")
+    app.register_blueprint(ferramentas_bp)  # /antes-e-depois, /es/…, /en/…, /ferramentas/…
 
     # Contexto global para templates
     @app.context_processor
@@ -71,7 +73,7 @@ def create_app(env=None):
             "https://www.clarity.ms https://*.clarity.ms; "
             "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
             "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-            "img-src 'self' data: https:; "
+            "img-src 'self' data: blob: https:; "
             "frame-src https://www.mercadopago.com.br https://www.mercadolibre.com https://td.doubleclick.net https://www.googletagmanager.com; "
             "connect-src 'self' https://api.mercadopago.com https://www.facebook.com https://connect.facebook.net "
             "https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com "
@@ -149,6 +151,7 @@ def _seed_initial_data(app):
         "produto_versao_atual": "v1.19",
         "mp_ativo": "1",
         "manutencao_ativa": "0",
+        "ferr_pro_preco": "10.00",  # Pro das ferramentas online (pagamento único)
     }
     for k, v in defaults.items():
         SiteConfig.set_if_missing(k, v)

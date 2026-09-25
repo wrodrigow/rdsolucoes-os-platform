@@ -1,0 +1,243 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}{{ t.title }}{% endblock %}
+{% block description %}{{ t.description }}{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical }}">
+{% for alt in alternativas %}
+<link rel="alternate" hreflang="{{ alt.hreflang }}" href="{{ alt.url }}">
+{% endfor %}
+{% for alt in alternativas if alt.idioma == 'en' %}
+<link rel="alternate" hreflang="x-default" href="{{ alt.url }}">
+{% endfor %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RD OS">
+<meta property="og:title" content="{{ t.title }}">
+<meta property="og:description" content="{{ t.description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="{{ meta_idioma.og }}">
+{% for alt in alternativas if alt.idioma != idioma %}
+<meta property="og:locale:alternate" content="{{ {'pt': 'pt_BR', 'es': 'es_LA', 'en': 'en_US'}[alt.idioma] }}">
+{% endfor %}
+<meta name="twitter:card" content="summary_large_image">
+{% for bloco in json_ld %}
+<script type="application/ld+json">{{ bloco|tojson }}</script>
+{% endfor %}
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio">
+  <p class="olho">{{ t.eyebrow }}</p>
+  <h1>{{ t.h1 }}</h1>
+  <p class="lead">{{ t.lead }}</p>
+</section>
+
+<section class="ferramenta envoltorio" aria-label="{{ t.nav_ferramenta }}">
+  <div class="palco">
+    <canvas id="ad-canvas" width="1080" height="1080" role="img" aria-label="{{ t.canvas_label }}"></canvas>
+    <p id="ad-nota-exemplo" class="nota-palco exemplo">{{ t.nota_exemplo }}</p>
+    <p id="ad-dica" class="nota-palco" hidden>{{ t.dica }}</p>
+  </div>
+
+  <div class="controles">
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">1</span>{{ t.passo_fotos }}</legend>
+      <div class="fotos">
+        {% for lado in ['antes', 'depois'] %}
+        <div class="foto-slot">
+          <button type="button" class="slot" id="ad-escolher-{{ lado }}">
+            <span class="mini" id="ad-mini-{{ lado }}"></span>
+            <span class="rotulo-slot"><span class="etiqueta {{ lado }}">{{ t.js[lado] }}</span>{{ t['foto_' + lado] }}</span>
+          </button>
+          <input type="file" id="ad-arquivo-{{ lado }}" class="sr-only" accept="image/*" tabindex="-1" aria-hidden="true">
+          <div class="ajuste" id="ad-ajuste-{{ lado }}" hidden>
+            <label for="ad-zoom-{{ lado }}">{{ t.zoom }}
+              <input type="range" id="ad-zoom-{{ lado }}" min="1" max="3" step="0.01" value="1">
+            </label>
+            <label for="ad-x-{{ lado }}">{{ t.horizontal }}
+              <input type="range" id="ad-x-{{ lado }}" min="-1" max="1" step="0.01" value="0">
+            </label>
+            <label for="ad-y-{{ lado }}">{{ t.vertical }}
+              <input type="range" id="ad-y-{{ lado }}" min="-1" max="1" step="0.01" value="0">
+            </label>
+            <button type="button" class="botao-texto" id="ad-centralizar-{{ lado }}">{{ t.centralizar }}</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="linha-inverter">
+        <button type="button" class="botao-texto" id="ad-trocar" disabled>⇄ {{ t.inverter }}</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">2</span>{{ t.passo_formato }}</legend>
+      <div class="formatos">
+        {% for valor, nome, uso in t.formatos %}
+        <div class="formato">
+          <input type="radio" name="ad-formato" id="ad-formato-{{ valor }}" value="{{ valor }}"{% if loop.first %} checked{% endif %}>
+          <label for="ad-formato-{{ valor }}"><span class="prop {{ valor }}" aria-hidden="true"></span>{{ nome }}<small>{{ uso }}</small></label>
+        </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <details class="bloco">
+      <summary><span class="num" aria-hidden="true">3</span>{{ t.passo_textos }}</summary>
+      <div class="campos">
+        <label class="campo" for="ad-titulo">{{ t.titulo }}
+          <input type="text" id="ad-titulo" maxlength="60" placeholder="{{ t.titulo_ph }}" autocomplete="off">
+        </label>
+        <label class="campo" for="ad-subtitulo">{{ t.subtitulo }}
+          <input type="text" id="ad-subtitulo" maxlength="80" placeholder="{{ t.subtitulo_ph }}" autocomplete="off">
+        </label>
+        <div class="campos duplo">
+          <label class="campo" for="ad-rotulo-antes">{{ t.rotulo_antes }}
+            <input type="text" id="ad-rotulo-antes" maxlength="16" placeholder="{{ t.js.antes }}" autocomplete="off">
+          </label>
+          <label class="campo" for="ad-rotulo-depois">{{ t.rotulo_depois }}
+            <input type="text" id="ad-rotulo-depois" maxlength="16" placeholder="{{ t.js.depois }}" autocomplete="off">
+          </label>
+        </div>
+      </div>
+    </details>
+
+    {% if pro %}
+    <fieldset class="bloco">
+      <legend><span class="num" aria-hidden="true">4</span>{{ t.passo_marca }}</legend>
+      {% if marca and (marca.logo or marca.empresa or marca.telefone or marca.site) %}
+      <div class="kit">
+        {% if marca.logo %}<img src="{{ marca.logo }}" alt="" width="56" height="56">{% endif %}
+        <div><b>{{ marca.empresa or '—' }}</b><span>{{ [marca.telefone, marca.site]|select|join(' · ') }}</span></div>
+      </div>
+      {% else %}
+      <p class="aviso-ferramenta">{{ t.marca_vazia }} <a href="{{ url_for('ferramentas.minha_marca') }}">{{ t.marca_vazia_cta }}</a></p>
+      {% endif %}
+      <div class="cores">
+        <label class="cor" for="ad-cor-primaria"><input type="color" id="ad-cor-primaria" value="{{ (marca.corPrimaria if marca else None) or '#0c2340' }}">{{ t.cor_primaria }}</label>
+        <label class="cor" for="ad-cor-destaque"><input type="color" id="ad-cor-destaque" value="{{ (marca.corDestaque if marca else None) or '#f97316' }}">{{ t.cor_destaque }}</label>
+      </div>
+      <label class="chave" for="ad-rodape-marca"><input type="checkbox" id="ad-rodape-marca" checked>{{ t.rodape_marca }}</label>
+      <p style="margin:10px 0 0"><a href="{{ url_for('ferramentas.minha_marca') }}">{{ t.marca_editar }}</a></p>
+    </fieldset>
+    {% endif %}
+
+    <div class="acoes">
+      <button type="button" class="botao principal" id="ad-baixar" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16"/></svg>{{ t.baixar }}
+      </button>
+      <button type="button" class="botao secundario" id="ad-compartilhar" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>{{ t.compartilhar }}
+      </button>
+      <button type="button" class="botao escuro largo" id="ad-video" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>
+        <span id="ad-video-rotulo">{{ t.video }}</span>{% if not pro %} <span class="selo">PRO</span>{% endif %}
+      </button>
+    </div>
+    <div id="ad-video-pronto" class="video-pronto" hidden>
+      <button type="button" class="botao principal" id="ad-video-compartilhar">{{ t.video_compartilhar }}</button>
+      <button type="button" class="botao secundario" id="ad-video-baixar">{{ t.video_baixar }}</button>
+    </div>
+    <p id="ad-aviso" class="aviso-ferramenta" role="status" hidden></p>
+    <p class="privacidade">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      {{ t.privacidade }}
+    </p>
+
+    {% if not pro %}
+      {% if idioma == 'pt' %}
+      <aside class="upsell" id="pro">
+        <h2>{{ t.upsell_titulo }}</h2>
+        <ul>{% for item in t.upsell_itens %}<li>{{ item }}</li>{% endfor %}</ul>
+        <p class="preco"><b>{{ t.upsell_preco }}</b><span>{{ t.upsell_preco_nota }}</span></p>
+        <div class="linha-cta">
+          <a class="botao principal js-pro" data-origem="caixa-pro" href="{{ url_for('ferramentas.pro') }}">{{ t.upsell_cta }}</a>
+          {% if not current_user.is_authenticated %}
+          <a class="link-claro" href="{{ url_for('auth.login', next=request.path) }}">{{ t.upsell_ja_tenho }}</a>
+          {% endif %}
+        </div>
+      </aside>
+      {% else %}
+      <aside class="upsell" id="pro">
+        <h2>{{ t.upsell_titulo }}</h2>
+        <ul>{% for item in t.upsell_itens %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% if lista_ok %}
+        <p class="retorno-lista" role="status">{{ t.espera_ok }}</p>
+        {% else %}
+        <p style="margin:0;font-size:14px;opacity:.9">{{ t.espera_texto }}</p>
+        {% if lista_erro %}<p class="retorno-lista" role="alert">{{ t.espera_erro }}</p>{% endif %}
+        <form method="post" action="{{ url_for('ferramentas.lista_espera') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="idioma" value="{{ idioma }}">
+          <label class="sr-only" for="espera-email">{{ t.espera_email }}</label>
+          <input type="email" id="espera-email" name="email" required maxlength="180" autocomplete="email" placeholder="{{ t.espera_email }}">
+          <button type="submit" class="botao principal js-pro" data-origem="lista-espera">{{ t.espera_cta }}</button>
+        </form>
+        {% endif %}
+      </aside>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="secao envoltorio" aria-labelledby="como-titulo">
+  <h2 id="como-titulo">{{ t.como_titulo }}</h2>
+  <ol class="passos">
+    {% for titulo, texto in t.como_passos %}
+    <li><h3>{{ titulo }}</h3><p>{{ texto }}</p></li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="secao envoltorio" aria-labelledby="planos-titulo">
+  <h2 id="planos-titulo">{{ t.planos_titulo }}</h2>
+  <div class="tabela-rolagem">
+    <table class="planos">
+      <thead>
+        <tr><th scope="col">{{ t.planos_col_recurso }}</th><th scope="col" class="marca-col">{{ t.planos_col_gratis }}</th><th scope="col" class="marca-col col-pro">{{ t.planos_col_pro }}</th></tr>
+      </thead>
+      <tbody>
+        {% for recurso, gratis, com_pro in t.planos_linhas %}
+        <tr>
+          <th scope="row" style="font-weight:500">{{ recurso }}</th>
+          <td class="marca-col">{% if gratis %}<span class="sim" aria-label="✓">✓</span>{% else %}<span class="nao" aria-label="—">—</span>{% endif %}</td>
+          <td class="marca-col col-pro">{% if com_pro %}<span class="sim" aria-label="✓">✓</span>{% else %}<span class="nao">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td></td><td class="marca-col">{{ t.planos_preco_gratis }}</td><td class="marca-col col-pro">{{ t.planos_preco_pro }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+  {% if idioma == 'pt' and not pro %}
+  <div class="depois-tabela">
+    <a class="botao principal js-pro" data-origem="tabela" href="{{ url_for('ferramentas.pro') }}">{{ t.planos_cta }}</a>
+    <p>{{ t.planos_garantia }}</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="secao envoltorio profissoes" aria-labelledby="profissoes-titulo">
+  <h2 id="profissoes-titulo">{{ t.profissoes_titulo }}</h2>
+  <p>{{ t.profissoes_texto }}</p>
+</section>
+
+<section class="secao envoltorio" aria-labelledby="faq-titulo">
+  <h2 id="faq-titulo">{{ t.faq_titulo }}</h2>
+  <div class="faq">
+    {% for pergunta, resposta in t.faq %}
+    <details><summary>{{ pergunta }}</summary><p>{{ resposta }}</p></details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>window.RD_FERR = {{ cfg|tojson }};</script>
+<script src="{{ url_for('static', filename='ferramentas/antes-depois.js') }}?v={{ versao_estatico('antes-depois.js') }}" defer></script>
+{% endblock %}

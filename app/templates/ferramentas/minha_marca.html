@@ -1,0 +1,100 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}Minha marca | RD OS Pro{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio pagina-estreita">
+  <p class="olho">RD OS Pro</p>
+  <h1>Minha marca</h1>
+  <p class="lead">O que você salvar aqui entra no rodapé de todas as suas artes de antes e depois. Dá para mudar quando quiser.</p>
+</section>
+
+<section class="envoltorio pagina-estreita">
+  <form class="cartao form-compra" method="post" enctype="multipart/form-data" action="{{ url_for('ferramentas.minha_marca') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <h2>Logotipo</h2>
+    <div class="previa-logo">
+      <div class="caixa">
+        <img id="mm-logo-previa" src="{{ logo_url or '' }}" alt="Seu logotipo"{% if not logo_url %} hidden{% endif %}>
+        <span id="mm-logo-vazio" class="letra-miuda"{% if logo_url %} hidden{% endif %}>Sem logo</span>
+      </div>
+      <div class="campos" style="flex:1 1 220px">
+        <label class="campo" for="mm-logo">Enviar logotipo
+          <input type="file" id="mm-logo" name="logo" accept="image/png,image/jpeg,image/webp">
+          <span class="ajuda">PNG com fundo transparente fica melhor. JPG ou WEBP também servem. Até 4 MB.</span>
+        </label>
+        {% if logo_url %}
+        <label class="chave" for="mm-remover" style="margin-top:0"><input type="checkbox" id="mm-remover" name="remover_logo" value="1">Remover o logotipo atual</label>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2 style="margin-top:10px">Nome e contato</h2>
+    <label class="campo" for="mm-empresa">Nome da empresa
+      <input type="text" id="mm-empresa" name="empresa" maxlength="80" value="{{ marca.empresa if marca and marca.empresa else '' }}" autocomplete="organization" placeholder="Ex.: Silva Reformas">
+    </label>
+    <div class="campos duplo">
+      <label class="campo" for="mm-telefone">WhatsApp ou telefone
+        <input type="tel" id="mm-telefone" name="telefone" maxlength="30" value="{{ marca.telefone if marca and marca.telefone else '' }}" autocomplete="tel" placeholder="(11) 90000-0000">
+      </label>
+      <label class="campo" for="mm-site">Site ou @instagram
+        <input type="text" id="mm-site" name="site" maxlength="120" value="{{ marca.site if marca and marca.site else '' }}" placeholder="@suaempresa">
+      </label>
+    </div>
+
+    <h2 style="margin-top:10px">Cores</h2>
+    <div class="cores">
+      <label class="cor" for="mm-cor-primaria"><input type="color" id="mm-cor-primaria" name="cor_primaria" value="{{ cor_primaria }}">Cor das faixas</label>
+      <label class="cor" for="mm-cor-destaque"><input type="color" id="mm-cor-destaque" name="cor_destaque" value="{{ cor_destaque }}">Cor de destaque</label>
+    </div>
+
+    <div class="previa-faixa" aria-label="Prévia do rodapé da arte">
+      <div class="faixa" id="mm-faixa" style="background:{{ cor_primaria }};border-top-color:{{ cor_destaque }}">
+        <img id="mm-faixa-logo" src="{{ logo_url or '' }}" alt=""{% if not logo_url %} hidden{% endif %}>
+        <div class="txt">
+          <b id="mm-faixa-empresa">{{ marca.empresa if marca and marca.empresa else 'Nome da empresa' }}</b>
+          <span id="mm-faixa-contato" style="color:{{ cor_destaque }}">{{ [marca.telefone if marca else None, marca.site if marca else None]|select|join('  ·  ') or '(11) 90000-0000  ·  @suaempresa' }}</span>
+        </div>
+      </div>
+    </div>
+    <p class="letra-miuda">Prévia do rodapé. As fotos e os textos da arte você escolhe no gerador.</p>
+
+    <div class="botoes" style="justify-content:flex-start;margin-top:6px">
+      <button type="submit" class="botao principal">Salvar minha marca</button>
+      <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Abrir o gerador</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var faixa = $('mm-faixa'), contato = $('mm-faixa-contato');
+  function atualizarTextos() {
+    $('mm-faixa-empresa').textContent = $('mm-empresa').value.trim() || 'Nome da empresa';
+    var c = [$('mm-telefone').value.trim(), $('mm-site').value.trim()].filter(Boolean).join('  ·  ');
+    contato.textContent = c || '(11) 90000-0000  ·  @suaempresa';
+  }
+  ['mm-empresa', 'mm-telefone', 'mm-site'].forEach(function (id) { $(id).addEventListener('input', atualizarTextos); });
+  $('mm-cor-primaria').addEventListener('input', function (e) { faixa.style.background = e.target.value; });
+  $('mm-cor-destaque').addEventListener('input', function (e) { faixa.style.borderTopColor = e.target.value; contato.style.color = e.target.value; });
+  $('mm-logo').addEventListener('change', function (e) {
+    var arq = e.target.files && e.target.files[0];
+    if (!arq) return;
+    if (arq.size > 4 * 1024 * 1024) {
+      alert('Esse arquivo tem mais de 4 MB. Escolha uma imagem menor (dá para tirar um print do logotipo).');
+      e.target.value = '';
+      return;
+    }
+    var url = URL.createObjectURL(arq);
+    ['mm-logo-previa', 'mm-faixa-logo'].forEach(function (id) { $(id).src = url; $(id).hidden = false; });
+    $('mm-logo-vazio').hidden = true;
+    var rem = $('mm-remover'); if (rem) rem.checked = false;
+  });
+})();
+</script>
+{% endblock %}

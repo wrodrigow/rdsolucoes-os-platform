@@ -273,6 +273,11 @@ function trafRenderFunil(funil, mostrarVendas) {
   }
 }
 
+// Nome e e-mail vêm do formulário de compra: nunca entram no innerHTML sem escape
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+
 function trafRenderEventos(eventos) {
   const tbody = document.getElementById('traf-eventos-tbody');
   if (!eventos.length) {
@@ -281,10 +286,10 @@ function trafRenderEventos(eventos) {
   }
   tbody.innerHTML = eventos.map(e => `
     <tr>
-      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${e.hora}</td>
-      <td><span class="adm-badge adm-badge-${e.tipo === 'checkout_success' ? 'success' : e.tipo === 'checkout_fail' ? 'danger' : e.tipo === 'checkout_start' ? 'warning' : 'info'}">${EVENTO_LABELS[e.tipo] || e.tipo}</span></td>
+      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${esc(e.hora)}</td>
+      <td><span class="adm-badge adm-badge-${e.tipo === 'checkout_success' ? 'success' : e.tipo === 'checkout_fail' ? 'danger' : e.tipo === 'checkout_start' ? 'warning' : 'info'}">${esc(EVENTO_LABELS[e.tipo] || e.tipo)}</span></td>
       <td style="font-size:0.8rem;">${e.bot ? '<span style="color:#9ca3af;"><i class="fa-solid fa-robot"></i> robô</span>' : '<span style="color:#059669;"><i class="fa-solid fa-user"></i> real</span>'}</td>
-      <td style="font-size:0.8rem;color:var(--adm-muted);">${e.device}</td>
+      <td style="font-size:0.8rem;color:var(--adm-muted);">${esc(e.device)}</td>
     </tr>
   `).join('');
 }
@@ -297,12 +302,12 @@ function trafRenderVendas(vendas) {
   }
   tbody.innerHTML = vendas.map(v => `
     <tr>
-      <td style="font-size:0.82rem;font-weight:600;">${v.numero_pedido}</td>
-      <td style="font-size:0.82rem;">${v.cliente}</td>
-      <td style="font-size:0.8rem;color:var(--adm-muted);">${v.email}</td>
-      <td style="font-size:0.82rem;color:#059669;font-weight:600;">${v.valor}</td>
-      <td style="font-size:0.8rem;">${v.canal}</td>
-      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${v.data}</td>
+      <td style="font-size:0.82rem;font-weight:600;">${esc(v.numero_pedido)}</td>
+      <td style="font-size:0.82rem;">${esc(v.cliente)}</td>
+      <td style="font-size:0.8rem;color:var(--adm-muted);">${esc(v.email)}</td>
+      <td style="font-size:0.82rem;color:#059669;font-weight:600;">${esc(v.valor)}</td>
+      <td style="font-size:0.8rem;">${esc(v.canal)}</td>
+      <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">${esc(v.data)}</td>
     </tr>
   `).join('');
 }

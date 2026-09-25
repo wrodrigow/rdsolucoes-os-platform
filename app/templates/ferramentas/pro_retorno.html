@@ -1,0 +1,81 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}{% if aprovado %}Pro liberado{% elif situacao == 'falha' %}Pagamento não concluído{% else %}Pagamento em análise{% endif %} | RD OS{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">
+{% if order and not aprovado and situacao != 'falha' %}<meta http-equiv="refresh" content="15">{% endif %}{% endblock %}
+
+{% block conteudo %}
+<section class="envoltorio pagina-estreita" style="padding-block:28px">
+  <div class="cartao">
+    {% if aprovado %}
+      <div class="status-grande">
+        <div class="icone" aria-hidden="true">✓</div>
+        <h1>Pagamento aprovado! Seu Pro está liberado.</h1>
+        {% if order %}<p class="letra-miuda">Pedido {{ order.numero_pedido }}</p>{% endif %}
+      </div>
+
+      {% if pode_criar_senha %}
+        <h2>Crie a sua senha</h2>
+        <p>Seu login é <strong>{{ order.user.email }}</strong>. Com a senha, você entra no celular ou no computador quando quiser.</p>
+        <form class="form-compra" method="post" action="{{ url_for('ferramentas.criar_senha') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="email" name="username" value="{{ order.user.email }}" autocomplete="username" hidden>
+          <label class="campo" for="senha">Senha <span class="ajuda">(pelo menos 8 caracteres)</span>
+            <input type="password" id="senha" name="senha" required minlength="8" autocomplete="new-password">
+          </label>
+          <label class="campo" for="senha2">Repita a senha
+            <input type="password" id="senha2" name="senha2" required minlength="8" autocomplete="new-password">
+          </label>
+          <button type="submit" class="botao principal">Criar senha e configurar minha marca</button>
+          <p class="letra-miuda">Também mandamos um e-mail para {{ email_mascarado }} com um link para criar a senha, se preferir fazer depois.</p>
+        </form>
+      {% elif e_dono %}
+        <p style="text-align:center">Agora envie o seu logotipo e escolha as suas cores. Isso entra em todas as artes.</p>
+        <div class="botoes">
+          <a class="botao principal" href="{{ url_for('ferramentas.minha_marca') }}">Configurar minha marca</a>
+          <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Abrir o gerador</a>
+        </div>
+      {% elif ja_tem_senha %}
+        <p style="text-align:center">O Pro foi liberado na conta <strong>{{ email_mascarado }}</strong>. Entre com a senha que você já usa.</p>
+        <div class="botoes">
+          <a class="botao principal" href="{{ url_for('auth.login', next=url_for('ferramentas.minha_marca')) }}">Entrar</a>
+          <a class="botao secundario" href="{{ url_for('auth.recuperar_senha') }}">Esqueci a senha</a>
+        </div>
+      {% else %}
+        <p style="text-align:center">Mandamos um e-mail para <strong>{{ email_mascarado or 'o seu e-mail' }}</strong> com o link para criar a sua senha. Se não chegar em alguns minutos, olhe o spam ou as promoções.</p>
+        <div class="botoes">
+          <a class="botao principal" href="{{ url_for('auth.login', next=url_for('ferramentas.minha_marca')) }}">Já tenho senha — entrar</a>
+          <a class="botao secundario" href="{{ url_for('auth.recuperar_senha') }}">Receber o link de novo</a>
+        </div>
+      {% endif %}
+
+    {% elif situacao == 'falha' %}
+      <div class="status-grande">
+        <div class="icone erro" aria-hidden="true">✕</div>
+        <h1>O pagamento não foi concluído</h1>
+        <p>Nada foi cobrado. Você pode tentar de novo com Pix ou com outro cartão.</p>
+        <div class="botoes">
+          <a class="botao principal" href="{{ url_for('ferramentas.pro') }}#comprar">Tentar de novo</a>
+          <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Voltar ao gerador</a>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="status-grande">
+        <div class="icone espera" aria-hidden="true">…</div>
+        <h1>Pagamento em análise</h1>
+        {% if order %}
+        <p>Assim que o Mercado Pago aprovar, o Pro é liberado e mandamos um e-mail para <strong>{{ email_mascarado }}</strong>. Esta página se atualiza sozinha.</p>
+        <p class="letra-miuda">Pedido {{ order.numero_pedido }}. No Pix, a aprovação costuma ser na hora; no cartão, pode levar alguns minutos.</p>
+        {% else %}
+        <p>Não encontrei o seu pedido nesta página, mas isso não afeta o pagamento. Quando for aprovado, você recebe um e-mail com o acesso.</p>
+        {% endif %}
+        <div class="botoes">
+          <a class="botao secundario" href="{{ request.full_path }}">Atualizar agora</a>
+          <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Voltar ao gerador</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

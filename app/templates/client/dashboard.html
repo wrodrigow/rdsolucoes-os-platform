@@ -8,6 +8,23 @@
   <p style="color:var(--cl-muted);font-size:0.9rem;">Bem-vindo à sua área do cliente. Gerencie sua licença e downloads aqui.</p>
 </div>
 
+<!-- Ferramentas online (antes e depois) -->
+<div style="margin-top:16px;padding:16px 18px;border-radius:12px;background:#0c2340;color:#fff;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-left:6px solid #f97316;">
+  <div style="flex:1 1 240px;">
+    {% if ferr_pro %}
+    <strong style="display:block;font-size:1rem;">Gerador de antes e depois — Pro liberado</strong>
+    <span style="font-size:0.85rem;opacity:.85;">Suas artes saem com o seu logotipo, sem marca d'água, e com vídeo.</span>
+    {% else %}
+    <strong style="display:block;font-size:1rem;">Novo: gerador de antes e depois, grátis</strong>
+    <span style="font-size:0.85rem;opacity:.85;">Monte a arte do serviço pelo celular. No Pro, com a sua marca.</span>
+    {% endif %}
+  </div>
+  {% if ferr_pro %}
+  <a href="{{ url_for('ferramentas.minha_marca') }}" style="background:#f97316;color:#1a0d03;font-weight:700;padding:10px 16px;border-radius:10px;text-decoration:none;">Minha marca</a>
+  {% endif %}
+  <a href="{{ url_for('ferramentas.antes_depois_pt') }}" style="background:#fff;color:#0c2340;font-weight:700;padding:10px 16px;border-radius:10px;text-decoration:none;">Abrir o gerador</a>
+</div>
+
 <!-- Stats -->
 <div class="cl-stats-row" style="margin-top:24px;">
   <div class="cl-stat-card">

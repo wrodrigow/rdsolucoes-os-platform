@@ -8,20 +8,27 @@ def get_sdk():
     return mercadopago.SDK(current_app.config["MP_ACCESS_TOKEN"])
 
 
-def criar_preferencia(order, user):
-    """Cria uma preference no Mercado Pago e retorna o init_point."""
+def criar_preferencia(order, user, *, item_id="rdsolucoes-os-vitalicia",
+                      descricao="Licença Vitalícia — sem mensalidade, instale em 1 computador",
+                      retorno="/checkout", descritor="RD SOLUCOES OS", parcelas=12,
+                      tipos_excluidos=()):
+    """Cria uma preference no Mercado Pago e retorna o init_point.
+
+    Os padrões são os do RD OS desktop; as ferramentas online (Pro) passam os
+    próprios valores — outro item, outras páginas de retorno, pagamento à vista.
+    """
     sdk = get_sdk()
     base_url = current_app.config["BASE_URL"]
 
     preference_data = {
         "items": [
             {
-                "id": "rdsolucoes-os-vitalicia",
+                "id": item_id,
                 "title": order.produto_nome,
                 "quantity": 1,
                 "unit_price": float(order.valor),
                 "currency_id": "BRL",
-                "description": "Licença Vitalícia — sem mensalidade, instale em 1 computador",
+                "description": descricao,
             }
         ],
         "payer": {
@@ -31,18 +38,18 @@ def criar_preferencia(order, user):
         },
         "external_reference": order.id,
         "back_urls": {
-            "success": f"{base_url}/checkout/sucesso",
-            "pending": f"{base_url}/checkout/pendente",
-            "failure": f"{base_url}/checkout/falha",
+            "success": f"{base_url}{retorno}/sucesso",
+            "pending": f"{base_url}{retorno}/pendente",
+            "failure": f"{base_url}{retorno}/falha",
         },
         # auto_return só funciona com URL pública; em localhost deixa desabilitado
         **({"auto_return": "approved"} if not base_url.startswith("http://localhost") else {}),
         "notification_url": f"{base_url}/payment/webhook",
-        "statement_descriptor": "RD SOLUCOES OS",
+        "statement_descriptor": descritor,
         "expires": False,
         "payment_methods": {
-            "excluded_payment_types": [],
-            "installments": 12,
+            "excluded_payment_types": [{"id": tipo} for tipo in tipos_excluidos],
+            "installments": parcelas,
         },
         "metadata": {
             "order_id": order.id,

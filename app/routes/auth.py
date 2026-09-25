@@ -9,6 +9,21 @@ from ..models.log import Log
 bp = Blueprint("auth", __name__)
 
 
+def _next_seguro(destino):
+    """Só aceita caminho do próprio site. Recusa caracteres de controle e espaço
+    (o navegador descarta TAB/quebra de linha: "/\t/site.com" viraria "//site.com"),
+    barra invertida e qualquer coisa com esquema ou domínio."""
+    from urllib.parse import urlsplit
+    if not destino or not destino.startswith("/") or destino.startswith("//"):
+        return None
+    if "\\" in destino or any(ord(c) < 33 or ord(c) == 127 for c in destino):
+        return None
+    partes = urlsplit(destino)
+    if partes.scheme or partes.netloc:
+        return None
+    return destino
+
+
 def _get_ip():
     return request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
 
@@ -56,7 +71,7 @@ def login():
         login_user(user, remember=lembrar)
         Log.registrar("login_sucesso", user_id=user.id, ip=_get_ip())
 
-        next_page = request.args.get("next")
+        next_page = _next_seguro(request.args.get("next"))
         if user.is_admin:
             return redirect(next_page or url_for("admin.dashboard"))
         return redirect(next_page or url_for("client.dashboard"))
@@ -141,8 +156,9 @@ def nova_senha(token):
     if exp is not None and exp.tzinfo is None:
         exp = exp.replace(tzinfo=timezone.utc)
     if not user or not exp or exp < datetime.now(timezone.utc):
-        flash("Link inválido ou expirado.", "danger")
-        return redirect(url_for("auth.recuperar_senha"))
+        flash("Esse link não vale mais. Se você já criou a sua senha, é só entrar; "
+              "se esqueceu, peça um link novo em \"Esqueci a senha\".", "warning")
+        return redirect(url_for("auth.login"))
 
     if request.method == "POST":
         senha = request.form.get("senha", "")

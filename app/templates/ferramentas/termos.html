@@ -1,0 +1,42 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}Termos do RD OS Ferramentas{% endblock %}
+{% block description %}Termos de uso do gerador de antes e depois do RD OS: versão grátis, Pro por pagamento único, direito de arrependimento e privacidade das fotos.{% endblock %}
+{% block seo %}<link rel="canonical" href="{{ canonical }}">{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio pagina-estreita">
+  <p class="olho">RD OS Ferramentas</p>
+  <h1>Termos de uso</h1>
+  <p class="lead">Valem para o gerador de antes e depois (versão grátis e Pro). O RD OS para computador tem os próprios <a href="{{ url_for('main.termos') }}">termos</a>.</p>
+</section>
+
+<section class="envoltorio pagina-estreita">
+  <div class="cartao faq-termos">
+    <h2>1. Quem oferece</h2>
+    <p>RD Soluções LTDA, CNPJ 55.849.815/0001-31, São Bernardo do Campo – SP. Contato: <a href="mailto:{{ site_cfg.get('site_email_contato') or 'contato@rdsolucoes.eco.br' }}">{{ site_cfg.get('site_email_contato') or 'contato@rdsolucoes.eco.br' }}</a> ou WhatsApp <a href="https://wa.me/{{ site_cfg.get('site_whatsapp') or '5511941579827' }}" rel="noopener">{{ site_cfg.get('site_telefone') or '(11) 94157-9827' }}</a>.</p>
+
+    <h2>2. Versão grátis</h2>
+    <p>Pode ser usada sem cadastro e sem limite de artes. As artes grátis saem com o selo da RD Soluções sobre as fotos e uma faixa "Feito grátis com RD OS" no rodapé.</p>
+
+    <h2>3. O que é o Pro</h2>
+    <p>O Pro custa {{ preco_fmt }}, em pagamento único pelo Mercado Pago (Pix ou cartão), sem mensalidade e sem renovação. Ele libera, na conta do e-mail informado na compra: o logotipo, o nome e o contato da sua empresa nas artes, no lugar do selo e da faixa da RD; as cores da sua empresa; e o vídeo de 7 segundos. O acesso é feito com login e senha, sem prazo de expiração, enquanto o serviço estiver no ar. Por enquanto o Pro é vendido só no Brasil.</p>
+
+    <h2>4. Direito de arrependimento</h2>
+    <p>Você pode desistir em até 7 dias depois da compra e receber o valor de volta (Código de Defesa do Consumidor, art. 49). Basta responder o e-mail da compra ou chamar no WhatsApp. Com o reembolso, o Pro sai da conta; o logotipo e os dados que você salvou continuam guardados caso compre de novo.</p>
+
+    <h2>5. Suas fotos e seus dados</h2>
+    <p>As fotos de antes e depois são montadas no seu próprio aparelho e <strong>não são enviadas</strong> para os nossos servidores. No Pro, guardamos na sua conta o nome, o e-mail, o logotipo, o nome da empresa, o contato e as cores que você salvar, só para montar as suas artes e dar suporte. Registramos também eventos de uso sem as fotos (por exemplo, "gerou uma arte" ou "baixou"), para saber se a ferramenta está sendo útil. Veja a <a href="{{ url_for('main.privacidade') }}">política de privacidade</a>.</p>
+
+    <h2>6. Uso correto</h2>
+    <p>Use fotos que você tirou ou tem autorização para usar, e um logotipo que seja seu. A ferramenta junta as fotos reais que você escolher: ela não cria nem altera o resultado do serviço, e a responsabilidade pelo que for publicado é de quem publica. É boa prática pedir autorização ao cliente antes de postar fotos do imóvel dele.</p>
+
+    <h2>7. Disponibilidade</h2>
+    <p>O serviço pode ficar fora do ar por manutenção ou falhas de terceiros (hospedagem, Mercado Pago). Se o Pro for encerrado, avisaremos por e-mail com antecedência.</p>
+
+    <h2>8. Lei e foro</h2>
+    <p>Estes termos seguem as leis brasileiras. Fica eleito o foro da comarca de São Paulo/SP, sem prejuízo do direito do consumidor de acionar o foro do seu domicílio.</p>
+    <p class="letra-miuda">Atualizado em 25/09/2026.</p>
+  </div>
+</section>
+{% endblock %}

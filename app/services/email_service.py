@@ -103,6 +103,28 @@ def enviar_confirmacao_compra(order, license_, user, set_password_url=None):
         return False
 
 
+def enviar_confirmacao_pro(order, user, set_password_url=None):
+    """E-mail da compra do Pro das ferramentas online (sem chave de desktop)."""
+    try:
+        from ..models.site_config import SiteConfig
+        suporte_email = SiteConfig.get("site_email_contato") or current_app.config.get("MAIL_USERNAME", "")
+        mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
+        return send_email(
+            to=user.email,
+            subject=f"✅ Seu Pro está liberado! Pedido {order.numero_pedido}",
+            template="emails/ferramentas_pro_confirmada.html",
+            user=user,
+            order=order,
+            base_url=current_app.config["BASE_URL"],
+            suporte_email=suporte_email,
+            mail_footer=mail_footer,
+            set_password_url=set_password_url,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Erro em enviar_confirmacao_pro para {user.email}: {e}")
+        return False
+
+
 def enviar_recuperacao_senha(user, token):
     from ..models.site_config import SiteConfig
     base_url = current_app.config["BASE_URL"]

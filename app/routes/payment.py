@@ -27,8 +27,9 @@ def webhook():
     payload = request.get_json(silent=True) or {}
     current_app.logger.info(f"Webhook MP recebido: {json.dumps(payload)}")
 
-    # Formato Webhook (v2)
-    if payload.get("type") == "payment" and payload.get("action") == "payment.updated":
+    # Formato Webhook (v2). Cartão aprovado na hora costuma chegar só como
+    # "payment.created" — por isso os dois; o processamento é idempotente.
+    if payload.get("type") == "payment" and payload.get("action") in ("payment.created", "payment.updated"):
         payment_id = str(payload.get("data", {}).get("id", ""))
         if payment_id:
             _processar_pagamento(payment_id)
@@ -92,6 +93,18 @@ def _processar_pagamento(payment_id: str):
         current_app.logger.warning(f"Pedido {order_id} não encontrado.")
         return
 
+    # Pedido já aprovado recebendo aviso de OUTRO pagamento: um recusado que chegou
+    # fora de ordem não pode rebaixar o pedido pago; um segundo pagamento aprovado
+    # (preferência antiga paga de novo) fica registrado para o admin reembolsar.
+    if order.status == "approved" and order.mp_payment_id and str(order.mp_payment_id) != payment_id:
+        if status_mp == "approved":
+            Log.registrar("pagamento_duplicado", f"order={order.numero_pedido} payment={payment_id} "
+                          f"(aprovado antes: {order.mp_payment_id}) — reembolsar", user_id=order.user_id)
+            current_app.logger.warning(f"Pagamento duplicado {payment_id} para o pedido já aprovado {order_id}.")
+        else:
+            Log.registrar("webhook_mp", f"payment={payment_id} status={status_mp} order={order_id} (ignorado: pedido já aprovado)")
+        return
+
     # Atualiza dados do MP no pedido
     order.mp_payment_id = payment_id
     order.mp_status = status_mp
@@ -101,39 +114,66 @@ def _processar_pagamento(payment_id: str):
 
     if status_mp != "approved":
         if status_mp in ("cancelled", "rejected"):
-            order.status = "cancelled"
+            # condicional no banco: um aprovado processado ao mesmo tempo não é sobrescrito
+            from sqlalchemy import update as _update
+            db.session.execute(_update(Order).where(Order.id == order.id, Order.status != "approved")
+                               .values(status="cancelled"))
             db.session.commit()
+        elif status_mp in ("refunded", "charged_back"):
+            # Reembolso (direito de arrependimento) ou estorno: o Pro deixa de valer.
+            from ..services.ferramentas_service import eh_pedido_pro, revogar_pro
+            if eh_pedido_pro(order):
+                order.status = "refunded"
+                db.session.commit()
+                if revogar_pro(order):
+                    Log.registrar("pro_revogado", f"order={order.numero_pedido} status={status_mp}", user_id=order.user_id)
         Log.registrar("webhook_mp", f"payment={payment_id} status={status_mp} order={order_id}")
         return
 
-    # Já processado anteriormente → idempotência
-    if order.status == "approved":
+    # Pro das ferramentas: o valor pago tem que cobrir o pedido
+    from ..services.ferramentas_service import eh_pedido_pro, liberar_pro
+    pedido_pro = eh_pedido_pro(order)
+    if pedido_pro:
+        try:
+            pago = float(dados.get("transaction_amount") or 0)
+        except (TypeError, ValueError):
+            pago = 0.0
+        if pago + 0.01 < float(order.valor):
+            current_app.logger.error(f"Pro {order.numero_pedido}: pago {pago} menor que {order.valor}. Não liberado.")
+            Log.registrar("pro_valor_divergente", f"order={order.numero_pedido} pago={pago} valor={order.valor}")
+            return
+
+    # Aprovação atômica: o Mercado Pago avisa mais de uma vez (IPN + webhook, e o
+    # retorno do checkout também confere). Só quem muda o status de fato continua.
+    from sqlalchemy import update
+    agora = datetime.now(timezone.utc)
+    mudou = db.session.execute(
+        update(Order)
+        .where(Order.id == order.id, Order.status != "approved")
+        .values(status="approved", approved_at=agora)
+    ).rowcount
+    db.session.commit()
+    if not mudou:
         current_app.logger.info(f"Pedido {order_id} já estava aprovado. Ignorando.")
         return
+    db.session.refresh(order)
 
     # Processa aprovação
     try:
-        order.status = "approved"
-        order.approved_at = datetime.now(timezone.utc)
-        db.session.commit()
+        user = order.user
+
+        # Pro das ferramentas online: libera o acesso e NÃO entrega chave do desktop.
+        if pedido_pro:
+            liberar_pro(order)
+            from ..services.email_service import enviar_confirmacao_pro
+            enviar_confirmacao_pro(order, user, set_password_url=_link_definir_senha(user))
+            Log.registrar("compra_aprovada_pro", f"order={order.numero_pedido} user={user.email}", user_id=user.id)
+            current_app.logger.info(f"Pro das ferramentas liberado: {order.numero_pedido} para {user.email}")
+            return
 
         license_ = assign_key(order)
 
-        user = order.user
-
-        # Comprador do checkout direto (nunca fez login): gera link para
-        # definir a senha, válido por 7 dias, incluído no e-mail da compra
-        set_password_url = None
-        if user.ultimo_login is None:
-            import secrets as _secrets
-            from datetime import timedelta
-            user.reset_token = _secrets.token_urlsafe(32)
-            user.reset_token_exp = datetime.now(timezone.utc) + timedelta(days=7)
-            db.session.commit()
-            base_url = current_app.config["BASE_URL"]
-            set_password_url = f"{base_url}/auth/nova-senha/{user.reset_token}"
-
-        enviar_confirmacao_compra(order, license_, user, set_password_url=set_password_url)
+        enviar_confirmacao_compra(order, license_, user, set_password_url=_link_definir_senha(user))
 
         Log.registrar(
             "compra_aprovada",
@@ -149,3 +189,17 @@ def _processar_pagamento(payment_id: str):
         order.status = "pending"
         db.session.commit()
         raise
+
+
+def _link_definir_senha(user):
+    """Comprador do checkout direto (nunca fez login): gera o link para definir
+    a senha, válido por 7 dias, que vai no e-mail da compra. Quem já tem senha
+    recebe None e o e-mail manda só entrar."""
+    if user.ultimo_login is not None:
+        return None
+    import secrets as _secrets
+    from datetime import timedelta
+    user.reset_token = _secrets.token_urlsafe(32)
+    user.reset_token_exp = datetime.now(timezone.utc) + timedelta(days=7)
+    db.session.commit()
+    return f"{current_app.config['BASE_URL']}/auth/nova-senha/{user.reset_token}"

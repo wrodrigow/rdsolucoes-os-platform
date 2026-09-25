@@ -110,9 +110,13 @@ def direto():
     preco = float(SiteConfig.get("produto_preco", "297.00"))
     nome_produto = SiteConfig.get("produto_nome", "RD Soluções OS — Licença Vitalícia")
 
-    # Reaproveita pedido pendente recente do mesmo usuário (evita duplicar a cada clique)
+    # Reaproveita pedido pendente recente do mesmo usuário (evita duplicar a cada clique).
+    # Ignora pedidos do Pro das ferramentas: sem isso, quem começou a comprar o Pro
+    # (R$ 10) e desistiu cairia no pedido errado ao comprar o desktop, e vice-versa.
+    from ..models.ferramentas import FerrPedidoPro
     order = (
         Order.query.filter_by(user_id=user.id, status="pending")
+        .filter(~Order.id.in_(db.session.query(FerrPedidoPro.order_id)))
         .order_by(Order.created_at.desc())
         .first()
     )

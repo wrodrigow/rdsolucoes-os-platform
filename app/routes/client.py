@@ -28,7 +28,8 @@ def _require_client(fn):
 def dashboard():
     license_ = get_license_for_user(current_user.id)
     orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).limit(5).all()
-    return render_template("client/dashboard.html", license=license_, orders=orders)
+    from ..services.ferramentas_service import tem_pro
+    return render_template("client/dashboard.html", license=license_, orders=orders, ferr_pro=tem_pro(current_user))
 
 
 @bp.route("/licenca")

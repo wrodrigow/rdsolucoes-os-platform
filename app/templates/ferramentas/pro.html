@@ -1,0 +1,112 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}Antes e Depois com a Sua Logomarca por {{ preco_fmt }} | RD OS Pro{% endblock %}
+{% block description %}Tire a marca d'água e coloque seu logotipo, nome, WhatsApp e cores nas artes de antes e depois. {{ preco_fmt }}, pagamento único, sem mensalidade.{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical }}">
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="RD OS">
+<meta property="og:title" content="Antes e Depois com a sua logomarca — RD OS Pro">
+<meta property="og:description" content="Seu logotipo, WhatsApp e cores em todas as artes, sem marca d'água, e vídeo para Reels. {{ preco_fmt }}, pagamento único.">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "RD OS Ferramentas Pro — gerador de antes e depois",
+  "description": "Acesso vitalício ao Pro do gerador de antes e depois: sua logomarca, nome e contato nas artes, sem marca d'água, cores da sua empresa e vídeo para Reels e Status.",
+  "brand": {"@type": "Brand", "name": "RD OS"},
+  "image": og_image,
+  "url": canonical,
+  "offers": {
+    "@type": "Offer",
+    "price": "%.2f"|format(preco),
+    "priceCurrency": "BRL",
+    "availability": "https://schema.org/InStock",
+    "url": canonical,
+    "seller": {"@type": "Organization", "name": "RD Soluções"}
+  }
+}|tojson }}</script>
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio pagina-estreita">
+  <p class="olho">RD OS Pro · gerador de antes e depois</p>
+  <h1>Suas artes de antes e depois com a SUA marca</h1>
+  <p class="lead">A versão grátis leva a marca d'água da RD Soluções. No Pro, entra o seu logotipo, o nome da empresa e o seu WhatsApp — e cada foto que você posta vira propaganda do seu serviço.</p>
+
+  <div class="comparacao">
+    <figure>
+      <img src="{{ url_for('static', filename='ferramentas/pro-gratis.jpg') }}" alt="Arte grátis: faixa e selo da RD Soluções" width="720" height="720" fetchpriority="high">
+      <figcaption>Grátis — com a marca d'água da RD</figcaption>
+    </figure>
+    <figure>
+      <img src="{{ url_for('static', filename='ferramentas/pro-com-marca.jpg') }}" alt="Arte Pro: logotipo, nome e contato de uma empresa fictícia, com cores verde e amarelo" width="720" height="720" loading="lazy">
+      <figcaption>Pro — com a marca da sua empresa</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="envoltorio pagina-estreita" id="comprar">
+  <div class="cartao">
+    {% if ja_tem %}
+      <h2>Você já tem o Pro</h2>
+      <p>Seu acesso está liberado. Configure a sua marca uma vez e ela entra em todas as artes.</p>
+      <div class="botoes" style="justify-content:flex-start">
+        <a class="botao principal" href="{{ url_for('ferramentas.minha_marca') }}">Configurar minha marca</a>
+        <a class="botao secundario" href="{{ url_for('ferramentas.antes_depois_pt') }}">Abrir o gerador</a>
+      </div>
+    {% else %}
+      <h2>O que você recebe</h2>
+      <ul class="lista-check">
+        <li>Seu logotipo, nome da empresa e WhatsApp (ou @ do Instagram) no rodapé das artes</li>
+        <li>Sem a marca d'água da RD Soluções</li>
+        <li>As cores da sua empresa nas faixas</li>
+        <li>Vídeo de 7 segundos com a revelação do antes para o depois, para Reels e Status</li>
+        <li>Login e senha para usar no celular e no computador, sempre que quiser</li>
+      </ul>
+      <p class="preco-grande"><b>{{ preco_fmt }}</b><span>pagamento único · sem mensalidade</span></p>
+
+      {% if not pagamentos_ativos %}
+        <p class="aviso">As vendas estão pausadas por alguns minutos. Volte daqui a pouco.</p>
+      {% elif current_user.is_authenticated %}
+        <form class="form-compra" method="post" action="{{ url_for('ferramentas.comprar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="letra-miuda">Você vai comprar com a conta <strong>{{ current_user.email }}</strong>.</p>
+          <button type="submit" class="botao principal">Pagar {{ preco_fmt }} com Pix ou cartão</button>
+        </form>
+      {% else %}
+        <form class="form-compra" method="post" action="{{ url_for('ferramentas.comprar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="campo" for="pro-nome">Seu nome
+            <input type="text" id="pro-nome" name="nome" required minlength="3" maxlength="120" autocomplete="name">
+          </label>
+          <label class="campo" for="pro-email">Seu e-mail <span class="ajuda">É o seu login. O acesso chega nele.</span>
+            <input type="email" id="pro-email" name="email" required maxlength="180" autocomplete="email" inputmode="email">
+          </label>
+          <label class="campo" for="pro-whatsapp">WhatsApp <span class="ajuda">(opcional, para suporte)</span>
+            <input type="tel" id="pro-whatsapp" name="whatsapp" maxlength="30" autocomplete="tel" inputmode="tel">
+          </label>
+          <button type="submit" class="botao principal">Pagar {{ preco_fmt }} com Pix ou cartão</button>
+          <p class="letra-miuda">Você vai para o Mercado Pago. Aprovado o pagamento (no Pix é na hora), o Pro é liberado e você cria a sua senha. Ao continuar, você concorda com os <a href="{{ url_for('ferramentas.termos') }}">Termos do Pro</a>.</p>
+          <p class="letra-miuda">Já comprou? <a href="{{ url_for('auth.login', next=url_for('ferramentas.minha_marca')) }}">Entre com o seu e-mail e senha</a>.</p>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="secao envoltorio pagina-estreita" aria-labelledby="pro-faq">
+  <h2 id="pro-faq">Dúvidas sobre o Pro</h2>
+  <div class="faq">
+    <details><summary>É mensalidade?</summary><p>Não. Você paga {{ preco_fmt }} uma vez e usa o Pro sempre que quiser, sem renovação.</p></details>
+    <details><summary>Como eu entro depois de pagar?</summary><p>Na volta do pagamento você já cria a sua senha. Também mandamos um e-mail com o link. Depois é só entrar com o seu e-mail e a senha, no celular ou no computador.</p></details>
+    <details><summary>E se eu não gostar?</summary><p>Você tem 7 dias, pelo direito de arrependimento, para pedir o valor de volta. Responda o e-mail da compra ou chame no WhatsApp.</p></details>
+    <details><summary>Minhas fotos vão para o servidor?</summary><p>Não. As artes são montadas no seu aparelho. Só o logotipo que você envia fica guardado na sua conta, para entrar nas artes.</p></details>
+    <details><summary>Serve para qualquer profissão?</summary><p>Serve para qualquer serviço em que o resultado aparece na foto: solda, reforma, pintura, limpeza, jardinagem, estética automotiva, manutenção e muito mais.</p></details>
+  </div>
+</section>
+{% endblock %}

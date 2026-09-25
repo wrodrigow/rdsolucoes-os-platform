@@ -952,7 +952,7 @@ def trafego_dados():
     # licença vendida) — a seção de vendas/receita, que é 100% baseada em
     # Order, só faz sentido para "Todos" (histórico é todo RD OS) ou "RD OS"
     # explicitamente. Ver PRODUTOS em models/traffic_event.py.
-    mostrar_vendas = produto in ("", "rd_os")
+    mostrar_vendas = produto in ("", "rd_os", "ferramentas")
 
     eventos = (
         _por_produto(TrafficEvent.query).filter(TrafficEvent.created_at >= desde)
@@ -1069,7 +1069,16 @@ def trafego_dados():
     # conversões do próprio TrafficEvent no lugar.
     total_conversoes_whatsapp = 0
     if mostrar_vendas:
-        vendas_aprovadas = Order.query.filter(Order.status == "approved").order_by(Order.approved_at.desc()).all()
+        # Pedidos do Pro das ferramentas (R$ 10) são marcados em ferr_pedidos_pro:
+        # "RD OS" mostra só o desktop, "Ferramentas online" só o Pro, "Todos" os dois.
+        from ..models.ferramentas import FerrPedidoPro
+        vendas_q = Order.query.filter(Order.status == "approved")
+        pedidos_pro = db.session.query(FerrPedidoPro.order_id)
+        if produto == "rd_os":
+            vendas_q = vendas_q.filter(~Order.id.in_(pedidos_pro))
+        elif produto == "ferramentas":
+            vendas_q = vendas_q.filter(Order.id.in_(pedidos_pro))
+        vendas_aprovadas = vendas_q.order_by(Order.approved_at.desc()).all()
         total_vendas = len(vendas_aprovadas)
         receita_total = sum(float(o.valor) for o in vendas_aprovadas)
 
@@ -1130,8 +1139,8 @@ def trafego_dados():
         # (configurada globalmente) — ainda não existe campanha paga para
         # outros produtos, então só exibimos quando a seção de vendas
         # (RD OS) está ativa. Ver "Fora do escopo" no plano de tráfego por produto.
-        "meta_ads": _buscar_metricas_meta_ads() if mostrar_vendas else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
-        "google_ads": _buscar_metricas_google_ads() if mostrar_vendas else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
+        "meta_ads": _buscar_metricas_meta_ads() if produto in ("", "rd_os") else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
+        "google_ads": _buscar_metricas_google_ads() if produto in ("", "rd_os") else {"disponivel": False, "erro": "Sem campanha configurada para este produto ainda."},
         "clarity": _buscar_metricas_clarity(),
         "clarity_url": f"https://clarity.microsoft.com/projects/view/{SiteConfig.get('clarity_id')}/dashboard" if SiteConfig.get("clarity_id") else "https://clarity.microsoft.com/",
         "eventos_recentes": eventos_recentes,
@@ -1155,11 +1164,14 @@ def _pedidos_de_teste_query():
     pedido que nunca foi de fato aprovado com pagamento real (pendente,
     cancelado, em processamento). Vendas realmente aprovadas (não simuladas)
     nunca são tocadas por esta rotina."""
+    from ..models.ferramentas import FerrAcessoPro
     return Order.query.filter(
         db.or_(
             Order.mp_payment_id == "SIMULADO",
             Order.status.in_(["pending", "cancelled", "in_process"]),
-        )
+        ),
+        # pedido que liberou o Pro das ferramentas nunca é apagado
+        ~Order.id.in_(db.session.query(FerrAcessoPro.order_id).filter(FerrAcessoPro.order_id.isnot(None))),
     )
 
 
@@ -1175,7 +1187,8 @@ def limpar_testes():
             flash("Digite CONFIRMAR (em maiúsculas) para prosseguir com a limpeza.", "warning")
             return redirect(url_for("admin.limpar_testes"))
 
-        total_logs_removidos = Log.query.delete()
+        # "pagamento_duplicado" = cliente pagou duas vezes e precisa de reembolso: não some na limpeza
+        total_logs_removidos = Log.query.filter(Log.acao != "pagamento_duplicado").delete(synchronize_session=False)
         total_traffic_removidos = TrafficEvent.query.delete()
 
         keys_liberadas = 0
@@ -1188,6 +1201,8 @@ def limpar_testes():
                 k.user_id = None
                 k.data_venda = None
                 keys_liberadas += 1
+            from ..models.ferramentas import FerrPedidoPro
+            FerrPedidoPro.query.filter_by(order_id=o.id).delete()   # marcação do Pro (checkout abandonado)
             db.session.delete(o)  # cascade remove a License associada
             pedidos_removidos += 1
 

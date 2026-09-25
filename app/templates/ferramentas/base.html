@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="{{ meta_idioma.html if meta_idioma else 'pt-BR' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}RD OS Ferramentas{% endblock %}</title>
+<meta name="description" content="{% block description %}{% endblock %}">
+{% block robots %}{% endblock %}
+{% block seo %}{% endblock %}
+<meta name="theme-color" content="#0c2340">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='ferramentas/rd-icone.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='ferramentas/rd-icone.png') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='ferramentas/ferramentas.css') }}?v={{ versao_estatico('ferramentas.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% set idioma_atual = idioma|default('pt') %}
+<header class="topo">
+  <div class="envoltorio">
+    <a class="marca-topo" href="{{ url_for(meta_idioma.endpoint if meta_idioma else 'ferramentas.antes_depois_pt') }}">
+      <img src="{{ url_for('static', filename='ferramentas/rd-icone.png') }}" alt="" width="34" height="31">
+      <span><b>RD OS</b><small>{{ t.nav_ferramenta }}</small></span>
+    </a>
+    <nav class="nav-topo" aria-label="{{ t.nav_ferramenta }}">
+      {% if current_user.is_authenticated %}
+        {% if tem_pro_atual %}
+          <a href="{{ url_for('ferramentas.minha_marca') }}">{{ t.nav_marca }}</a>
+        {% elif idioma_atual == 'pt' %}
+          <a class="selo-pro js-pro" data-origem="topo" href="{{ url_for('ferramentas.pro') }}">{{ t.nav_pro }}</a>
+        {% endif %}
+        <a href="{{ url_for('ferramentas.sair', idioma=idioma_atual) }}">{{ t.nav_sair }}</a>
+      {% else %}
+        {% if idioma_atual == 'pt' %}
+          {# login só existe em português e só serve a quem comprou o Pro (vendido no Brasil) #}
+          <a class="selo-pro js-pro" data-origem="topo" href="{{ url_for('ferramentas.pro') }}">{{ t.nav_pro }}</a>
+          <a href="{{ url_for('auth.login', next=request.path) }}">{{ t.nav_entrar }}</a>
+        {% endif %}
+      {% endif %}
+      {% if alternativas %}
+      <details class="idiomas">
+        <summary aria-label="{{ t.nav_idioma }}">{{ idioma_atual|upper }} ▾</summary>
+        <ul>
+          {% for alt in alternativas %}
+          <li><a href="{{ alt.caminho }}" hreflang="{{ alt.hreflang }}" lang="{{ alt.hreflang }}"{% if alt.idioma == idioma_atual %} aria-current="page"{% endif %}>{{ alt.nome }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main id="conteudo">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+  <div class="envoltorio">
+    <div class="avisos" role="status">
+      {% for categoria, mensagem in mensagens %}
+      <p class="aviso {{ categoria }}">{{ mensagem }}</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+</main>
+
+<footer class="rodape">
+  <div class="envoltorio">
+    <p>{{ t.rodape_texto }}</p>
+    <nav aria-label="{{ t.rodape_texto }}">
+      <a href="{{ url_for('ferramentas.termos') }}">{{ t.rodape_termos }}</a>
+      <a href="{{ url_for('main.privacidade') }}">{{ t.rodape_privacidade }}</a>
+      <a href="https://wa.me/{{ site_cfg.get('site_whatsapp') or '5511941579827' }}" rel="noopener">{{ t.rodape_contato }}</a>
+    </nav>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

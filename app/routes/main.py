@@ -138,10 +138,18 @@ def robots():
 def sitemap():
     from flask import Response
     base = current_app.config["BASE_URL"]
-    pages = ["", "/recursos", "/como-funciona", "/planos", "/faq", "/contato"]
+    pages = ["", "/recursos", "/como-funciona", "/planos", "/faq", "/contato", "/ferramentas/pro"]
     urls = "\n".join(f"  <url><loc>{base}{p}</loc></url>" for p in pages)
+
+    # Gerador de antes e depois: as três versões apontam umas para as outras (hreflang)
+    versoes = [("pt-BR", "/antes-e-depois"), ("es", "/es/antes-y-despues"), ("en", "/en/before-and-after")]
+    alternadas = "".join(
+        f'\n    <xhtml:link rel="alternate" hreflang="{h}" href="{base}{c}"/>' for h, c in versoes
+    ) + f'\n    <xhtml:link rel="alternate" hreflang="x-default" href="{base}/en/before-and-after"/>'
+    urls += "".join(f"\n  <url><loc>{base}{c}</loc>{alternadas}\n  </url>" for _, c in versoes)
+
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 {urls}
 </urlset>"""
     return Response(xml, mimetype="application/xml")

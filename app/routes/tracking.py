@@ -34,6 +34,11 @@ EVENTOS_PERMITIDOS = {
         "lp_view", "whatsapp_click", "scroll_50", "scroll_100",
         "click_afiliado", "click_interno",
     },
+    "ferramentas": {
+        # Gerador de antes e depois (rdos.rdsolucoes.eco.br/antes-e-depois).
+        # A visita (lp_view) é gravada pelo servidor; estes vêm do antes-depois.js.
+        "gerou_arte", "baixou", "compartilhou", "gerou_video", "clicou_pro",
+    },
 }
 
 
