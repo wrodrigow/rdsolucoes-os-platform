@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from functools import wraps
 from flask import (Blueprint, render_template, redirect, url_for, flash,
-                   request, current_app, Response, jsonify)
+                   request, current_app, Response, jsonify, session)
 from flask_login import login_required, current_user
 from ..extensions import db
 from ..models.user import User
@@ -27,6 +27,7 @@ def admin_required(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_admin:
             flash("Acesso restrito a administradores.", "danger")
+            session["sem_visita"] = True        # não conta como visita em /sistema
             return redirect(url_for("main.sistema"))
         return fn(*args, **kwargs)
     return wrapped
@@ -1374,3 +1375,21 @@ def ferr_uso_parar(uso_id):
         Log.registrar("ferr_contato_parou", f"uso={uso_id} user={uso.user_id}", user_id=current_user.id)
         flash("Pronto: essa pessoa não recebe mais novidades e o WhatsApp dela foi apagado do resgate.", "success")
     return redirect(url_for("admin.ferr_codigos"))
+
+
+# ── Acessos: visão geral de todos os sites (site, blog, ferramentas, sistema) ─
+
+@bp.route("/acessos")
+@admin_required
+def acessos():
+    from ..services.acessos import PERIODOS
+    return render_template("admin/acessos.html", periodos=PERIODOS)
+
+
+@bp.route("/acessos/dados")
+@admin_required
+def acessos_dados():
+    from ..services.acessos import resumo
+    resp = jsonify(resumo(request.args.get("periodo", "7")))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp

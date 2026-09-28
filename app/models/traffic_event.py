@@ -14,6 +14,15 @@ class TrafficEvent(db.Model):
     PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas", "blog": "Blog", "redes": "Certificação de Redes",
                 "ferramentas": "Ferramentas online"}
 
+    # Quem abre a página sem ser gente: prévia de link do WhatsApp e do Facebook, scripts e
+    # navegadores automatizados. TelegramBot, Slackbot, Discordbot, LinkedInBot etc. já caem
+    # no "bot" genérico; "linkedin"/"telegram" sozinhos pegariam o navegador interno desses
+    # apps, usado por gente de verdade, então ficam de fora.
+    MARCAS_DE_ROBO = ("facebookexternalhit", "facebookcatalog", "whatsapp/", "skypeuripreview", "embedly",
+                      "curl/", "wget/", "python-requests", "python-urllib", "aiohttp", "go-http-client", "okhttp",
+                      "axios/", "node-fetch", "headlesschrome", "phantomjs", "lighthouse", "pagespeed",
+                      "crawler", "spider")
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # lp_view | checkout_start | checkout_success | checkout_fail | post_view | click_afiliado | ...
     event_type = db.Column(db.String(30), nullable=False, index=True)
@@ -99,9 +108,11 @@ class TrafficEvent(db.Model):
         order_id = order_id or request.args.get("external_reference")
         ua = request.user_agent.string or ""
 
+        ua_min = ua.lower()
         is_bot = (
             "AdWords-Express" in ua
-            or "bot" in ua.lower()
+            or "bot" in ua_min
+            or any(m in ua_min for m in cls.MARCAS_DE_ROBO)
             or (gclid is not None and not cls._parece_gclid_real(gclid))
         )
         if "Mobile" in ua:

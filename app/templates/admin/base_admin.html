@@ -24,6 +24,9 @@
     <nav class="adm-nav">
       <div class="adm-nav-section">
         <div class="adm-nav-section-title">Visão Geral</div>
+        <a href="{{ url_for('admin.acessos') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.acessos' }}">
+          <i class="fa-solid fa-chart-column adm-nav-icon"></i> Acessos
+        </a>
         <a href="{{ url_for('admin.dashboard') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}">
           <i class="fa-solid fa-gauge-high adm-nav-icon"></i> Dashboard
         </a>

@@ -108,7 +108,7 @@ def _registrar(tipo, slug, detalhe=None, order_id=None, origem_padrao=None, orig
     evento (ex.: o resgate conta para o parceiro dono do código)."""
     atual = _origem_atual(origem_padrao)
     origem = origem or atual
-    if getattr(current_user, "is_admin", False):
+    if getattr(current_user, "is_admin", False) or request.method == "HEAD":
         return
     try:
         from ..models.traffic_event import TrafficEvent

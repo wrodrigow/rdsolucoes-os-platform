@@ -1,0 +1,293 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Acessos — Admin{% endblock %}
+{% block page_title %}Acessos dos sites{% endblock %}
+
+{% block content %}
+<style>
+  .ac-topo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .ac-periodos{display:flex;gap:6px;flex-wrap:wrap}
+  .ac-pill{font-size:.82rem;padding:6px 14px;border-radius:999px;cursor:pointer;border:1px solid var(--adm-border);background:var(--adm-white);color:var(--adm-text);font-weight:600}
+  .ac-pill[aria-pressed="true"]{background:var(--adm-primary);border-color:var(--adm-primary);color:#fff}
+  .ac-pill:focus-visible{outline:2px solid var(--adm-primary);outline-offset:2px}
+  .ac-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--adm-muted)}
+  .ac-agora{display:inline-flex;align-items:center;gap:8px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:5px 12px;border-radius:999px;font-weight:600}
+  .ac-agora i{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+  .ac-cartoes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}
+  @media (max-width:1200px){.ac-cartoes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.ac-cartoes{grid-template-columns:1fr}}
+  .ac-cartao{background:var(--adm-white);border:1px solid var(--adm-border);border-radius:var(--adm-radius);box-shadow:var(--adm-shadow);padding:18px;display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--cor)}
+  .ac-cartao h3{margin:0;font-size:.95rem;color:var(--adm-text);display:flex;justify-content:space-between;gap:8px}
+  .ac-cartao h3 small{font-weight:500;color:var(--adm-muted);font-size:.72rem}
+  .ac-numero{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .ac-numero b{font-size:2rem;line-height:1;color:var(--adm-text);font-variant-numeric:tabular-nums}
+  .ac-numero span{font-size:.8rem;color:var(--adm-muted)}
+  .ac-var{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .ac-var.sobe{background:#dcfce7;color:#166534}.ac-var.desce{background:#fee2e2;color:#991b1b}.ac-var.igual{background:#f1f5f9;color:#475569}
+  .ac-acoes{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:.8rem}
+  .ac-acoes li{display:flex;justify-content:space-between;gap:8px;color:var(--adm-muted)}
+  .ac-acoes li b{color:var(--adm-text);font-variant-numeric:tabular-nums}
+  .ac-spark{width:100%;height:44px;display:block}
+  .ac-vendas{display:flex;flex-wrap:wrap;gap:18px;align-items:center;background:var(--adm-white);border:1px solid var(--adm-border);border-radius:var(--adm-radius);padding:12px 18px;margin-bottom:20px;font-size:.85rem;color:var(--adm-muted)}
+  .ac-vendas b{color:var(--adm-text);font-size:1rem}
+  .ac-legenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--adm-muted)}
+  .ac-legenda span{display:inline-flex;align-items:center;gap:6px}
+  .ac-legenda i{width:12px;height:3px;border-radius:2px;background:var(--cor);display:inline-block}
+  .ac-grafico{position:relative}
+  .ac-dica{position:absolute;pointer-events:none;background:#0f172a;color:#fff;font-size:.75rem;padding:8px 10px;border-radius:8px;white-space:nowrap;display:none;z-index:2}
+  .ac-barra{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden;min-width:60px}
+  .ac-barra i{display:block;height:100%;background:var(--adm-secondary)}
+  .ac-tabela td,.ac-tabela th{font-size:.82rem}
+  .ac-tabela td.n{font-variant-numeric:tabular-nums;text-align:right}
+  .ac-tabela th.n{text-align:right}
+  .ac-vazio{text-align:center;padding:20px;color:var(--adm-muted);font-size:.85rem}
+  .ac-nota{font-size:.75rem;color:var(--adm-muted);margin-top:14px}
+</style>
+
+<div class="ac-topo">
+  <div class="ac-periodos" role="group" aria-label="Período">
+    {% for chave, nome in periodos.items() %}
+    <button type="button" class="ac-pill" data-periodo="{{ chave }}" aria-pressed="{{ 'true' if chave == '7' else 'false' }}">{{ nome }}</button>
+    {% endfor %}
+  </div>
+  <div class="ac-status">
+    <span class="ac-agora" title="Pessoas diferentes com alguma atividade nos últimos 30 minutos"><i aria-hidden="true"></i><span id="ac-agora">— agora</span></span>
+    <span id="ac-atualizado">Carregando…</span>
+  </div>
+</div>
+
+<div class="ac-cartoes" id="ac-cartoes" aria-live="polite"></div>
+
+<div class="ac-vendas" id="ac-vendas"></div>
+
+<div class="adm-card" style="margin-bottom:20px;">
+  <div class="adm-card-header" style="flex-wrap:wrap;gap:10px;">
+    <div class="adm-card-title"><i class="fa-solid fa-chart-line" style="color:var(--adm-primary);"></i> <span id="ac-titulo-grafico">Visitas por dia</span></div>
+    <div class="ac-legenda" id="ac-legenda"></div>
+  </div>
+  <div class="ac-grafico"><canvas id="ac-grafico" height="240" role="img" aria-label="Gráfico de visitas por site"></canvas><div class="ac-dica" id="ac-dica"></div></div>
+</div>
+
+<div class="adm-grid-2" style="margin-bottom:20px;">
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title"><i class="fa-solid fa-screwdriver-wrench" style="color:#f97316;"></i> Ferramentas por página</div></div>
+    <div class="adm-table-wrapper">
+      <table class="adm-table ac-tabela">
+        <thead><tr><th>Página</th><th class="n">Visitas</th><th class="n">Artes</th><th class="n">PDFs</th><th class="n">Baixou/compart.</th><th class="n">Pro</th><th class="n">Códigos</th></tr></thead>
+        <tbody id="ac-ferramentas"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title"><i class="fa-solid fa-route" style="color:var(--adm-secondary);"></i> De onde vieram as visitas</div></div>
+    <div class="adm-table-wrapper">
+      <table class="adm-table ac-tabela">
+        <thead><tr><th>Origem</th><th class="n" title="Conta a primeira página que a pessoa abriu no site naquele dia">Entradas</th><th style="width:30%;">Parte</th></tr></thead>
+        <tbody id="ac-origens"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="adm-grid-2" style="margin-bottom:20px;">
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title"><i class="fa-solid fa-file-lines" style="color:#7c3aed;"></i> Páginas mais vistas</div></div>
+    <div class="adm-table-wrapper" style="max-height:420px;overflow-y:auto;">
+      <table class="adm-table ac-tabela">
+        <thead><tr><th>Página</th><th>Site</th><th class="n">Visitas</th></tr></thead>
+        <tbody id="ac-paginas"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="adm-card">
+    <div class="adm-card-header"><div class="adm-card-title"><i class="fa-solid fa-signal" style="color:#10b981;"></i> Agora (últimos 30 minutos)</div></div>
+    <div id="ac-agora-lista"></div>
+    <div class="adm-card-header" style="margin-top:14px;"><div class="adm-card-title"><i class="fa-solid fa-mobile-screen" style="color:var(--adm-muted);"></i> Aparelhos</div></div>
+    <div id="ac-dispositivos" style="font-size:.85rem;color:var(--adm-muted);"></div>
+  </div>
+</div>
+
+<div class="adm-card">
+  <div class="adm-card-header"><div class="adm-card-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--adm-primary);"></i> Últimos acessos</div></div>
+  <div class="adm-table-wrapper" style="max-height:460px;overflow-y:auto;">
+    <table class="adm-table ac-tabela">
+      <thead><tr><th>Quando</th><th>Site</th><th>Página</th><th>O quê</th><th>Aparelho</th><th>Origem</th></tr></thead>
+      <tbody id="ac-ultimos"></tbody>
+    </table>
+  </div>
+  <p class="ac-nota" id="ac-nota"></p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const CORES = { site: '#0d7d8c', blog: '#7c3aed', ferramentas: '#f97316', sistema: '#1a5fa8' };
+  const $ = id => document.getElementById(id);
+  let periodo = '7', dados = null;
+  try { const salvo = localStorage.getItem('ac-periodo'); if (salvo) periodo = salvo; } catch (e) {}
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  }
+  const num = n => Number(n || 0).toLocaleString('pt-BR');
+
+  function variacao(v, comparacao) {
+    if (v === null || v === undefined) return '<span class="ac-var igual" title="Sem visitas no período anterior para comparar">sem base</span>';
+    const cls = v > 0 ? 'sobe' : v < 0 ? 'desce' : 'igual';
+    const seta = v > 0 ? '▲' : v < 0 ? '▼' : '=';
+    return `<span class="ac-var ${cls}" title="Comparado com ${esc(comparacao)}">${seta} ${Math.abs(v)}%</span>`;
+  }
+
+  function preparar(canvas, altura) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.parentElement.clientWidth;
+    canvas.width = w * dpr; canvas.height = altura * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = altura + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, altura);
+    return { ctx, w };
+  }
+
+  function sparkline(canvas, valores, cor) {
+    const altura = 44, { ctx, w } = preparar(canvas, altura);
+    const max = Math.max(1, ...valores), n = valores.length;
+    if (n < 2) return;
+    const x = i => 2 + i * (w - 4) / (n - 1), y = v => altura - 4 - (v / max) * (altura - 10);
+    ctx.beginPath(); valores.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+    ctx.lineTo(x(n - 1), altura); ctx.lineTo(x(0), altura); ctx.closePath();
+    ctx.fillStyle = cor + '1f'; ctx.fill();
+    ctx.beginPath(); valores.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+    ctx.strokeStyle = cor; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x(n - 1), y(valores[n - 1]), 3, 0, Math.PI * 2); ctx.fillStyle = cor; ctx.fill();
+  }
+
+  let geometria = null;
+  function grafico(d) {
+    const canvas = $('ac-grafico'), altura = 240, { ctx, w } = preparar(canvas, altura);
+    const esq = 40, dir = 12, topo = 12, base = 28, n = d.rotulos.length;
+    const series = d.cartoes.map(c => ({ chave: c.chave, nome: c.nome, valores: c.serie }));
+    // passo "redondo" e inteiro (1, 2, 5 × 10^n): cada linha da grade cai num número exato
+    const maxBruto = Math.max(1, ...series.flatMap(s => s.valores));
+    const alvo = maxBruto / 4, mag = Math.pow(10, Math.floor(Math.log10(alvo)));
+    const passoY = Math.max(1, [1, 2, 5, 10].map(m => m * mag).find(p => p >= alvo));
+    const max = passoY * 4;
+    const x = i => n < 2 ? esq + (w - esq - dir) / 2 : esq + i * (w - esq - dir) / (n - 1);
+    const y = v => topo + (1 - v / max) * (altura - topo - base);
+    ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#64748b'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+    for (let k = 0; k <= 4; k++) {
+      const v = passoY * k, yy = Math.round(y(v)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(esq, yy); ctx.lineTo(w - dir, yy); ctx.stroke();
+      ctx.textAlign = 'right'; ctx.fillText(num(Math.round(v)), esq - 6, yy + 4);
+    }
+    const cada = Math.max(1, Math.ceil(n / Math.max(1, Math.floor((w - esq) / 46))));
+    ctx.textAlign = 'center';
+    // o último rótulo sempre aparece; o anterior a ele some se ficar colado
+    d.rotulos.forEach((r, i) => {
+      const ultimo = i === n - 1, colado = !ultimo && (n - 1 - i) < cada;
+      if ((i % cada === 0 && !colado) || ultimo) ctx.fillText(r, x(i), altura - 8);
+    });
+    series.forEach(s => {
+      const cor = CORES[s.chave];
+      ctx.beginPath(); s.valores.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+      ctx.strokeStyle = cor; ctx.lineWidth = 2; ctx.stroke();
+      if (n <= 31) s.valores.forEach((v, i) => { ctx.beginPath(); ctx.arc(x(i), y(v), 2.5, 0, Math.PI * 2); ctx.fillStyle = cor; ctx.fill(); });
+    });
+    geometria = { x, n, esq, dir, w, series, rotulos: d.rotulos };
+  }
+
+  $('ac-grafico').addEventListener('mousemove', ev => {
+    if (!geometria || geometria.n < 1) return;
+    const r = ev.target.getBoundingClientRect(), mx = ev.clientX - r.left;
+    let melhor = 0, dist = Infinity;
+    for (let i = 0; i < geometria.n; i++) { const dd = Math.abs(geometria.x(i) - mx); if (dd < dist) { dist = dd; melhor = i; } }
+    const dica = $('ac-dica');
+    dica.innerHTML = `<b>${esc(geometria.rotulos[melhor])}</b><br>` +
+      geometria.series.map(s => `<span style="color:${CORES[s.chave]}">●</span> ${esc(s.nome)}: ${num(s.valores[melhor])}`).join('<br>');
+    dica.style.display = 'block';
+    const px = geometria.x(melhor);
+    dica.style.left = Math.min(px + 12, geometria.w - dica.offsetWidth - 4) + 'px';
+    dica.style.top = '10px';
+  });
+  $('ac-grafico').addEventListener('mouseleave', () => { $('ac-dica').style.display = 'none'; });
+
+  function linhasVazias(cols, texto) { return `<tr><td colspan="${cols}" class="ac-vazio">${esc(texto)}</td></tr>`; }
+
+  function render(d) {
+    dados = d;
+    document.querySelectorAll('.ac-pill').forEach(b => b.setAttribute('aria-pressed', b.dataset.periodo === d.periodo ? 'true' : 'false'));
+    $('ac-agora').textContent = `${num(d.agora.pessoas)} ${d.agora.pessoas === 1 ? 'pessoa' : 'pessoas'} agora`;
+    $('ac-atualizado').textContent = 'Atualizado às ' + d.atualizado_em;
+    $('ac-titulo-grafico').textContent = d.por_hora ? 'Visitas por hora (hoje)' : `Visitas por dia (${d.periodo_nome})`;
+
+    $('ac-cartoes').innerHTML = d.cartoes.map(c => `
+      <article class="ac-cartao" style="--cor:${CORES[c.chave]}">
+        <h3>${esc(c.nome)} <small>${esc(c.endereco)}</small></h3>
+        <div class="ac-numero"><b>${num(c.visitas)}</b><span>visitas</span>${variacao(c.variacao, d.comparacao)}</div>
+        <div style="font-size:.8rem;color:var(--adm-muted)">${num(c.unicos)} ${c.unicos === 1 ? 'visitante' : 'visitantes'} · antes: ${num(c.visitas_ant)} visitas</div>
+        <ul class="ac-acoes">${c.acoes.map(a => `<li><span>${esc(a.rotulo)}</span><b title="Período anterior: ${num(a.anterior)}">${num(a.valor)}</b></li>`).join('')}</ul>
+        <canvas class="ac-spark" data-chave="${c.chave}" aria-hidden="true"></canvas>
+      </article>`).join('');
+    document.querySelectorAll('.ac-spark').forEach(cv => {
+      const c = d.cartoes.find(x => x.chave === cv.dataset.chave); sparkline(cv, c.serie, CORES[c.chave]);
+    });
+
+    const v = d.vendas;
+    $('ac-vendas').innerHTML = `<span><i class="fa-solid fa-sack-dollar" style="color:#059669"></i> Vendas no período:</span>
+      <span>Pro das ferramentas <b>${num(v.pro)}</b></span><span>Sistema desktop <b>${num(v.desktop)}</b></span>
+      <span>Receita <b>${Number(v.receita || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</b></span>`;
+
+    $('ac-legenda').innerHTML = d.cartoes.map(c => `<span style="--cor:${CORES[c.chave]}"><i></i>${esc(c.nome)}</span>`).join('');
+    grafico(d);
+
+    $('ac-ferramentas').innerHTML = d.ferramentas.length ? d.ferramentas.map(f => `
+      <tr><td>${esc(f.pagina)}</td><td class="n">${num(f.visitas)}</td><td class="n">${num(f.artes)}</td><td class="n">${num(f.pdfs)}</td>
+      <td class="n">${num(f.saidas)}</td><td class="n">${num(f.pro)}</td><td class="n">${num(f.codigos)}</td></tr>`).join('')
+      : linhasVazias(7, 'Nenhum acesso às ferramentas neste período.');
+
+    $('ac-origens').innerHTML = d.top_origens.length ? d.top_origens.map(o => `
+      <tr><td>${esc(o.origem)}</td><td class="n">${num(o.visitas)}</td><td><div class="ac-barra" title="${o.pct}%"><i style="width:${o.pct}%"></i></div></td></tr>`).join('')
+      : linhasVazias(3, 'Sem visitas neste período.');
+
+    $('ac-paginas').innerHTML = d.top_paginas.length ? d.top_paginas.map(p => `
+      <tr><td>${esc(p.pagina)}</td><td style="color:var(--adm-muted)">${esc(p.site)}</td><td class="n">${num(p.visitas)}</td></tr>`).join('')
+      : linhasVazias(3, 'Sem visitas neste período.');
+
+    $('ac-agora-lista').innerHTML = d.agora.paginas.length
+      ? '<table class="adm-table ac-tabela"><tbody>' + d.agora.paginas.map(p => `<tr><td>${esc(p.pagina)}</td><td style="color:var(--adm-muted)">${esc(p.site)}</td><td class="n">${num(p.visitas)}</td></tr>`).join('') + '</tbody></table>'
+      : '<p class="ac-vazio">Ninguém nos últimos 30 minutos.</p>';
+    $('ac-dispositivos').innerHTML = `Celular <b style="color:var(--adm-text)">${d.dispositivos.celular}%</b> · Computador <b style="color:var(--adm-text)">${d.dispositivos.computador}%</b> das visitas do período`;
+
+    $('ac-ultimos').innerHTML = d.ultimos.length ? d.ultimos.map(u => `
+      <tr><td style="white-space:nowrap;color:var(--adm-muted)">${esc(u.hora)}</td><td>${esc(u.site)}</td><td>${esc(u.pagina)}</td>
+      <td>${esc(u.evento)}</td><td>${esc(u.dispositivo)}</td><td style="color:var(--adm-muted)">${esc(u.origem)}</td></tr>`).join('')
+      : linhasVazias(6, 'Sem acessos neste período.');
+
+    $('ac-nota').textContent = `Robôs, prévias de link e verificações automáticas ficam de fora (${num(d.robos)} no período). "Visitantes" conta aparelhos e redes diferentes, então é um número aproximado. `
+      + '"De onde vieram" conta só a primeira página que cada pessoa abriu no dia. Comparação: ' + d.comparacao + '. '
+      + 'Suas próprias visitas logado como admin não entram nas ferramentas nem no /sistema; nos outros sites, entram.'
+      + (d.truncado ? ' Atenção: o período tem mais eventos do que o limite da consulta; os números podem estar incompletos.' : '');
+  }
+
+  async function atualizar() {
+    try {
+      const r = await fetch('{{ url_for("admin.acessos_dados") }}?periodo=' + encodeURIComponent(periodo), { credentials: 'same-origin', cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      render(await r.json());
+    } catch (e) {
+      $('ac-atualizado').textContent = 'Não consegui atualizar. Tentando de novo em 1 minuto.';
+    }
+  }
+
+  document.querySelectorAll('.ac-pill').forEach(b => b.addEventListener('click', () => {
+    periodo = b.dataset.periodo;
+    try { localStorage.setItem('ac-periodo', periodo); } catch (e) {}
+    atualizar();
+  }));
+  let redesenho;
+  window.addEventListener('resize', () => { clearTimeout(redesenho); redesenho = setTimeout(() => dados && render(dados), 150); });
+  atualizar();
+  setInterval(atualizar, 60000);
+})();
+</script>
+{% endblock %}

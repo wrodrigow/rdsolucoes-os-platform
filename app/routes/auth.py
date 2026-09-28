@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime, timezone, timedelta
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from ..extensions import db, limiter
 from ..models.user import User
@@ -126,6 +126,7 @@ def registro():
 def logout():
     Log.registrar("logout", user_id=current_user.id, ip=_get_ip())
     logout_user()
+    session["sem_visita"] = True        # não conta como visita em /sistema
     return redirect(url_for("main.sistema"))
 
 

@@ -8,7 +8,7 @@ basta trocar a regra num único lugar, sem mexer em cada rota.
 from datetime import date
 from functools import wraps
 
-from flask import Blueprint, Response, redirect, render_template, url_for, flash
+from flask import Blueprint, Response, redirect, render_template, url_for, flash, session
 from flask_login import current_user, login_required
 
 from ...extensions import db
@@ -30,6 +30,7 @@ def gestao_required(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_admin:
             flash("Acesso restrito.", "danger")
+            session["sem_visita"] = True        # não conta como visita em /sistema
             return redirect(url_for("main.sistema"))
         return fn(*args, **kwargs)
     return wrapped

@@ -42,6 +42,15 @@ def home():
 
 @bp.route("/sistema")
 def sistema():
+    # visita para o painel Acessos: evento próprio (sistema_view) para não entrar no funil da
+    # LP de anúncio (/lp) do painel de Tráfego. Não conta o admin, HEAD, nem quem chega aqui
+    # redirecionado pelo próprio site (depois de sair da conta ou de um acesso negado).
+    from flask import session
+    from flask_login import current_user
+    redirecionado = session.pop("sem_visita", None)
+    if not (redirecionado or request.method == "HEAD" or getattr(current_user, "is_admin", False)):
+        from ..models.traffic_event import TrafficEvent
+        TrafficEvent.registrar("sistema_view", request, produto="rd_os", slug="sistema")
     keys_disponiveis = Key.total_disponiveis()
     cfg = SiteConfig.get_all()
     return render_template("marketing/home.html",
