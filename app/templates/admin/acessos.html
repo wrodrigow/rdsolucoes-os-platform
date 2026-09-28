@@ -12,8 +12,9 @@
   .ac-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--adm-muted)}
   .ac-agora{display:inline-flex;align-items:center;gap:8px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:5px 12px;border-radius:999px;font-weight:600}
   .ac-agora i{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 0 3px rgba(16,185,129,.2)}
-  .ac-cartoes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}
-  @media (max-width:1200px){.ac-cartoes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .ac-cartoes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:20px}
+  @media (max-width:1500px){.ac-cartoes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (max-width:1000px){.ac-cartoes{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media (max-width:640px){.ac-cartoes{grid-template-columns:1fr}}
   .ac-cartao{background:var(--adm-white);border:1px solid var(--adm-border);border-radius:var(--adm-radius);box-shadow:var(--adm-shadow);padding:18px;display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--cor)}
   .ac-cartao h3{margin:0;font-size:.95rem;color:var(--adm-text);display:flex;justify-content:space-between;gap:8px}
@@ -146,7 +147,7 @@
 {% block extra_js %}
 <script>
 (function () {
-  const CORES = { site: '#0d7d8c', blog: '#7c3aed', ferramentas: '#f97316', sistema: '#1a5fa8' };
+  const CORES = { site: '#0d7d8c', blog: '#7c3aed', ferramentas: '#f97316', sistema: '#1a5fa8', serralheria: '#be123c' };
   const $ = id => document.getElementById(id);
   let periodo = '7', dados = null;
   try { const salvo = localStorage.getItem('ac-periodo'); if (salvo) periodo = salvo; } catch (e) {}

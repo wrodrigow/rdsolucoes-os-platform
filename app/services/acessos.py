@@ -32,6 +32,8 @@ SITES = [
     {"chave": "ferramentas", "nome": "Ferramentas", "produtos": ("ferramentas",),
      "endereco": "rdos.rdsolucoes.eco.br"},
     {"chave": "sistema", "nome": "Sistema RD OS", "produtos": ("rd_os",), "endereco": "rdos…/lp e /sistema"},
+    {"chave": "serralheria", "nome": "Serralheria (Leonardo)", "produtos": ("serralheria",),
+     "endereco": "rdsolucoes.eco.br/serralheria"},
 ]
 SITE_DO_PRODUTO = {p: s["chave"] for s in SITES for p in s["produtos"]}
 PRODUTOS = tuple(SITE_DO_PRODUTO)
@@ -45,10 +47,13 @@ ACOES = {
                     ("Baixados ou compartilhados", ("baixou", "compartilhou", "baixou_pdf", "compartilhou_pdf")),
                     ("Interesse no Pro", ("clicou_pro", "checkout_start")), ("Códigos resgatados", ("resgatou_codigo",))],
     "sistema": [("Checkouts iniciados", ("checkout_start",)), ("Viram a oferta", ("lp_viu_oferta",))],
+    "serralheria": [("Cliques no WhatsApp", ("whatsapp_click",)), ("Cliques para ligar", ("tel_click",)),
+                    ("Viram as dúvidas", ("faq_view",))],
 }
 
 EVENTOS_LABEL = {
     "lp_view": "Visita", "sistema_view": "Visita", "whatsapp_click": "Clique no WhatsApp", "faq_view": "Viu o FAQ",
+    "tel_click": "Clique para ligar",
     "scroll_50": "Rolou metade", "scroll_100": "Rolou até o fim", "click_afiliado": "Clique em afiliado",
     "click_interno": "Clique para o site", "gerou_arte": "Gerou arte", "gerou_pdf": "Gerou PDF",
     "baixou": "Baixou a arte", "compartilhou": "Compartilhou a arte", "gerou_video": "Gerou vídeo",
@@ -182,6 +187,8 @@ def pagina_da_visita(ev, titulos_blog):
         return nome
     if produto == "rd_os":
         return "/sistema (venda do desktop)" if slug == "sistema" else "LP do sistema (/lp)"
+    if produto == "serralheria":
+        return "Serralheria (página)"
     return str(slug or ev.get("path") or produto)[:80]
 
 
