@@ -118,6 +118,7 @@ def _registrar(tipo, slug, detalhe=None, order_id=None, origem_padrao=None, orig
         TrafficEvent.registrar(tipo, request, order_id=order_id, produto="ferramentas", slug=slug, detalhe=detalhe,
                                origem=origem)
     except Exception as e:                      # rastreio nunca derruba a página
+        db.session.rollback()                   # nem deixa a transação inválida para o resto da requisição
         current_app.logger.warning(f"Rastreio das ferramentas falhou: {e}")
 
 

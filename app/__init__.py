@@ -75,6 +75,7 @@ def create_app(env=None):
         try:
             cfg = SiteConfig.get_all()
         except Exception:
+            db.session.rollback()        # sem isso, a próxima consulta da requisição dá PendingRollbackError
             cfg = {}
         return {"site_cfg": cfg, "site_name": app.config["SITE_NAME"]}
 
@@ -118,8 +119,19 @@ def create_app(env=None):
 
     @app.errorhandler(500)
     def server_error(e):
+        """A página de erro também consulta o banco (context processors). Se o erro
+        foi uma conexão que caiu no meio da requisição, a transação fica inválida:
+        desfaz antes de renderizar e, se ainda assim falhar, responde texto simples."""
         from flask import render_template
-        return render_template("500.html"), 500
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        try:
+            return render_template("500.html"), 500
+        except Exception:
+            return ("Tivemos um problema momentâneo. Recarregue a página em alguns segundos.", 500,
+                    {"Content-Type": "text/plain; charset=utf-8"})
 
     # Criar tabelas e dados iniciais
     with app.app_context():
