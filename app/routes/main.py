@@ -16,6 +16,32 @@ LP_EVENTOS_PERMITIDOS = {
 
 @bp.route("/")
 def home():
+    """O domínio raiz é o endereço impresso nas artes e nos PDFs grátis antigos
+    das ferramentas, então abre as ferramentas. A página do sistema desktop mudou
+    para /sistema; clique de anúncio do Google (gclid) que ainda aponte para cá
+    vai para lá. fbclid não conta: o Facebook e o Instagram o colocam em TODO
+    link clicado, inclusive post orgânico e bio, que é justamente quem procura
+    as ferramentas."""
+    from urllib.parse import urlparse
+    from flask import session
+    from .ferramentas import META_IDIOMA, com_query, pagina_inicio
+    if request.args.get("gclid"):
+        return redirect(com_query(url_for("main.sistema")))
+    # "Digitou só o domínio" só quando não veio de uma página do próprio site
+    # (logout, páginas de erro e links internos também trazem para cá)
+    ref = urlparse(request.referrer or "").hostname
+    externo = not ref or ref != (request.host or "").split(":")[0]
+    idioma = request.accept_languages.best_match(["pt", "es", "en"], default="pt")
+    if idioma in ("es", "en"):
+        destino = url_for(META_IDIOMA[idioma]["endpoint"])
+        if externo and not session.get("ferr_origem"):
+            destino = url_for(META_IDIOMA[idioma]["endpoint"], o="raiz")
+        return redirect(destino)
+    return pagina_inicio(origem_padrao="raiz" if externo else None)
+
+
+@bp.route("/sistema")
+def sistema():
     keys_disponiveis = Key.total_disponiveis()
     cfg = SiteConfig.get_all()
     return render_template("marketing/home.html",
@@ -138,8 +164,9 @@ def robots():
 def sitemap():
     from flask import Response
     base = current_app.config["BASE_URL"]
-    pages = ["", "/recursos", "/como-funciona", "/planos", "/faq", "/contato", "/ferramentas/pro",
-             "/ferramentas", "/orcamento", "/ordem-de-servico"]
+    # a raiz não entra: ela mostra as ferramentas, cujo endereço canônico é /ferramentas
+    pages = ["/ferramentas", "/orcamento", "/ordem-de-servico", "/ferramentas/pro",
+             "/sistema", "/recursos", "/como-funciona", "/planos", "/faq", "/contato"]
     urls = "\n".join(f"  <url><loc>{base}{p}</loc></url>" for p in pages)
 
     # Gerador de antes e depois: as três versões apontam umas para as outras (hreflang)

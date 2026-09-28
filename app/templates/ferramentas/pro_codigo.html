@@ -1,0 +1,57 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}Liberar o Pro com código de cortesia | RD OS{% endblock %}
+{% block description %}Recebeu um código de cortesia de um parceiro do RD OS? Libere o Pro das ferramentas sem pagar.{% endblock %}
+
+{% block seo %}
+<link rel="canonical" href="{{ canonical }}">
+<meta name="robots" content="noindex">
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio pagina-estreita">
+  <p class="olho">RD OS Pro · cortesia de parceiro</p>
+  <h1>Liberar o Pro com um código</h1>
+  <p class="lead">Recebeu um código de um grupo, loja, curso ou evento parceiro? Com ele, o Pro sai de graça: sua logomarca, nome e contato no orçamento, na ordem de serviço e no antes e depois.</p>
+</section>
+
+<section class="envoltorio pagina-estreita">
+  <div class="cartao-resgate">
+    {% if ja_tem %}
+      <h2>Você já tem o Pro</h2>
+      <p>Seu acesso está liberado. Configure a sua marca uma vez e ela entra em todos os documentos e artes.</p>
+      <div class="botoes" style="justify-content:flex-start">
+        <a class="botao principal" href="{{ url_for('ferramentas.minha_marca') }}">Configurar minha marca</a>
+        <a class="botao secundario" href="{{ url_for('ferramentas.inicio') }}">Abrir as ferramentas</a>
+      </div>
+    {% else %}
+      <form class="form-compra" method="post" action="{{ url_for('ferramentas.resgatar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="campo codigo" for="cod-codigo">Código de cortesia
+          <input type="text" id="cod-codigo" name="codigo" value="{{ codigo }}" required minlength="3" maxlength="30" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex.: GRUPO100">
+        </label>
+        {% if current_user.is_authenticated %}
+          <p class="letra-miuda">O Pro vai ser liberado na conta <strong>{{ current_user.email }}</strong>.</p>
+        {% else %}
+          <label class="campo" for="cod-nome">Seu nome
+            <input type="text" id="cod-nome" name="nome" required minlength="3" maxlength="120" autocomplete="name">
+          </label>
+          <label class="campo" for="cod-email">Seu e-mail <span class="ajuda">É o seu login. O link para liberar o Pro chega nele.</span>
+            <input type="email" id="cod-email" name="email" required maxlength="180" autocomplete="email" inputmode="email">
+          </label>
+        {% endif %}
+        <label class="campo" for="cod-whatsapp">WhatsApp <span class="ajuda">(opcional; só fica guardado se você marcar a caixa abaixo)</span>
+          <input type="tel" id="cod-whatsapp" name="whatsapp" maxlength="30" autocomplete="tel" inputmode="tel">
+        </label>
+        <label class="chave" for="cod-aceita"><input type="checkbox" id="cod-aceita" name="aceita_contato" value="1">Aceito receber novidades das ferramentas pelo WhatsApp (no máximo 1 mensagem por mês; é só pedir para parar)</label>
+        <button type="submit" class="botao principal">Liberar meu Pro</button>
+        <p class="letra-miuda">{% if not current_user.is_authenticated %}Vamos mandar um link para o seu e-mail: o Pro é liberado quando você tocar nele. {% endif %}Ao continuar, você concorda com os <a href="{{ url_for('ferramentas.termos') }}">Termos do Pro</a>. Cada conta usa um código só uma vez.</p>
+        {% if not current_user.is_authenticated %}
+        <p class="letra-miuda">Já tem conta? <a href="{{ url_for('auth.login', next=url_for('ferramentas.resgatar', c=codigo or None)) }}">Entre primeiro</a> e o Pro vai para ela.</p>
+        {% endif %}
+      </form>
+    {% endif %}
+  </div>
+  <p class="letra-miuda" style="text-align:center;margin-top:16px">Não tem código? As ferramentas continuam grátis: <a href="{{ url_for('ferramentas.inicio') }}">abrir as ferramentas</a>.</p>
+</section>
+{% endblock %}

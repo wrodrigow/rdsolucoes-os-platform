@@ -89,7 +89,7 @@ TEXTOS = {
         "upsell_titulo": "Tire a marca d'água e coloque a SUA marca",
         "upsell_itens": [
             "Seu logotipo, nome e WhatsApp no rodapé",
-            "Sem a marca d'água da RD Soluções",
+            "Sem a marca d'água do RD OS",
             "As cores da sua empresa",
             "Vídeo de 7 segundos para Reels e Status",
             "Orçamento e ordem de serviço em PDF com a sua marca",
@@ -114,7 +114,7 @@ TEXTOS = {
             ("Formatos para feed, retrato e stories", True, True),
             ("Baixar e compartilhar a imagem", True, True),
             ("Título, subtítulo e etiquetas", True, True),
-            ("Sem a marca d'água da RD Soluções", False, True),
+            ("Sem a marca d'água do RD OS", False, True),
             ("Seu logotipo, nome e contato", False, True),
             ("Cores da sua empresa", False, True),
             ("Vídeo para Reels e Status", False, True),
@@ -132,7 +132,7 @@ TEXTOS = {
         "faq": [
             ("É grátis mesmo?",
              "Sim. Você monta, baixa e compartilha quantas artes quiser sem pagar nada. A versão grátis leva o selo "
-             "da RD Soluções sobre as fotos e uma faixa \"Feito grátis com RD OS\" no rodapé. Para trocar pela sua "
+             "do RD OS sobre as fotos e uma faixa \"Feito grátis com RD OS\" no rodapé. Para trocar pela sua "
              "marca, existe o Pro."),
             ("Preciso instalar algum aplicativo?",
              "Não. Funciona no navegador do celular (Chrome ou Safari) e no computador. É só abrir esta página."),
@@ -167,7 +167,8 @@ TEXTOS = {
             "exemplo": "EXEMPLO",
             "toqueFoto": "Toque para escolher a foto",
             "feitoCom": "Feito grátis com RD OS",
-            "marca": "RD Soluções · rdos.rdsolucoes.eco.br",
+            "marca": "RD OS · rdos.rdsolucoes.eco.br/gratis",
+            "site": "rdos.rdsolucoes.eco.br/gratis",
             "soImagem": "Escolha um arquivo de imagem (foto).",
             "erroFoto": "Não consegui abrir essa foto. Tente outra ou tire um print dela.",
             "arquivo": "antes-e-depois",
@@ -304,7 +305,8 @@ TEXTOS = {
             "exemplo": "EJEMPLO",
             "toqueFoto": "Toca para elegir la foto",
             "feitoCom": "Hecho gratis con RD OS",
-            "marca": "RD OS · rdos.rdsolucoes.eco.br",
+            "marca": "RD OS · rdos.rdsolucoes.eco.br/gratis",
+            "site": "rdos.rdsolucoes.eco.br/gratis",
             "soImagem": "Elige un archivo de imagen (foto).",
             "erroFoto": "No pude abrir esa foto. Prueba con otra o haz una captura de pantalla.",
             "arquivo": "antes-y-despues",
@@ -441,7 +443,8 @@ TEXTOS = {
             "exemplo": "EXAMPLE",
             "toqueFoto": "Tap to choose a photo",
             "feitoCom": "Made for free with RD OS",
-            "marca": "RD OS · rdos.rdsolucoes.eco.br",
+            "marca": "RD OS · rdos.rdsolucoes.eco.br/free",
+            "site": "rdos.rdsolucoes.eco.br/free",
             "soImagem": "Please choose an image file (photo).",
             "erroFoto": "Couldn't open that photo. Try another one or take a screenshot of it.",
             "arquivo": "before-and-after",
@@ -487,7 +490,8 @@ DOCS = {
         "pro_nota": "pagamento único, vale para as três ferramentas",
         "faq": [
             ("É grátis mesmo?", "Sim. As três ferramentas funcionam sem pagar e sem cadastro. No grátis, os "
-             "documentos e as artes saem com a marca RD OS."),
+             "documentos e as artes saem com a marca RD OS; no orçamento e na OS, você também pode pôr o seu "
+             "nome e o seu WhatsApp."),
             ("Precisa instalar aplicativo?", "Não. Funciona no navegador do celular e do computador."),
             ("O que o Pro libera?", "No orçamento e na OS, a sua logomarca, o nome da empresa, o CNPJ, o contato e o "
              "endereço no cabeçalho, sem a marca RD OS. No antes e depois, a sua logomarca, o nome e o contato no lugar "
@@ -505,8 +509,8 @@ DOCS = {
         "lead": "Preencha o cliente e os itens, confira o total e gere o PDF para mandar no WhatsApp ou por e-mail.",
         "titulo_doc": "Orçamento",
         "faq": [
-            ("É grátis mesmo?", "Sim. Você faz quantos orçamentos quiser, sem cadastro. No grátis, o PDF sai com a "
-             "marca RD OS e sem os dados da sua empresa no cabeçalho."),
+            ("É grátis mesmo?", "Sim. Você faz quantos orçamentos quiser, sem cadastro. No grátis, o PDF sai com o "
+             "seu nome e o seu WhatsApp no cabeçalho (se você preencher) e com a marca RD OS."),
             ("Como mando o orçamento pelo WhatsApp?", "Toque em Gerar PDF e depois em Compartilhar: o celular abre a "
              "lista de apps e você escolhe o WhatsApp. No computador, baixe o PDF e anexe na conversa."),
             ("Dá para colocar desconto, validade e forma de pagamento?", "Sim. Tem campo para desconto em reais, "
@@ -528,7 +532,7 @@ DOCS = {
         "titulo_doc": "Ordem de serviço",
         "faq": [
             ("É grátis mesmo?", "Sim. Você faz quantas ordens de serviço quiser, sem cadastro. No grátis, o PDF sai "
-             "com a marca RD OS e sem os dados da sua empresa no cabeçalho."),
+             "com o seu nome e o seu WhatsApp no cabeçalho (se você preencher) e com a marca RD OS."),
             ("Serve para qualquer tipo de serviço?", "Serve para manutenção, instalação, reparo e assistência "
              "técnica: tem campos para equipamento ou local, defeito relatado, serviço executado, peças, mão de "
              "obra e garantia."),

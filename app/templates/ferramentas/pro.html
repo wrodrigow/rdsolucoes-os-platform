@@ -36,12 +36,12 @@
 <section class="abertura envoltorio pagina-estreita">
   <p class="olho">RD OS Pro · vale para as três ferramentas</p>
   <h1>Orçamento, ordem de serviço e antes e depois com a SUA marca</h1>
-  <p class="lead">Na versão grátis, tudo sai com a marca RD OS. No Pro, entram o seu logotipo, o nome da empresa e o seu WhatsApp (no orçamento e na OS, também o CNPJ e o endereço) — e cada documento e cada foto que você manda viram propaganda do seu serviço.</p>
+  <p class="lead">Na versão grátis, os documentos e as artes saem com a marca RD OS. No Pro, entram o seu logotipo, o nome da empresa e o seu WhatsApp (no orçamento e na OS, também o CNPJ e o endereço), sem a marca RD OS — e cada documento e cada foto que você manda viram propaganda do seu serviço.</p>
 
   <div class="comparacao">
     <figure>
-      <img src="{{ url_for('static', filename='ferramentas/pro-gratis.jpg') }}" alt="Arte grátis: faixa e selo da RD Soluções" width="720" height="720" fetchpriority="high">
-      <figcaption>Grátis — com a marca d'água da RD</figcaption>
+      <img src="{{ url_for('static', filename='ferramentas/pro-gratis.jpg') }}" alt="Arte grátis: faixa e selo do RD OS" width="720" height="720" fetchpriority="high">
+      <figcaption>Grátis — com a marca d'água do RD OS</figcaption>
     </figure>
     <figure>
       <img src="{{ url_for('static', filename='ferramentas/pro-com-marca.jpg') }}" alt="Arte Pro: logotipo, nome e contato de uma empresa fictícia, com cores verde e amarelo" width="720" height="720" loading="lazy">
@@ -96,6 +96,7 @@
           <p class="letra-miuda">Já comprou? <a href="{{ url_for('auth.login', next=url_for('ferramentas.minha_marca')) }}">Entre com o seu e-mail e senha</a>.</p>
         </form>
       {% endif %}
+      <p class="letra-miuda">Recebeu um código de cortesia de um parceiro? <a href="{{ url_for('ferramentas.resgatar') }}">Use o código aqui</a>.</p>
     {% endif %}
   </div>
 </section>

@@ -12,6 +12,10 @@
   var E_ORC = TIPO === 'orcamento';
   var CHAVE = 'rdos-doc-' + TIPO;
   var CHAVE_NUM = CHAVE + '-ultimo-numero';
+  // "Seus dados" (nome e WhatsApp de quem emite, no grátis): valem para o
+  // orçamento e para a OS, e não somem em "Novo documento" nem em "Limpar tudo"
+  var CHAVE_EMISSOR = 'rdos-doc-emissor';
+  var SITE_GRATIS = 'rdos.rdsolucoes.eco.br/gratis';
   var $ = function (id) { return document.getElementById(id); };
   var form = $('dc-form');
   if (!form) return;
@@ -123,7 +127,32 @@
       d[el.getAttribute('data-campo')] = el.type === 'checkbox' ? el.checked : el.value;
     });
     d.itens = itens().filter(function (i) { return i.descricao; });
+    var e = emissor();
+    if (e) { d.emissor_nome = e.emissor_nome; d.emissor_contato = e.emissor_contato; }
     return d;
+  }
+
+  // ------------------------------------------------------------------ seus dados (grátis)
+  function camposEmissor() { return form.querySelectorAll('[data-emissor]'); }
+  function emissor() {
+    var campos = camposEmissor();
+    if (!campos.length) return null;               // Pro: vale a marca cadastrada
+    var e = {};
+    campos.forEach(function (el) { e[el.getAttribute('data-emissor')] = el.value.trim(); });
+    return e;
+  }
+  function salvarEmissor() {
+    var e = emissor();
+    if (e) gravar(CHAVE_EMISSOR, JSON.stringify(e));
+  }
+  function preencherEmissor() {
+    var salvo = null;
+    try { salvo = JSON.parse(ler(CHAVE_EMISSOR) || 'null'); } catch (err) { salvo = null; }
+    if (!salvo || typeof salvo !== 'object') return;
+    camposEmissor().forEach(function (el) {
+      var v = salvo[el.getAttribute('data-emissor')];
+      if (typeof v === 'string') el.value = v.slice(0, Number(el.getAttribute('maxlength')) || 80);
+    });
   }
 
   function totalLinha(i) { return Math.round(qtd(i.quantidade) * numero(i.valor) * 100) / 100; }
@@ -164,8 +193,11 @@
         '<div><b>' + esc(m.empresa || 'Nome da sua empresa') + '</b>' +
         (m.cnpj ? '<span>CNPJ/CPF: ' + esc(m.cnpj) + '</span>' : '') +
         '<span>' + esc([m.telefone, m.email].filter(Boolean).join(' · ')) + '</span></div></div>';
+    } else if (d.emissor_nome || d.emissor_contato) {
+      h += '<div class="papel-emp"><div><b>' + esc(d.emissor_nome || '') + '</b>' +
+        (d.emissor_contato ? '<span>' + esc(d.emissor_contato) + '</span>' : '') + '</div></div>';
     } else {
-      h += '<div class="papel-emp gratis"><b>RD OS</b><span>Gerado grátis em rdos.rdsolucoes.eco.br</span></div>';
+      h += '<div class="papel-emp gratis"><b>RD OS</b><span>Gerado grátis em ' + SITE_GRATIS + '</span></div>';
     }
     h += '<div class="papel-tit"><strong style="color:' + esc(cor) + '">' + titulo + '</strong>' +
       (d.numero ? '<span>Nº ' + esc(d.numero) + '</span>' : '') + '<small>' + esc(dataBr(d.data)) + '</small></div></div>';
@@ -202,7 +234,7 @@
     h += '<div class="papel-ass"><span>' + (E_ORC ? 'Aprovação do cliente' : 'Técnico responsável') + '</span><span>' +
       (E_ORC ? 'Data' : 'Cliente / responsável') + '</span></div>';
     h += '<p class="papel-rodape">' + (m ? esc([m.empresa, m.cnpj ? 'CNPJ/CPF ' + m.cnpj : '', m.site].filter(Boolean).join(' | '))
-      : 'Gerado grátis com RD OS · com o Pro, sai com a sua logomarca') + '</p>';
+      : 'Feito grátis com RD OS · faça o seu em ' + SITE_GRATIS) + '</p>';
     if (!m) h += '<span class="papel-selo" aria-hidden="true">RD OS · versão grátis</span>';
     $('dc-previa').innerHTML = h;
 
@@ -266,6 +298,7 @@
     }
     form.reset();
     preencher(base);
+    preencherEmissor();               // o reset do formulário apagaria "Seus dados"
     esconderPronto();
     atualizar();
   }
@@ -354,7 +387,10 @@
   // ------------------------------------------------------------------ ligações
   function atualizar() { renderPrevia(); salvarRascunho(); }
 
-  form.addEventListener('input', function () { editadoDepoisDoPdf = true; esconderPronto(); atualizar(); });
+  form.addEventListener('input', function (ev) {
+    if (ev.target && ev.target.hasAttribute && ev.target.hasAttribute('data-emissor')) salvarEmissor();
+    editadoDepoisDoPdf = true; esconderPronto(); atualizar();
+  });
   form.addEventListener('change', function () { editadoDepoisDoPdf = true; esconderPronto(); atualizar(); });
   $('dc-add-item').addEventListener('click', function () {
     var l = novaLinha();
@@ -413,5 +449,6 @@
   } else {
     preencher({ numero: proximoNumero(), data: hojeIso(), itens: [] });
   }
+  preencherEmissor();
   renderPrevia();
 })();

@@ -116,6 +116,20 @@
   </div>
 </div>
 
+<!-- De onde vieram as visitas das ferramentas (?o= dos links, /p/parceiro, marca d'água, PDF) -->
+<div class="adm-card" id="traf-card-origens" style="margin-top:24px;display:none;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-route" style="color:#7c3aed;"></i> De onde vieram (Ferramentas, desde sempre)</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead><tr><th>Origem</th><th>Visitas</th><th>Artes</th><th>PDFs</th><th>Baixou / compartilhou</th><th>Interesse no Pro</th><th>Códigos usados</th></tr></thead>
+      <tbody id="traf-origens-tbody"></tbody>
+    </table>
+  </div>
+  <p style="font-size:0.75rem;color:var(--adm-muted);margin:8px 0 0;">Para medir um canal novo, use no link <code>?o=nome</code> (ex.: <code>/ferramentas?o=ig-bio</code>, <code>?o=grupo-refrig</code>).</p>
+</div>
+
 <!-- Vendas recentes (só existe pra produto com checkout — ex.: RD OS) -->
 <div class="adm-card" id="traf-card-vendas" style="margin-top:24px;">
   <div class="adm-card-header">
@@ -276,6 +290,24 @@ function trafRenderFunil(funil, mostrarVendas) {
 // Nome e e-mail vêm do formulário de compra: nunca entram no innerHTML sem escape
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+
+function trafRenderOrigens(origens) {
+  const card = document.getElementById('traf-card-origens');
+  if (!origens) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const tbody = document.getElementById('traf-origens-tbody');
+  tbody.innerHTML = origens.length ? origens.map(o => `
+    <tr>
+      <td style="font-size:0.85rem;font-weight:600;">${esc(o.rotulo)}${o.origem && o.rotulo !== o.origem ? ` <code style="font-size:0.72rem;color:var(--adm-muted);">${esc(o.origem)}</code>` : ''}</td>
+      <td style="font-size:0.85rem;">${o.visitas}</td>
+      <td style="font-size:0.85rem;">${o.artes}</td>
+      <td style="font-size:0.85rem;">${o.pdfs}</td>
+      <td style="font-size:0.85rem;">${o.saidas}</td>
+      <td style="font-size:0.85rem;">${o.pro}</td>
+      <td style="font-size:0.85rem;font-weight:600;color:${o.codigos > 0 ? '#059669' : 'inherit'};">${o.codigos}</td>
+    </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--adm-muted);">Sem visitas ainda.</td></tr>';
 }
 
 function trafRenderEventos(eventos) {
@@ -496,6 +528,7 @@ async function trafAtualizar() {
     trafRenderFunil(d.funil, d.mostrar_vendas);
     trafRenderEventos(d.eventos_recentes);
     trafRenderVendas(d.vendas_recentes);
+    trafRenderOrigens(d.origens);
     trafRenderCanal(d.canal);
     trafRenderMetaAds(d.meta_ads);
     trafRenderGoogleAds(d.google_ads);

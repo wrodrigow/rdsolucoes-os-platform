@@ -27,7 +27,7 @@ def admin_required(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_admin:
             flash("Acesso restrito a administradores.", "danger")
-            return redirect(url_for("main.home"))
+            return redirect(url_for("main.sistema"))
         return fn(*args, **kwargs)
     return wrapped
 
@@ -1153,8 +1153,31 @@ def trafego_dados():
             "conversoes_whatsapp": total_conversoes_whatsapp,
         },
         "vendas_recentes": vendas_recentes,
+        "origens": _ferr_origens_para_painel() if produto == "ferramentas" else None,
         "atualizado_em": now_local.strftime("%H:%M:%S"),
     })
+
+
+def _ferr_origens_para_painel():
+    """Tabela "de onde vieram" das ferramentas (desde sempre), pela coluna origem."""
+    from ..models.ferramentas import FerrCodigo
+    parceiros = {"p:" + c.slug: c.parceiro for c in FerrCodigo.query.all()}
+    linhas = []
+    for origem, ev in _ferr_contagem_por_origem().items():
+        if origem is None:
+            rotulo = "Sem origem no link (direto, busca, redes)"
+        elif origem in parceiros:
+            rotulo = f"Parceiro: {parceiros[origem]}"
+        else:
+            rotulo = ORIGENS_LABELS.get(origem, origem)
+        linhas.append({
+            "origem": origem or "", "rotulo": rotulo, "visitas": ev.get("lp_view", 0),
+            "artes": ev.get("gerou_arte", 0), "pdfs": ev.get("gerou_pdf", 0),
+            "saidas": sum(ev.get(k, 0) for k in ("baixou", "compartilhou", "baixou_pdf", "compartilhou_pdf")),
+            "pro": ev.get("clicou_pro", 0) + ev.get("checkout_start", 0), "codigos": ev.get("resgatou_codigo", 0),
+        })
+    linhas.sort(key=lambda l: (l["origem"] == "", -l["visitas"]))
+    return linhas[:30]
 
 
 # ── Manutenção: limpar dados de teste ────────────────────────────────────────
@@ -1222,3 +1245,132 @@ def limpar_testes():
         total_logs=total_logs,
         total_traffic_events=total_traffic_events,
     )
+
+
+# ── Ferramentas: códigos de cortesia do Pro (um por parceiro) ────────────────
+
+# rótulos das origens conhecidas (?o= dos links); o resto aparece como veio
+ORIGENS_LABELS = {
+    "marca": "Marca d'água da arte (pt)", "marca-es": "Marca d'água da arte (es)",
+    "marca-en": "Marca d'água da arte (en)", "pdf-orc": "PDF de orçamento (QR ou link)",
+    "pdf-os": "PDF de ordem de serviço (QR ou link)", "raiz": "Digitou só o domínio",
+}
+FERR_EVENTOS_ORIGEM = ("lp_view", "gerou_arte", "gerou_pdf", "baixou", "compartilhou", "baixou_pdf",
+                       "compartilhou_pdf", "clicou_pro", "checkout_start", "resgatou_codigo")
+
+
+def _ferr_contagem_por_origem(filtro_origem=None):
+    """{origem: {evento: n}} das ferramentas, sem robôs, desde sempre."""
+    from sqlalchemy import func
+    q = (TrafficEvent.query
+         .filter(TrafficEvent.produto == "ferramentas", TrafficEvent.is_bot == False,  # noqa: E712
+                 TrafficEvent.event_type.in_(FERR_EVENTOS_ORIGEM)))
+    if filtro_origem is not None:
+        q = q.filter(filtro_origem)
+    linhas = (q.with_entities(TrafficEvent.origem, TrafficEvent.event_type, func.count(TrafficEvent.id))
+              .group_by(TrafficEvent.origem, TrafficEvent.event_type).all())
+    saida = {}
+    for origem, tipo, n in linhas:
+        saida.setdefault(origem, {})[tipo] = n
+    return saida
+
+
+@bp.route("/ferramentas/codigos", methods=["GET", "POST"])
+@admin_required
+def ferr_codigos():
+    import secrets
+    from datetime import date
+    from ..models.ferramentas import FerrCodigo, FerrCodigoUso
+    from ..services import ferramentas_service as fs
+
+    if request.method == "POST":
+        codigo = fs.normalizar_codigo(request.form.get("codigo"))
+        if not codigo:
+            alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"          # sem 0/O e 1/I, que confundem
+            codigo = "RD" + "".join(secrets.choice(alfabeto) for _ in range(6))
+        parceiro = re.sub(r"[\x00-\x1f<>]", "", request.form.get("parceiro") or "").strip()[:80]
+        try:
+            limite = max(1, min(int(request.form.get("limite") or 100), 1000))
+            dias = max(0, min(int(request.form.get("dias") or 60), 3650))
+        except ValueError:
+            flash("Limite e validade precisam ser números.", "danger")
+            return redirect(url_for("admin.ferr_codigos"))
+        if len(parceiro) < 2:
+            flash("Escreva o nome do parceiro (aparece para quem chega pelo link).", "danger")
+            return redirect(url_for("admin.ferr_codigos"))
+        if not fs.CODIGO_RE.match(codigo):
+            flash("O código precisa ter de 3 a 24 letras ou números.", "danger")
+            return redirect(url_for("admin.ferr_codigos"))
+        if FerrCodigo.query.filter_by(codigo=codigo).first():
+            flash(f"O código {codigo} já existe.", "danger")
+            return redirect(url_for("admin.ferr_codigos"))
+        db.session.add(FerrCodigo(codigo=codigo, parceiro=parceiro, limite_usos=limite,
+                                  valido_ate=(date.today() + timedelta(days=dias)) if dias else None))
+        db.session.commit()
+        Log.registrar("ferr_codigo_criado", f"{codigo} parceiro={parceiro} limite={limite} dias={dias}",
+                      user_id=current_user.id)
+        flash(f"Código {codigo} criado. Link do parceiro: {current_app.config['BASE_URL']}/p/{codigo.lower()}", "success")
+        return redirect(url_for("admin.ferr_codigos"))
+
+    codigos = FerrCodigo.query.order_by(FerrCodigo.criado_em.desc()).all()
+    por_origem = _ferr_contagem_por_origem(TrafficEvent.origem.like("p:%"))
+    linhas = (db.session.query(FerrCodigoUso, User, FerrCodigo)
+              .join(User, User.id == FerrCodigoUso.user_id)
+              .join(FerrCodigo, FerrCodigo.id == FerrCodigoUso.codigo_id)
+              .order_by(FerrCodigoUso.criado_em.desc()).limit(100).all())
+    usos = [(uso, user, cod, uso.criado_em.replace(tzinfo=timezone.utc).astimezone(BRT).strftime("%d/%m %H:%M"))
+            for uso, user, cod in linhas]
+    return render_template("admin/ferr_codigos.html", codigos=codigos, por_origem=por_origem, usos=usos,
+                           hoje=date.today(), base_url=current_app.config["BASE_URL"])
+
+
+@bp.route("/ferramentas/codigos/<int:codigo_id>/ativo", methods=["POST"])
+@admin_required
+def ferr_codigo_ativo(codigo_id):
+    from ..models.ferramentas import FerrCodigo
+    codigo = db.session.get(FerrCodigo, codigo_id)
+    if codigo is None:
+        flash("Código não encontrado.", "danger")
+        return redirect(url_for("admin.ferr_codigos"))
+    codigo.ativo = not codigo.ativo
+    db.session.commit()
+    Log.registrar("ferr_codigo_ativo" if codigo.ativo else "ferr_codigo_encerrado", codigo.codigo, user_id=current_user.id)
+    flash(f"Código {codigo.codigo} {'reativado' if codigo.ativo else 'encerrado'}.", "success")
+    return redirect(url_for("admin.ferr_codigos"))
+
+
+@bp.route("/ferramentas/codigos/<int:codigo_id>/qr.svg")
+@admin_required
+def ferr_codigo_qr(codigo_id):
+    """QR do link do parceiro, em SVG (nítido no display de balcão e no cartão)."""
+    from reportlab.graphics import renderSVG
+    from reportlab.graphics.barcode.qr import QrCodeWidget
+    from reportlab.graphics.shapes import Drawing
+    from ..models.ferramentas import FerrCodigo
+    codigo = db.session.get(FerrCodigo, codigo_id)
+    if codigo is None:
+        return "", 404
+    link = f"{current_app.config['BASE_URL']}/p/{codigo.slug}"
+    w = QrCodeWidget(link, barLevel="M")
+    x0, y0, x1, y1 = w.getBounds()
+    lado = 600
+    d = Drawing(lado, lado, transform=[lado / (x1 - x0), 0, 0, lado / (y1 - y0), 0, 0])
+    d.add(w)
+    resp = Response(renderSVG.drawToString(d), mimetype="image/svg+xml")
+    resp.headers["Content-Disposition"] = f'inline; filename="qr-{codigo.slug}.svg"'
+    return resp
+
+
+@bp.route("/ferramentas/codigos/uso/<int:uso_id>/parar", methods=["POST"])
+@admin_required
+def ferr_uso_parar(uso_id):
+    """A pessoa pediu para não receber mais novidades: apaga o WhatsApp do resgate."""
+    from ..models.ferramentas import FerrCodigoUso
+    uso = db.session.get(FerrCodigoUso, uso_id)
+    if uso is not None:
+        uso.aceita_contato = False
+        uso.whatsapp = None
+        db.session.commit()
+        Log.registrar("ferr_contato_parou", f"uso={uso_id} user={uso.user_id}", user_id=current_user.id)
+        flash("Pronto: essa pessoa não recebe mais novidades e o WhatsApp dela foi apagado do resgate.", "success")
+    return redirect(url_for("admin.ferr_codigos"))

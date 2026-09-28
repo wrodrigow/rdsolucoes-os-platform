@@ -19,6 +19,21 @@
 {% endblock %}
 
 {% block conteudo %}
+{% if chegada %}
+<div class="envoltorio"><div class="faixa-chegada" role="status">
+  {% if chegada.tipo == 'parceiro' %}
+    <p>Indicado por <b>{{ chegada.parceiro }}</b>.{% if chegada.codigo and not tem_pro_atual %} Com o código <b>{{ chegada.codigo }}</b>, o Pro sai de graça.{% endif %}</p>
+    {% if chegada.codigo and not tem_pro_atual %}
+    <a class="botao principal pequeno" href="{{ url_for('ferramentas.resgatar', c=chegada.codigo) }}">Liberar o Pro grátis</a>
+    {% endif %}
+  {% elif chegada.tipo == 'arte' %}
+    <p>Viu uma arte de antes e depois feita aqui? Monte a sua agora: é grátis e não precisa de cadastro.</p>
+    <a class="botao principal pequeno" href="{{ url_for('ferramentas.antes_depois_pt') }}">Montar antes e depois</a>
+  {% else %}
+    <p>Faça o seu agora: é grátis e não precisa de cadastro.</p>
+  {% endif %}
+</div></div>
+{% endif %}
 <section class="abertura envoltorio">
   <p class="olho">{{ d.eyebrow }}</p>
   <h1>{{ d.h1 }}</h1>

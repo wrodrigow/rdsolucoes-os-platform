@@ -16,7 +16,7 @@ from flask import (Blueprint, Response, abort, current_app, flash, jsonify, make
 from flask_login import current_user, login_required, login_user
 
 from ..extensions import csrf, db, limiter
-from ..models.ferramentas import FerrListaEspera, FerrMarca, FerrPedidoPro
+from ..models.ferramentas import FerrCodigo, FerrListaEspera, FerrMarca, FerrPedidoPro
 from ..models.order import Order
 from ..models.site_config import SiteConfig
 from ..services import ferramentas_service as fs
@@ -79,9 +79,35 @@ def _alternativas():
     ]
 
 
-def _registrar(tipo, slug, detalhe=None, order_id=None):
+ORIGEM_RE = re.compile(r"^[a-z0-9][a-z0-9:-]{0,39}$")
+ORIGENS_DE_DOCUMENTO = {"marca": "arte", "marca-es": "arte", "marca-en": "arte", "pdf-orc": "orcamento",
+                        "pdf-os": "ordem-de-servico"}
+
+
+def _origem_atual(padrao=None):
+    """De onde a visita veio: o ?o= do link (bio, post, grupo, marca d'água, PDF,
+    parceiro). Fica na sessão para os eventos seguintes (gerou_arte, checkout...)
+    saberem a origem sem o JavaScript precisar repassar nada.
+
+    `padrao` só vale quando a sessão ainda não tem origem (ex.: "raiz" para quem
+    digitou só o domínio): não apaga a origem de um link visto antes."""
+    bruto = (request.args.get("o") or "").strip().lower()[:40]
+    if bruto and ORIGEM_RE.match(bruto) and _origem_de_parceiro_valida(bruto):
+        session["ferr_origem"] = bruto
+        return bruto
+    atual = session.get("ferr_origem")
+    if not atual and padrao:
+        session["ferr_origem"] = padrao
+        return padrao
+    return atual
+
+
+def _registrar(tipo, slug, detalhe=None, order_id=None, origem_padrao=None, origem=None):
     """Grava a visita/evento no mesmo painel de tráfego dos outros produtos.
-    Visitas do próprio admin não entram."""
+    Visitas do próprio admin não entram. `origem` fixa a origem só deste
+    evento (ex.: o resgate conta para o parceiro dono do código)."""
+    atual = _origem_atual(origem_padrao)
+    origem = origem or atual
     if getattr(current_user, "is_admin", False):
         return
     try:
@@ -89,9 +115,34 @@ def _registrar(tipo, slug, detalhe=None, order_id=None):
         ref = urlparse(request.referrer or "").hostname
         if ref and ref not in (request.host or ""):
             detalhe = f"{detalhe or ''}:ref:{ref}".lstrip(":")
-        TrafficEvent.registrar(tipo, request, order_id=order_id, produto="ferramentas", slug=slug, detalhe=detalhe)
+        TrafficEvent.registrar(tipo, request, order_id=order_id, produto="ferramentas", slug=slug, detalhe=detalhe,
+                               origem=origem)
     except Exception as e:                      # rastreio nunca derruba a página
         current_app.logger.warning(f"Rastreio das ferramentas falhou: {e}")
+
+
+def _origem_de_parceiro_valida(origem):
+    """"p:<código>" só vale quando a pessoa passou por /p/<código> nesta sessão.
+    Sem isso, ?o=p:<palpite> viraria um jeito sem limite de testar se um código
+    existe (a faixa mostra o código) e sujaria o painel com parceiros inventados."""
+    return not origem.startswith("p:") or session.get("ferr_parceiro") == origem[2:]
+
+
+def _chegada(origem):
+    """Faixa de boas-vindas para quem chegou por uma arte, um PDF ou um parceiro."""
+    if not origem:
+        return None
+    if origem.startswith("p:"):
+        if not _origem_de_parceiro_valida(origem):
+            return None
+        codigo = FerrCodigo.query.filter_by(codigo=fs.normalizar_codigo(origem[2:])).first()
+        if not codigo:
+            return None
+        return {"tipo": "parceiro", "parceiro": codigo.parceiro,
+                "codigo": codigo.codigo if codigo.situacao() is None else None}
+    if origem in ORIGENS_DE_DOCUMENTO:
+        return {"tipo": ORIGENS_DE_DOCUMENTO[origem]}
+    return None
 
 
 def _json_ld(idioma, t, canonical, preco):
@@ -216,17 +267,96 @@ def inicio_barra():
 
 @bp.route("/ferramentas")
 def inicio():
-    """Página única com as três ferramentas."""
-    _registrar("lp_view", "ferramentas", "pt")
+    return pagina_inicio()
+
+
+def _origem_do_link():
+    bruto = (request.args.get("o") or "").strip().lower()[:40]
+    return bruto if ORIGEM_RE.match(bruto) and _origem_de_parceiro_valida(bruto) else None
+
+
+def pagina_inicio(origem_padrao=None):
+    """Página única com as três ferramentas. Também é o que abre no domínio raiz
+    (main.home), que é o endereço impresso nas artes e nos PDFs antigos."""
+    _registrar("lp_view", "ferramentas", "pt", origem_padrao=origem_padrao)
     d = DOCS["hub"]
-    resp = make_response(render_template(
-        "ferramentas/hub.html", d=d, preco_fmt=fs.preco_pro_formatado(),
+    # o context_processor deste blueprint não roda quando a página é aberta pela
+    # raiz (blueprint main): o contexto vai explícito para valer nos dois casos
+    contexto = _contexto_ferramentas()
+    contexto.update(
+        d=d, preco_fmt=fs.preco_pro_formatado(),
         canonical=_url_absoluta("ferramentas.inicio"),
         og_image=_url_absoluta("static", filename="ferramentas/og-antes-depois-pt.jpg"),
         json_ld=_json_ld_doc(d, _url_absoluta("ferramentas.inicio"), "Ferramentas para prestador de serviço"),
-        aba_atual=None,
-    ))
+        aba_atual=None, chegada=_chegada(_origem_do_link()),
+    )
+    resp = make_response(render_template("ferramentas/hub.html", **contexto))
     return _sem_cache(resp) if current_user.is_authenticated else resp
+
+
+# ---------------------------------------------------------------------- endereços curtos (marca d'água, PDF, parceiros)
+def _idioma_do_navegador():
+    return request.accept_languages.best_match(["pt", "es", "en"], default="pt")
+
+
+def com_query(destino):
+    """Destino + a query original, sem passar os parâmetros pelo url_for
+    (?endpoint= ou ?_method= virariam argumentos dele e dariam erro 500)."""
+    qs = request.query_string.decode("latin-1")
+    return destino + ("?" + qs if qs else "")
+
+
+@bp.route("/grátis")
+def gratis_acentuado():
+    """Quem digita com acento (é comum) cai no mesmo lugar."""
+    return redirect(com_query(url_for("ferramentas.gratis")))
+
+
+@bp.route("/gratis/orcamento")
+def gratis_orcamento():
+    """Endereço impresso no orçamento grátis (e no QR dele)."""
+    return redirect(url_for("ferramentas.orcamento", o="pdf-orc"))
+
+
+@bp.route("/gratis/os")
+def gratis_os():
+    """Endereço impresso na ordem de serviço grátis (e no QR dela)."""
+    return redirect(url_for("ferramentas.ordem_servico", o="pdf-os"))
+
+
+@bp.route("/gratis")
+def gratis():
+    """Endereço impresso na arte grátis (pt e es) e no rodapé do PDF grátis.
+    O link clicável e o QR do PDF trazem ?o=pdf-orc / pdf-os e caem direto no
+    documento; quem digita o endereço visto numa arte cai nas ferramentas."""
+    origem = _origem_do_link()
+    if origem == "pdf-orc":
+        return redirect(url_for("ferramentas.orcamento", o=origem))
+    if origem == "pdf-os":
+        return redirect(url_for("ferramentas.ordem_servico", o=origem))
+    idioma = _idioma_do_navegador()
+    if idioma == "es":
+        return redirect(url_for("ferramentas.antes_depois_es", o=origem or "marca-es"))
+    if idioma == "en":
+        return redirect(url_for("ferramentas.antes_depois_en", o=origem or "marca-en"))
+    return redirect(url_for("ferramentas.inicio", o=origem or "marca"))
+
+
+@bp.route("/free")
+def gratis_en():
+    """Endereço impresso na arte grátis em inglês."""
+    return redirect(url_for("ferramentas.antes_depois_en", o=_origem_do_link() or "marca-en"))
+
+
+@bp.route("/p/<slug>")
+@limiter.limit("60 per minute")
+def parceiro(slug):
+    """Link de indicação de um parceiro: o mesmo texto do código, em minúsculas."""
+    codigo = FerrCodigo.query.filter_by(codigo=fs.normalizar_codigo(slug)).first()
+    if not codigo:
+        return redirect(url_for("ferramentas.inicio"))       # link digitado errado: mostra as ferramentas mesmo
+    session["ferr_parceiro"] = codigo.slug                   # libera a origem "p:<código>" (ver _origem_de_parceiro_valida)
+    return redirect(url_for("ferramentas.inicio", o=f"p:{codigo.slug}"))
 
 
 # ---------------------------------------------------------------------- orçamento e ordem de serviço
@@ -280,7 +410,7 @@ def _pagina_documento(tipo):
         canonical=_url_absoluta(endpoint),
         og_image=_url_absoluta("static", filename="ferramentas/og-antes-depois-pt.jpg"),
         json_ld=_json_ld_doc(d, _url_absoluta(endpoint), d["nome"]),
-        aba_atual=tipo, alternativas=None,
+        aba_atual=tipo, alternativas=None, chegada=_chegada(_origem_do_link()),
     ))
     return _sem_cache(resp) if current_user.is_authenticated else resp
 
@@ -373,6 +503,9 @@ def _dados_documento(tipo, dados):
         "garantia": _texto(dados, "garantia", 120),
         "observacoes": _texto(dados, "observacoes", 2000),
         "itens": itens,
+        # quem emite (só no grátis: no Pro vale a marca cadastrada)
+        "emissor_nome": _texto(dados, "emissor_nome", 80, linhas=1),
+        "emissor_contato": _texto(dados, "emissor_contato", 40, linhas=1),
     }
     if tipo == "orcamento":
         validade = int(_numero(dados.get("validade_dias"), 0, 365, 0, casas=0))
@@ -418,8 +551,10 @@ def documento_pdf(tipo):
         marca = FerrMarca(user_id=current_user.id)          # Pro sem marca salva: sem marca d'água, cabeçalho vazio
     d = _dados_documento(tipo, dados)
     from ..services.ferramentas_pdf import DocumentoLongo
+    # endereço impresso, link clicável e QR do PDF grátis: quem recebe o documento cai no mesmo gerador
+    link = _url_absoluta("ferramentas.gratis_orcamento" if tipo == "orcamento" else "ferramentas.gratis_os")
     try:
-        pdf = (gerar_orcamento if tipo == "orcamento" else gerar_ordem_servico)(d, marca)
+        pdf = (gerar_orcamento if tipo == "orcamento" else gerar_ordem_servico)(d, marca, link_gratis=link)
     except DocumentoLongo:
         return jsonify({"erro": "O documento ficou longo demais (mais de 12 páginas). Divida em dois ou encurte os textos."}), 413
     except Exception as e:
@@ -499,7 +634,7 @@ def comprar():
     else:
         nome = (request.form.get("nome") or "").strip()[:120]
         email = (request.form.get("email") or "").strip().lower()[:180]
-        telefone = (request.form.get("whatsapp") or "").strip()[:30]
+        telefone = (request.form.get("whatsapp") or "").strip()[:20]     # coluna users.telefone: 20
         if len(nome) < 3 or NOME_PROIBIDO.search(nome):
             flash("Escreva o seu nome (só letras, números e pontuação comum).", "danger")
             return redirect(url_for("ferramentas.pro") + "#comprar")
@@ -662,6 +797,220 @@ def criar_senha():
     return redirect(url_for("ferramentas.minha_marca"))
 
 
+# ---------------------------------------------------------------------- Pro de cortesia (código de parceiro)
+WHATSAPP_PERMITIDO = re.compile(r"[^0-9 ()+\-]")
+CORTESIA_SALT = "ferr-cortesia"
+CORTESIA_VALIDADE = 3 * 24 * 3600          # link de confirmação: 3 dias
+CORTESIA_SENHA_VALIDADE = 3600             # criar a senha depois de confirmar: 1 hora
+
+
+def _email_do_form():
+    return (request.form.get("email") or "").strip().lower()[:180] or "-"
+
+
+def _serializador_cortesia():
+    from itsdangerous import URLSafeTimedSerializer
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt=CORTESIA_SALT)
+
+
+@bp.route("/ferramentas/pro/codigo", methods=["GET", "POST"])
+@limiter.limit("10 per hour;4 per minute", methods=["POST"])
+@limiter.limit("3 per hour", key_func=_email_do_form, methods=["POST"])          # e-mails para o mesmo endereço
+@limiter.limit("300 per day", key_func=lambda: "ferr-cortesia", methods=["POST"])  # teto geral de e-mails
+def resgatar():
+    """Libera o Pro sem pagamento, com o código de um parceiro.
+
+    Logado: libera na hora (a conta já é da pessoa). Sem login: nada é liberado
+    nem gasto aqui. Vai um link assinado para o e-mail e o resgate só acontece
+    no clique (resgatar_confirmar). Assim ninguém esgota um código com e-mails
+    inventados nem aplica o código na conta de outra pessoa, e a resposta é a
+    mesma para qualquer e-mail (não revela quem tem conta ou quem é admin)."""
+    codigo_txt = fs.normalizar_codigo(request.values.get("c") or request.form.get("codigo"))
+    if request.method == "GET":
+        _registrar("lp_view", "pro-codigo", codigo_txt or None)
+        resp = make_response(render_template(
+            "ferramentas/pro_codigo.html", codigo=codigo_txt, ja_tem=fs.tem_pro(current_user),
+            canonical=_url_absoluta("ferramentas.resgatar")))
+        return _sem_cache(resp)
+
+    volta = redirect(url_for("ferramentas.resgatar", c=codigo_txt or None))
+    codigo = FerrCodigo.query.filter_by(codigo=codigo_txt).first() if fs.CODIGO_RE.match(codigo_txt) else None
+    if codigo is None:
+        flash("Não encontrei esse código. Confira as letras e os números.", "danger")
+        return volta
+    motivo = codigo.situacao()
+    if motivo:
+        flash(motivo + " Você ainda pode usar as ferramentas grátis.", "warning")
+        return volta
+
+    whatsapp = WHATSAPP_PERMITIDO.sub("", request.form.get("whatsapp") or "").strip()[:30]
+    aceita = request.form.get("aceita_contato") == "1" and bool(whatsapp)
+
+    if current_user.is_authenticated:
+        if getattr(current_user, "is_admin", False):
+            flash("Conta de administrador não usa código. Para ver o Pro, use \"Testar a versão Pro\".", "info")
+            return volta
+        ok, motivo = fs.resgatar_codigo(current_user._get_current_object(), codigo, whatsapp=whatsapp, aceita_contato=aceita)
+        if not ok:
+            flash(motivo, "warning")
+            return volta
+        _registrar("resgatou_codigo", "pro", codigo.codigo, origem=f"p:{codigo.slug}")
+        try:
+            from ..services.email_service import enviar_pro_cortesia
+            enviar_pro_cortesia(current_user, codigo.parceiro)
+        except Exception as e:                   # o Pro já está liberado; o e-mail é só o comprovante
+            current_app.logger.error(f"E-mail do Pro de cortesia falhou para {current_user.email}: {e}")
+        flash("Pronto! O Pro foi liberado na sua conta. Agora envie o seu logotipo.", "success")
+        return redirect(url_for("ferramentas.minha_marca"))
+
+    nome = (request.form.get("nome") or "").strip()[:120]
+    email = (request.form.get("email") or "").strip().lower()[:180]
+    if len(nome) < 3 or NOME_PROIBIDO.search(nome):
+        flash("Escreva o seu nome (só letras, números e pontuação comum).", "danger")
+        return volta
+    if not EMAIL_RE.match(email):
+        flash("Escreva um e-mail válido: é nele que chega o link para liberar o Pro.", "danger")
+        return volta
+
+    from ..models.user import User
+    existente = User.query.filter_by(email=email).first()
+    # admin e conta desativada não recebem nada, mas a tela é a mesma de todo mundo
+    if not (existente and (existente.is_admin or not existente.is_active)):
+        token = _serializador_cortesia().dumps({"c": codigo.codigo, "e": email, "n": nome,
+                                                "w": whatsapp if aceita else "", "a": aceita})
+        link = _url_absoluta("ferramentas.resgatar_confirmar", token=token)
+        try:
+            from ..services.email_service import enviar_confirmacao_cortesia
+            enviar_confirmacao_cortesia(email, nome, codigo.codigo, codigo.parceiro, link)
+        except Exception as e:
+            current_app.logger.error(f"E-mail de confirmação da cortesia falhou para {email}: {e}")
+    _registrar("pediu_codigo", "pro", codigo.codigo, origem=f"p:{codigo.slug}")
+    session["ferr_cortesia_email"] = _mascarar_email(email)
+    return redirect(url_for("ferramentas.resgatar_pronto"))
+
+
+@bp.route("/ferramentas/pro/codigo/pronto")
+def resgatar_pronto():
+    email = session.get("ferr_cortesia_email")
+    if not email:
+        return redirect(url_for("ferramentas.resgatar"))
+    resp = make_response(render_template("ferramentas/pro_codigo_pronto.html", estado="enviado", email_mascarado=email))
+    return _sem_cache(resp)
+
+
+def _pagina_cortesia(estado, **extra):
+    resp = make_response(render_template("ferramentas/pro_codigo_pronto.html", estado=estado, **extra))
+    return _sem_cache(resp)
+
+
+@bp.route("/ferramentas/pro/codigo/confirmar/<token>")
+@limiter.limit("30 per hour")
+def resgatar_confirmar(token):
+    """Clique no link do e-mail: aqui o código é gasto e o Pro liberado. Só quem
+    abriu o e-mail chega aqui, então a conta é mesmo da pessoa."""
+    from itsdangerous import BadSignature, SignatureExpired
+    from sqlalchemy.exc import IntegrityError
+    from ..models.ferramentas import FerrAcessoPro
+    from ..models.user import User
+    try:
+        dados = _serializador_cortesia().loads(token, max_age=CORTESIA_VALIDADE)
+    except SignatureExpired:
+        return _pagina_cortesia("vencido")
+    except BadSignature:
+        return _pagina_cortesia("invalido")
+    email = str(dados.get("e") or "")
+    codigo = FerrCodigo.query.filter_by(codigo=fs.normalizar_codigo(dados.get("c"))).first()
+    if codigo is None or not EMAIL_RE.match(email):
+        return _pagina_cortesia("invalido")
+    if current_user.is_authenticated and current_user.email != email:
+        return _pagina_cortesia("outra_conta", email_mascarado=_mascarar_email(email))
+
+    user = User.query.filter_by(email=email).first()
+    if user and (user.is_admin or not user.is_active):
+        return _pagina_cortesia("indisponivel")
+    if user and db.session.get(FerrAcessoPro, user.id) is not None:
+        return _depois_da_cortesia(user, ja_tinha=True)
+
+    motivo = codigo.situacao()
+    if motivo:
+        return _pagina_cortesia("codigo_indisponivel", motivo=motivo)
+
+    whatsapp = WHATSAPP_PERMITIDO.sub("", str(dados.get("w") or ""))[:30]
+    aceita = bool(dados.get("a")) and bool(whatsapp)
+    if user is None:
+        nome = str(dados.get("n") or "")[:120]
+        user = User(nome=nome if len(nome) >= 3 and not NOME_PROIBIDO.search(nome) else email.split("@")[0][:120],
+                    email=email)
+        user.set_senha(secrets.token_urlsafe(32))
+        db.session.add(user)
+        try:
+            db.session.flush()                   # a conta nova só vale se o resgate der certo (mesmo commit)
+        except IntegrityError:                   # dois cliques ao mesmo tempo no mesmo link
+            db.session.rollback()
+            user = User.query.filter_by(email=email).first()
+            if user is None:
+                return _pagina_cortesia("invalido")
+    ok, motivo = fs.resgatar_codigo(user, codigo, whatsapp=whatsapp, aceita_contato=aceita)
+    if not ok:
+        db.session.rollback()
+        user = User.query.filter_by(email=email).first()
+        if user and db.session.get(FerrAcessoPro, user.id) is not None:
+            return _depois_da_cortesia(user, ja_tinha=True)
+        return _pagina_cortesia("codigo_indisponivel", motivo=motivo)
+    _registrar("resgatou_codigo", "pro", codigo.codigo, origem=f"p:{codigo.slug}")
+    return _depois_da_cortesia(user)
+
+
+def _depois_da_cortesia(user, ja_tinha=False):
+    """Conta sem senha própria cria a senha ali mesmo; quem já tem senha entra."""
+    if current_user.is_authenticated and current_user.id == user.id:
+        flash("Seu Pro já está liberado." if ja_tinha else "Pronto! O Pro foi liberado. Agora envie o seu logotipo.", "success")
+        return redirect(url_for("ferramentas.minha_marca"))
+    if user.ultimo_login is None:
+        import time
+        session["ferr_cortesia_senha"] = {"u": user.id, "t": int(time.time())}
+        return _pagina_cortesia("criar_senha", ja_tinha=ja_tinha, email_mascarado=_mascarar_email(user.email))
+    flash("Seu Pro já está liberado. Entre com a sua senha." if ja_tinha
+          else "Pronto! O Pro foi liberado na sua conta. Entre com a sua senha.", "success")
+    return redirect(url_for("auth.login", next=url_for("ferramentas.minha_marca")))
+
+
+def _conta_para_criar_senha():
+    import time
+    from ..models.user import User
+    marca = session.get("ferr_cortesia_senha") or {}
+    if current_user.is_authenticated or not isinstance(marca, dict):
+        return None
+    if int(time.time()) - int(marca.get("t") or 0) > CORTESIA_SENHA_VALIDADE:
+        return None
+    user = db.session.get(User, marca.get("u")) if marca.get("u") else None
+    if not user or user.ultimo_login is not None or user.is_admin or not user.is_active:
+        return None
+    return user
+
+
+@bp.route("/ferramentas/pro/codigo/senha", methods=["POST"])
+@limiter.limit("10 per hour")
+def resgatar_senha():
+    user = _conta_para_criar_senha()
+    if user is None:
+        flash("Esse passo venceu. Use \"Esqueci a senha\" com o seu e-mail para criar a senha.", "warning")
+        return redirect(url_for("auth.recuperar_senha"))
+    senha = request.form.get("senha", "")
+    if len(senha) < 8 or senha != request.form.get("senha2", ""):
+        flash("A senha precisa ter pelo menos 8 caracteres, e as duas precisam ser iguais.", "danger")
+        return _pagina_cortesia("criar_senha", ja_tinha=False, email_mascarado=_mascarar_email(user.email))
+    user.set_senha(senha)
+    user.reset_token = None
+    user.reset_token_exp = None
+    user.ultimo_login = datetime.now(timezone.utc)
+    db.session.commit()
+    session.pop("ferr_cortesia_senha", None)
+    login_user(user, remember=True)
+    flash("Senha criada. Agora envie o seu logotipo e escolha as suas cores.", "success")
+    return redirect(url_for("ferramentas.minha_marca"))
+
+
 # ---------------------------------------------------------------------- marca do usuário Pro
 @bp.route("/ferramentas/minha-marca", methods=["GET", "POST"])
 @csrf.exempt          # validado à mão, depois de recusar corpo grande (ver abaixo)
@@ -774,6 +1123,8 @@ def _csrf_vencido(e):
         return redirect(url_for("ferramentas.retorno", situacao="sucesso"))
     if ep == "ferramentas.comprar":
         return redirect(url_for("ferramentas.pro") + "#comprar")
+    if ep == "ferramentas.resgatar":
+        return redirect(url_for("ferramentas.resgatar", c=fs.normalizar_codigo(request.form.get("codigo")) or None))
     return redirect(url_for("ferramentas.antes_depois_pt"))
 
 

@@ -3,10 +3,11 @@
 Baseado no layout dos PDFs da Gestão (services/gestao), generalizado para
 qualquer profissão. Nada é guardado: o PDF é montado em memória e devolvido.
 
-Grátis: sem identidade do prestador, com a marca RD OS (selo diagonal claro e
-rodapé). Pro: logotipo, nome, CNPJ e contato da empresa, cores da marca, sem
-marca d'água. A decisão Pro/grátis é do servidor (quem chama passa `marca`
-só quando o usuário tem o Pro).
+Grátis: nome e WhatsApp de quem emite (texto, se preenchidos), marca RD OS no
+selo diagonal claro e no rodapé, e um QR + link clicável para quem recebe o
+documento fazer o seu. Pro: logotipo, nome, CNPJ e contato da empresa, cores da
+marca, sem marca d'água. A decisão Pro/grátis é do servidor (quem chama passa
+`marca` só quando o usuário tem o Pro).
 """
 from datetime import timedelta
 from io import BytesIO
@@ -18,12 +19,13 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.pdfbase.pdfmetrics import stringWidth
-from reportlab.platypus import (HRFlowable, Image, KeepTogether, Paragraph, SimpleDocTemplate,
+from reportlab.platypus import (Flowable, HRFlowable, Image, KeepTogether, Paragraph, SimpleDocTemplate,
                                 Spacer, Table, TableStyle)
 
 from .gestao.formatos import data_br, data_extenso, moeda, numero_br
 
 SITE = "rdos.rdsolucoes.eco.br"
+SITE_GRATIS = SITE + "/gratis"          # endereço curto padrão do grátis (routes/ferramentas.gratis)
 NAVY = colors.HexColor("#0c2340")
 LARANJA = colors.HexColor("#c2410c")
 CINZA_LINHA = colors.HexColor("#dde4ec")
@@ -105,7 +107,63 @@ def _identidade(marca):
     return "<br/>".join(linhas)
 
 
-def _cabecalho(titulo, numero, data_emissao, marca, cor):
+def _qr(link, lado):
+    """QR code vetorial (nítido em qualquer impressão)."""
+    from reportlab.graphics.barcode.qr import QrCodeWidget
+    from reportlab.graphics.shapes import Drawing
+    w = QrCodeWidget(link, barLevel="M")
+    x0, y0, x1, y1 = w.getBounds()
+    d = Drawing(lado, lado, transform=[lado / (x1 - x0), 0, 0, lado / (y1 - y0), 0, 0])
+    d.add(w)
+    return d
+
+
+def _site(link_gratis):
+    """Endereço impresso (sem https://): o mesmo do link clicável e do QR."""
+    return link_gratis.split("://", 1)[-1] if link_gratis else SITE_GRATIS
+
+
+class _SoSeCouber(Flowable):
+    """Desenha o conteúdo só se couber no que sobrou da página; senão some.
+    O convite com QR não pode empurrar as assinaturas para uma folha nova."""
+
+    def __init__(self, conteudo, espaco_antes=0):
+        super().__init__()
+        self.conteudo, self.espaco_antes, self._cabe = conteudo, espaco_antes, False
+        self.hAlign = getattr(conteudo, "hAlign", "LEFT")
+
+    def wrap(self, largura, altura):
+        w, h = self.conteudo.wrap(largura, altura)
+        self._cabe = h + self.espaco_antes <= altura
+        return (w, h + self.espaco_antes) if self._cabe else (0, 0)
+
+    def split(self, largura, altura):
+        return []                             # nunca parte o convite em dois
+
+    def draw(self):
+        if self._cabe:
+            self.conteudo.drawOn(self.canv, 0, 0)
+
+
+def _convite_gratis(link, feito):
+    """Bloco do grátis no fim do documento, falando com quem RECEBE (o cliente do
+    prestador): é por aqui que a ferramenta chega a gente nova."""
+    s = _estilo("conv", fontSize=7.5, leading=10, textColor=CINZA_TEXTO)
+    texto = Paragraph(f"<b>{feito} grátis com o RD OS.</b><br/>"
+                      f'Aponte a câmera para fazer o seu, ou acesse <a href="{escape(link)}" color="#0c2340">'
+                      f"<u>{escape(_site(link))}</u></a>", s)
+    t = Table([[_qr(link, 2.0 * cm), texto]], colWidths=[2.3 * cm, 7.2 * cm], hAlign="RIGHT")   # 2 cm: mínimo para ler bem no celular
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                           ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    return t
+
+
+def _emissor(d):
+    """Nome e contato de quem emite, digitados no grátis (texto; a logo é do Pro)."""
+    return (d.get("emissor_nome") or "").strip(), (d.get("emissor_contato") or "").strip()
+
+
+def _cabecalho(titulo, numero, data_emissao, marca, cor, emissor=("", ""), site=SITE_GRATIS):
     s_tit = _estilo("tit", fontName="Helvetica-Bold", fontSize=16, leading=20, textColor=cor, alignment=TA_RIGHT)
     s_num = _estilo("num", fontName="Helvetica-Bold", fontSize=12, leading=16, alignment=TA_RIGHT)
     s_dir = _estilo("dir", fontSize=9, leading=12.5, alignment=TA_RIGHT, textColor=CINZA_TEXTO)
@@ -121,9 +179,16 @@ def _cabecalho(titulo, numero, data_emissao, marca, cor):
                          colWidths=[2.9 * cm, 6.3 * cm] if logo else [9.2 * cm])
         esquerda.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                                       ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    elif emissor[0] or emissor[1]:
+        linhas = []
+        if emissor[0]:
+            linhas.append(f'<font size="11" color="#0c2340"><b>{txt(emissor[0], 80)}</b></font>')
+        if emissor[1]:
+            linhas.append(txt(emissor[1], 40))
+        esquerda = Paragraph("<br/>".join(linhas), s_esq)
     else:
         esquerda = Paragraph(f'<font color="#0c2340"><b>RD OS</b></font><br/>'
-                             f'<font size="7.5">Gerado grátis em {SITE}</font>', s_esq)
+                             f'<font size="7.5">Gerado grátis em {escape(site)}</font>', s_esq)
     cab = Table([[esquerda, lado_direito]], colWidths=[9.4 * cm, LARGURA - 9.4 * cm])
     cab.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                              ("LEFTPADDING", (0, 0), (-1, -1), 0),
@@ -200,8 +265,9 @@ def _tabela_itens(itens, cor, com_valores=True, desconto=0.0, mostrar_total=True
     return t, total_geral
 
 
-def _rodape_e_selo(marca, identificacao=""):
-    """Desenha em toda página: rodapé (com o nº do documento) e, no grátis, o selo diagonal."""
+def _rodape_e_selo(marca, identificacao="", link_gratis=None):
+    """Desenha em toda página: rodapé (com o nº do documento) e, no grátis, o selo
+    diagonal e o endereço clicável."""
     def desenhar(canv, doc):
         if doc.page > MAX_PAGINAS:
             raise DocumentoLongo()
@@ -217,7 +283,7 @@ def _rodape_e_selo(marca, identificacao=""):
             canv.rotate(-35)
             canv.translate(-largura / 2, -altura / 2)
             canv.setFillAlpha(1)
-            texto = f"Gerado grátis com RD OS · {SITE} · com o Pro, sai com a sua logomarca"
+            texto = f"Feito grátis com RD OS · faça o seu em {_site(link_gratis)}"
         else:
             site = limpo(marca.site, 120).split("?")[0]
             partes = [limpo(marca.empresa, 80), f"CNPJ/CPF {limpo(marca.cnpj, 30)}" if marca.cnpj else "", site]
@@ -230,6 +296,9 @@ def _rodape_e_selo(marca, identificacao=""):
         while texto and stringWidth(texto, "Helvetica", 7.5) > espaco:     # nunca invade o "pág. N"
             texto = texto[:-2].rstrip() + "…"
         canv.drawString(esquerda, 0.8 * cm, texto)
+        if marca is None and link_gratis:
+            fim = esquerda + stringWidth(texto, "Helvetica", 7.5)
+            canv.linkURL(link_gratis, (esquerda, 0.8 * cm - 2, fim, 0.8 * cm + 7.5), relative=0, thickness=0)
         canv.drawRightString(direita, 0.8 * cm, pagina)
         canv.restoreState()
     return desenhar
@@ -253,13 +322,14 @@ def _assinaturas(esquerda, direita):
 
 
 # ---------------------------------------------------------------------- orçamento
-def gerar_orcamento(d, marca=None):
-    """d: dicionário já validado pela rota (ver routes/ferramentas._dados_documento)."""
+def gerar_orcamento(d, marca=None, link_gratis=None):
+    """d: dicionário já validado pela rota (ver routes/ferramentas._dados_documento).
+    link_gratis: endereço do QR e do rodapé clicável no grátis (ignorado no Pro)."""
     cor, destaque = _cores(marca)
     buffer = BytesIO()
     doc = _doc(buffer, f"Orçamento {d['numero']}".strip())
     s = _estilo("corpo", fontSize=9.5, leading=13.5)
-    story = _cabecalho("ORÇAMENTO", d["numero"], d["data"], marca, cor)
+    story = _cabecalho("ORÇAMENTO", d["numero"], d["data"], marca, cor, _emissor(d), _site(link_gratis))
 
     pares = _pares([("Nome", txt(d["cliente_nome"], 120)), ("Telefone", txt(d["cliente_telefone"], 40)),
                     ("CPF/CNPJ", txt(d["cliente_documento"], 30)), ("Endereço", txt(d["cliente_endereco"], 200))])
@@ -303,19 +373,22 @@ def gerar_orcamento(d, marca=None):
 
     story.append(Spacer(1, 0.6 * cm))
     story.append(KeepTogether([_assinaturas("Aprovação do cliente", "Data: ____/____/________")]))
+    if marca is None and link_gratis:
+        story.append(_SoSeCouber(_convite_gratis(link_gratis, "Orçamento feito"), espaco_antes=0.45 * cm))
     ident = f"Orçamento {limpo(d['numero'], 20)}".strip()
-    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident), onLaterPages=_rodape_e_selo(marca, ident))
+    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident, link_gratis),
+              onLaterPages=_rodape_e_selo(marca, ident, link_gratis))
     buffer.seek(0)
     return buffer
 
 
 # ---------------------------------------------------------------------- ordem de serviço
-def gerar_ordem_servico(d, marca=None):
+def gerar_ordem_servico(d, marca=None, link_gratis=None):
     cor, destaque = _cores(marca)
     buffer = BytesIO()
     doc = _doc(buffer, f"Ordem de Serviço {d['numero']}".strip())
     s = _estilo("corpo", fontSize=9.5, leading=13.5)
-    story = _cabecalho("ORDEM DE SERVIÇO", d["numero"], d["data"], marca, cor)
+    story = _cabecalho("ORDEM DE SERVIÇO", d["numero"], d["data"], marca, cor, _emissor(d), _site(link_gratis))
 
     pares = _pares([("Nome", txt(d["cliente_nome"], 120)), ("Telefone", txt(d["cliente_telefone"], 40)),
                     ("Responsável no local", txt(d["responsavel"], 120)), ("CPF/CNPJ", txt(d["cliente_documento"], 30)),
@@ -376,7 +449,10 @@ def gerar_ordem_servico(d, marca=None):
 
     story.append(Spacer(1, 0.6 * cm))
     story.append(KeepTogether([_assinaturas("Técnico responsável", "Cliente / responsável")]))
+    if marca is None and link_gratis:
+        story.append(_SoSeCouber(_convite_gratis(link_gratis, "Ordem de serviço feita"), espaco_antes=0.45 * cm))
     ident = f"OS {limpo(d['numero'], 20)}".strip()
-    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident), onLaterPages=_rodape_e_selo(marca, ident))
+    doc.build(story, onFirstPage=_rodape_e_selo(marca, ident, link_gratis),
+              onLaterPages=_rodape_e_selo(marca, ident, link_gratis))
     buffer.seek(0)
     return buffer

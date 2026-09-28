@@ -1,0 +1,62 @@
+{% extends "ferramentas/base.html" %}
+
+{% block title %}{% if estado == 'enviado' %}Confira o seu e-mail{% elif estado == 'criar_senha' %}Pro liberado{% else %}Código de cortesia{% endif %} | RD OS{% endblock %}
+{% block description %}Pro das ferramentas do RD OS por código de cortesia.{% endblock %}
+
+{% block seo %}
+<meta name="robots" content="noindex">
+{% endblock %}
+
+{% block conteudo %}
+<section class="abertura envoltorio pagina-estreita">
+  <p class="olho">RD OS Pro · cortesia</p>
+
+  {% if estado == 'enviado' %}
+  <h1>Confira o seu e-mail</h1>
+  <p class="lead">Se o código e o e-mail estiverem certos, mandamos para <strong>{{ email_mascarado }}</strong> um link para confirmar. Abra o e-mail e toque em <strong>Confirmar e liberar meu Pro</strong>. O link vale por 3 dias.</p>
+  <p class="letra-miuda">Não chegou em alguns minutos? Olhe a caixa de spam e as abas Promoções ou Atualizações. Se precisar, peça de novo daqui a pouco.</p>
+
+  {% elif estado == 'criar_senha' %}
+  <h1>{{ 'Seu Pro já estava liberado' if ja_tinha else 'Pronto! O Pro está liberado' }}</h1>
+  <p class="lead">Crie agora a senha da conta <strong>{{ email_mascarado }}</strong>. Depois é só enviar o seu logotipo em "Minha marca".</p>
+  <div class="cartao-resgate">
+    <form class="form-compra" method="post" action="{{ url_for('ferramentas.resgatar_senha') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="campo" for="cs-senha">Senha <span class="ajuda">(pelo menos 8 caracteres)</span>
+        <input type="password" id="cs-senha" name="senha" required minlength="8" autocomplete="new-password">
+      </label>
+      <label class="campo" for="cs-senha2">Repita a senha
+        <input type="password" id="cs-senha2" name="senha2" required minlength="8" autocomplete="new-password">
+      </label>
+      <button type="submit" class="botao principal">Criar senha e entrar</button>
+    </form>
+  </div>
+  <p class="letra-miuda" style="margin-top:12px">Fechou esta página sem criar? Use <a href="{{ url_for('auth.recuperar_senha') }}">Esqueci a senha</a> com o mesmo e-mail.</p>
+
+  {% elif estado == 'vencido' %}
+  <h1>Esse link venceu</h1>
+  <p class="lead">O link de confirmação vale por 3 dias. Peça um novo com o mesmo código.</p>
+  <div class="botoes" style="justify-content:flex-start"><a class="botao principal" href="{{ url_for('ferramentas.resgatar') }}">Pedir de novo</a></div>
+
+  {% elif estado == 'outra_conta' %}
+  <h1>Esse link é de outra conta</h1>
+  <p class="lead">Ele foi pedido para <strong>{{ email_mascarado }}</strong>, mas você está com outra conta aberta. Saia e abra o link de novo.</p>
+  <div class="botoes" style="justify-content:flex-start"><a class="botao secundario" href="{{ url_for('ferramentas.sair') }}">Sair desta conta</a></div>
+
+  {% elif estado == 'codigo_indisponivel' %}
+  <h1>Não deu para liberar</h1>
+  <p class="lead">{{ motivo }} As ferramentas continuam grátis.</p>
+
+  {% elif estado == 'indisponivel' %}
+  <h1>Não deu para liberar</h1>
+  <p class="lead">Não foi possível liberar o Pro nesta conta. Fale com a gente pelo WhatsApp ou pelo e-mail que aparece no rodapé.</p>
+
+  {% else %}
+  <h1>Link inválido</h1>
+  <p class="lead">Esse link não é válido. Confira se ele foi copiado inteiro do e-mail, ou peça de novo.</p>
+  <div class="botoes" style="justify-content:flex-start"><a class="botao principal" href="{{ url_for('ferramentas.resgatar') }}">Pedir de novo</a></div>
+  {% endif %}
+
+  <p style="margin-top:20px"><a href="{{ url_for('ferramentas.inicio') }}">Voltar para as ferramentas</a></p>
+</section>
+{% endblock %}

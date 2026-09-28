@@ -103,6 +103,49 @@ def enviar_confirmacao_compra(order, license_, user, set_password_url=None):
         return False
 
 
+def enviar_confirmacao_cortesia(email, nome, codigo, parceiro, link):
+    """Link para confirmar o Pro de cortesia (o resgate só acontece no clique)."""
+    try:
+        from ..models.site_config import SiteConfig
+        mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
+        return send_email(
+            to=email,
+            subject="Confirme para liberar o seu Pro (cortesia)",
+            template="emails/ferramentas_confirmar_cortesia.html",
+            nome=nome,
+            codigo=codigo,
+            parceiro=parceiro,
+            link=link,
+            mail_footer=mail_footer,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Erro em enviar_confirmacao_cortesia para {email}: {e}")
+        return False
+
+
+def enviar_pro_cortesia(user, parceiro, set_password_url=None):
+    """E-mail do Pro liberado por código de cortesia (sem pedido nem pagamento)."""
+    try:
+        from ..models.site_config import SiteConfig
+        suporte_email = SiteConfig.get("site_email_contato") or current_app.config.get("MAIL_USERNAME", "")
+        mail_footer = SiteConfig.get("mail_footer") or "RD Soluções — rdsolucoes.eco.br"
+        return send_email(
+            to=user.email,
+            subject="✅ Seu Pro está liberado (cortesia)",
+            template="emails/ferramentas_pro_confirmada.html",
+            user=user,
+            order=None,
+            parceiro=parceiro,
+            base_url=current_app.config["BASE_URL"],
+            suporte_email=suporte_email,
+            mail_footer=mail_footer,
+            set_password_url=set_password_url,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Erro em enviar_pro_cortesia para {user.email}: {e}")
+        return False
+
+
 def enviar_confirmacao_pro(order, user, set_password_url=None):
     """E-mail da compra do Pro das ferramentas online (sem chave de desktop)."""
     try:

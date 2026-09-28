@@ -126,7 +126,7 @@ def registro():
 def logout():
     Log.registrar("logout", user_id=current_user.id, ip=_get_ip())
     logout_user()
-    return redirect(url_for("main.home"))
+    return redirect(url_for("main.sistema"))
 
 
 @bp.route("/recuperar-senha", methods=["GET", "POST"])

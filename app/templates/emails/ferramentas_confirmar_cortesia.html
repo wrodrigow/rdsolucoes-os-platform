@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Confirme para liberar o seu Pro — RD OS Ferramentas</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+      <tr><td bgcolor="#0c2340" style="background-color:#0c2340;background:linear-gradient(135deg,#0c2340 0%,#0b7c72 100%);border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+        <div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-0.5px;">RD OS Ferramentas</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">Orçamento, OS e antes e depois com a sua marca</div>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:36px 40px 8px;text-align:center;">
+        <h1 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#111827;">Falta um toque para liberar o seu Pro</h1>
+        <p style="margin:0;font-size:15px;color:#4b5563;">Olá, {{ nome.split()[0] if nome else 'tudo bem' }}! Alguém (provavelmente você) pediu o Pro das ferramentas do RD OS com o código de cortesia <strong>{{ codigo }}</strong>, de {{ parceiro }}, para este e-mail.</p>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:28px 40px 36px;text-align:center;">
+        <a href="{{ link }}" style="display:inline-block;background-color:#0f7a41;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:15px;">
+          Confirmar e liberar meu Pro →
+        </a>
+        <p style="margin:16px 0 0;font-size:12px;color:#6b7280;">O link vale por 3 dias. Depois de confirmar, você cria a sua senha (ou entra com a que já tem) e envia o seu logotipo.</p>
+        <p style="margin:18px 0 0;font-size:12px;color:#6b7280;">Não pediu? É só ignorar este e-mail: nada é liberado sem o seu clique.</p>
+      </td></tr>
+
+      <tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:18px 40px;text-align:center;font-size:11px;color:#9ca3af;">
+        {{ mail_footer }}
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

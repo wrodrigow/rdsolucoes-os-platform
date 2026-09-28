@@ -1,7 +1,7 @@
 {% extends "ferramentas/base.html" %}
 
 {% block title %}Termos do RD OS Ferramentas{% endblock %}
-{% block description %}Termos de uso do gerador de antes e depois do RD OS: versão grátis, Pro por pagamento único, direito de arrependimento e privacidade das fotos.{% endblock %}
+{% block description %}Termos de uso das ferramentas online do RD OS: versão grátis, Pro por pagamento único ou por código de cortesia, direito de arrependimento e privacidade.{% endblock %}
 {% block seo %}<link rel="canonical" href="{{ canonical }}">{% endblock %}
 
 {% block conteudo %}
@@ -17,16 +17,19 @@
     <p>RD Soluções LTDA, CNPJ 55.849.815/0001-31, São Bernardo do Campo – SP. Contato: <a href="mailto:{{ site_cfg.get('site_email_contato') or 'contato@rdsolucoes.eco.br' }}">{{ site_cfg.get('site_email_contato') or 'contato@rdsolucoes.eco.br' }}</a> ou WhatsApp <a href="https://wa.me/{{ site_cfg.get('site_whatsapp') or '5511941579827' }}" rel="noopener">{{ site_cfg.get('site_telefone') or '(11) 94157-9827' }}</a>.</p>
 
     <h2>2. Versão grátis</h2>
-    <p>Pode ser usada sem cadastro e sem limite. As artes grátis saem com o selo da RD Soluções sobre as fotos e uma faixa "Feito grátis com RD OS" no rodapé; o orçamento e a ordem de serviço grátis saem com a marca RD OS e sem os dados da empresa no cabeçalho.</p>
+    <p>Pode ser usada sem cadastro e sem limite. As artes grátis saem com o selo do RD OS sobre as fotos e uma faixa "Feito grátis com RD OS" no rodapé, com o endereço do site. O orçamento e a ordem de serviço grátis podem levar o seu nome e o seu WhatsApp no cabeçalho, em texto (só se você preencher; ficam guardados apenas no seu aparelho), e saem com a marca RD OS no fundo e no rodapé, um link para o site e um QR code para quem recebe o documento fazer o seu.</p>
 
     <h2>3. O que é o Pro</h2>
     <p>O Pro custa {{ preco_fmt }}, em pagamento único pelo Mercado Pago (Pix ou cartão), sem mensalidade e sem renovação. Ele libera, na conta do e-mail informado na compra: no orçamento e na ordem de serviço, o logotipo, o nome, o CNPJ ou CPF, o contato e o endereço da sua empresa no cabeçalho, no lugar da marca RD OS (e, no orçamento, as suas condições padrão); no antes e depois, o logotipo, o nome e o contato no lugar do selo e da faixa da RD, e o vídeo de 7 segundos; em todos, as cores da sua empresa. O acesso é feito com login e senha, sem prazo de expiração, enquanto o serviço estiver no ar. Por enquanto o Pro é vendido só no Brasil.</p>
+
+    <h2>3a. Pro de cortesia (código de parceiro)</h2>
+    <p>Grupos, lojas, cursos e eventos parceiros podem receber códigos que liberam o mesmo Pro sem pagamento. Cada código tem número de usos e validade definidos por nós, e cada conta usa um código uma vez só. Sem login, o Pro só é liberado depois que você confirma pelo link enviado ao seu e-mail. O Pro de cortesia não tem prazo de expiração enquanto o serviço estiver no ar; podemos retirá-lo se o código tiver sido obtido ou usado de forma irregular (por exemplo, repassado fora do grupo do parceiro para esgotar os usos). Como não há pagamento, não há valor a devolver.</p>
 
     <h2>4. Direito de arrependimento</h2>
     <p>Você pode desistir em até 7 dias depois da compra e receber o valor de volta (Código de Defesa do Consumidor, art. 49). Basta responder o e-mail da compra ou chamar no WhatsApp. Com o reembolso, o Pro sai da conta; o logotipo e os dados que você salvou continuam guardados caso compre de novo.</p>
 
     <h2>5. Suas fotos e seus dados</h2>
-    <p>As fotos de antes e depois são montadas no seu próprio aparelho e <strong>não são enviadas</strong> para os nossos servidores. No orçamento e na ordem de serviço, os dados preenchidos vão ao servidor apenas para montar o PDF e não ficam guardados; o rascunho fica salvo só no seu aparelho. No Pro, guardamos na sua conta os dados da compra (nome, e-mail e WhatsApp, se informado) e o que você salvar em "Minha marca" — logotipo, nome da empresa, CNPJ ou CPF, telefone, e-mail, site, endereço, condições do orçamento e cores —, só para montar os seus documentos e artes e dar suporte. Registramos também eventos de uso sem as fotos (por exemplo, "gerou uma arte" ou "baixou"), para saber se a ferramenta está sendo útil. Veja a <a href="{{ url_for('main.privacidade') }}">política de privacidade</a>.</p>
+    <p>As fotos de antes e depois são montadas no seu próprio aparelho e <strong>não são enviadas</strong> para os nossos servidores. No orçamento e na ordem de serviço, os dados preenchidos vão ao servidor apenas para montar o PDF e não ficam guardados; o rascunho fica salvo só no seu aparelho. No Pro, guardamos na sua conta os dados da compra (nome, e-mail e WhatsApp, se informado) ou, no Pro de cortesia, o nome, o e-mail, o código usado e o parceiro que o distribuiu. O WhatsApp informado no resgate de um código só fica guardado se você marcar que aceita receber novidades das ferramentas: no máximo 1 mensagem por mês, e para parar basta responder pedindo. Guardamos também o que você salvar em "Minha marca" — logotipo, nome da empresa, CNPJ ou CPF, telefone, e-mail, site, endereço, condições do orçamento e cores —, só para montar os seus documentos e artes e dar suporte. Registramos também eventos de uso sem as fotos (por exemplo, "gerou uma arte" ou "baixou") e de onde veio a visita quando o link diz (por exemplo, um QR de parceiro), para saber se a ferramenta está sendo útil. Veja a <a href="{{ url_for('main.privacidade') }}">política de privacidade</a>.</p>
 
     <h2>6. Uso correto</h2>
     <p>Use fotos que você tirou ou tem autorização para usar, e um logotipo que seja seu. A ferramenta junta as fotos reais que você escolher: ela não cria nem altera o resultado do serviço, e a responsabilidade pelo que for publicado é de quem publica. É boa prática pedir autorização ao cliente antes de postar fotos do imóvel dele.</p>
@@ -36,7 +39,7 @@
 
     <h2>8. Lei e foro</h2>
     <p>Estes termos seguem as leis brasileiras. Fica eleito o foro da comarca de São Paulo/SP, sem prejuízo do direito do consumidor de acionar o foro do seu domicílio.</p>
-    <p class="letra-miuda">Atualizado em 25/09/2026 (orçamento e ordem de serviço incluídos).</p>
+    <p class="letra-miuda">Atualizado em 28/09/2026 (Pro de cortesia; nome, WhatsApp e QR no orçamento e na OS grátis).</p>
   </div>
 </section>
 {% endblock %}

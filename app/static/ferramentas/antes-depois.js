@@ -26,7 +26,8 @@
   var VERDE = '#1a8a4c';
   var FONTE_TIT = '"Poppins", "Segoe UI", Arial, sans-serif';
   var FONTE_TXT = '"Inter", "Segoe UI", Arial, sans-serif';
-  var SITE = 'rdos.rdsolucoes.eco.br';
+  // endereço curto da arte grátis: grava de onde a visita veio (routes/ferramentas.gratis)
+  var SITE = T.site || 'rdos.rdsolucoes.eco.br/gratis';
 
   var estado = {
     fotos: { antes: null, depois: null },
@@ -239,7 +240,7 @@
     var meio = y0 + L.rodape / 2 + Math.round(3 * L.e);
 
     if (!PRO) {
-      // plano grátis: faixa da RD Soluções
+      // plano grátis: faixa do RD OS, com o endereço curto grande o bastante para ler no celular
       var x = pad;
       if (estado.rdLogo) {
         var lh = L.rodape * 0.5, lw = lh * largura(estado.rdLogo) / altura(estado.rdLogo);
@@ -251,9 +252,9 @@
       var t2 = SITE;
       var tam = textoAjustado(c, t1, L.W - x - pad, Math.round(34 * L.e), '700', FONTE_TIT);
       c.fillText(t1, x, meio - tam * 0.15);
-      c.font = '500 ' + Math.round(tam * 0.8) + 'px ' + FONTE_TXT;
+      var tam2 = textoAjustado(c, t2, L.W - x - pad, Math.round(tam * 0.95), '600', FONTE_TXT);
       c.fillStyle = estado.cores.destaque;
-      c.fillText(t2, x, meio + tam * 0.95);
+      c.fillText(t2, x, meio + tam * 0.2 + tam2 * 0.85);
       return;
     }
 
@@ -288,7 +289,7 @@
   // Fica em cima das fotos de propósito — é o que o Pro remove.
   function desenharMarcaDagua(c, L) {
     if (PRO) return;
-    var texto = T.marca || ('RD Soluções · ' + SITE);
+    var texto = T.marca || ('RD OS · ' + SITE);
     var tam = Math.round(26 * L.e);
     c.font = '600 ' + tam + 'px ' + FONTE_TXT;
     var logoH = estado.rdLogo ? tam * 1.6 : 0;

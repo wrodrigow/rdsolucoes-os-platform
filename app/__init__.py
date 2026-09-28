@@ -123,11 +123,29 @@ def create_app(env=None):
 
     # Criar tabelas e dados iniciais
     with app.app_context():
-        db.create_all()
+        _criar_tabelas()
         _ensure_schema_upgrades()
         _seed_initial_data(app)
 
     return app
+
+
+def _criar_tabelas(tentativas=3):
+    """create_all com os 2 workers do gunicorn subindo juntos: quando os dois
+    tentam criar a mesma tabela nova, o segundo recebe "already exists" (ou
+    "duplicate key" no catálogo do Postgres) e o worker não subiria. Na nova
+    tentativa a tabela já existe e o create_all passa direto."""
+    import time
+    for tentativa in range(tentativas):
+        try:
+            db.create_all()
+            return
+        except Exception as e:
+            texto = str(e).lower()
+            if tentativa == tentativas - 1 or not any(x in texto for x in ("already exists", "duplicate")):
+                raise
+            db.session.rollback()
+            time.sleep(0.5 * (tentativa + 1))
 
 
 def _adicionar_coluna(tabela, coluna, tipo):
@@ -176,6 +194,9 @@ def _ensure_schema_upgrades():
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_traffic_events_slug ON traffic_events (slug)"))
         if "detalhe" not in colunas_existentes:
             conn.execute(text("ALTER TABLE traffic_events ADD COLUMN detalhe VARCHAR(300)"))
+    if "origem" not in colunas_existentes:
+        # fora do bloco acima: os 2 workers sobem juntos e o IF NOT EXISTS evita a disputa
+        _adicionar_coluna("traffic_events", "origem", "VARCHAR(60)")
 
 
 def _seed_initial_data(app):

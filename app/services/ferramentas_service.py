@@ -1,5 +1,6 @@
 """Regras do plano Pro das ferramentas online."""
 import io
+import re
 
 from flask import current_app
 
@@ -54,6 +55,51 @@ def liberar_pro(order):
         db.session.add(acesso)
         db.session.commit()
     return acesso
+
+
+CODIGO_RE = re.compile(r"^[A-Z0-9]{3,24}$")
+
+
+def normalizar_codigo(valor) -> str:
+    """ " refrig-100 " → "REFRIG100". Só letras e números, até 24."""
+    return re.sub(r"[^A-Za-z0-9]", "", str(valor or ""))[:24].upper()
+
+
+def resgatar_codigo(user, codigo, whatsapp=None, aceita_contato=False):
+    """Libera o Pro de cortesia. Devolve (ok, mensagem).
+
+    O uso é descontado num UPDATE condicional: dois resgates ao mesmo tempo
+    nunca passam do limite. Quem já tem o Pro não gasta um uso do código."""
+    from datetime import date
+    from sqlalchemy import or_, update
+    from sqlalchemy.exc import IntegrityError
+    from ..models.ferramentas import FerrCodigo, FerrCodigoUso
+
+    if db.session.get(FerrAcessoPro, user.id) is not None:
+        return False, "Essa conta já tem o Pro."
+    motivo = codigo.situacao()
+    if motivo:
+        return False, motivo
+    hoje = date.today()
+    descontou = db.session.execute(
+        update(FerrCodigo)
+        .where(FerrCodigo.id == codigo.id, FerrCodigo.ativo.is_(True), FerrCodigo.usos < FerrCodigo.limite_usos,
+               or_(FerrCodigo.valido_ate.is_(None), FerrCodigo.valido_ate >= hoje))
+        .values(usos=FerrCodigo.usos + 1)
+    ).rowcount
+    if not descontou:
+        db.session.rollback()
+        return False, "Os acessos desse código já acabaram."
+    try:
+        db.session.add(FerrCodigoUso(codigo_id=codigo.id, user_id=user.id,
+                                     whatsapp=(whatsapp or None) if aceita_contato else None,
+                                     aceita_contato=bool(aceita_contato and whatsapp)))
+        db.session.add(FerrAcessoPro(user_id=user.id, order_id=None))
+        db.session.commit()
+    except IntegrityError:                 # a mesma conta resgatando duas vezes ao mesmo tempo
+        db.session.rollback()
+        return False, "Essa conta já tem o Pro."
+    return True, None
 
 
 def revogar_pro(order):

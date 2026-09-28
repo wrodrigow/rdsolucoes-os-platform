@@ -30,7 +30,7 @@ def gestao_required(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_admin:
             flash("Acesso restrito.", "danger")
-            return redirect(url_for("main.home"))
+            return redirect(url_for("main.sistema"))
         return fn(*args, **kwargs)
     return wrapped
 

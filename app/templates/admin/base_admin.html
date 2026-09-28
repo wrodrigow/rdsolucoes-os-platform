@@ -48,6 +48,9 @@
         <a href="{{ url_for('admin.financeiro') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.financeiro' }}">
           <i class="fa-solid fa-chart-line adm-nav-icon"></i> Financeiro
         </a>
+        <a href="{{ url_for('admin.ferr_codigos') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.ferr_codigos' }}">
+          <i class="fa-solid fa-ticket adm-nav-icon"></i> Códigos de parceiro
+        </a>
         <a href="{{ url_for('admin.trafego') }}" class="adm-nav-link {{ 'active' if request.endpoint == 'admin.trafego' }}">
           <i class="fa-solid fa-satellite-dish adm-nav-icon"></i> Tráfego (Ads)
         </a>

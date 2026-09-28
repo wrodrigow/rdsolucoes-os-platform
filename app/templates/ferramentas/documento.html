@@ -21,6 +21,9 @@
 {% endblock %}
 
 {% block conteudo %}
+{% if chegada and chegada.tipo == tipo %}
+<div class="envoltorio"><div class="faixa-chegada" role="status"><p>Recebeu {{ 'um orçamento' if e_orc else 'uma ordem de serviço' }} feit{{ 'o' if e_orc else 'a' }} aqui? Faça {{ 'o seu' if e_orc else 'a sua' }} agora: é grátis e não precisa de cadastro.</p></div></div>
+{% endif %}
 <section class="abertura envoltorio">
   <p class="olho">{{ d.eyebrow }}</p>
   <h1>{{ d.h1 }}</h1>
@@ -149,7 +152,7 @@
     </fieldset>
 
     <fieldset class="bloco">
-      <legend><span class="num" aria-hidden="true">6</span>Sua marca</legend>
+      <legend><span class="num" aria-hidden="true">6</span>{{ 'Sua marca' if pro else 'Seus dados' }}</legend>
       {% if pro %}
         {% if cfg.marca and (cfg.marca.empresa or cfg.marca.logo) %}
         <div class="kit">
@@ -161,10 +164,19 @@
         <p class="aviso-ferramenta">Você ainda não cadastrou os dados da empresa. <a href="{{ url_for('ferramentas.minha_marca') }}">Configurar minha marca</a></p>
         {% endif %}
       {% else %}
+        <div class="campos duplo">
+          <label class="campo" for="dc-emissor-nome">Seu nome ou empresa
+            <input type="text" id="dc-emissor-nome" data-emissor="emissor_nome" maxlength="80" autocomplete="organization" placeholder="Ex.: João Silva Elétrica">
+          </label>
+          <label class="campo" for="dc-emissor-contato">Seu WhatsApp
+            <input type="tel" id="dc-emissor-contato" data-emissor="emissor_contato" maxlength="40" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000">
+          </label>
+        </div>
+        <p class="letra-miuda">Saem no cabeçalho do PDF, para o cliente saber quem enviou. Ficam guardados neste aparelho para os próximos documentos.</p>
         <div class="upsell compacto">
           <h3>No Pro, o documento sai com a SUA marca</h3>
           <ul>
-            <li>Logomarca, nome da empresa, CNPJ e contato no cabeçalho</li>
+            <li>Logomarca, CNPJ, e-mail e endereço no cabeçalho</li>
             <li>Sem a marca RD OS e nas cores da sua empresa</li>
             <li>Vale também para o antes e depois</li>
           </ul>

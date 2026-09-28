@@ -1,0 +1,116 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Códigos de parceiro — Admin{% endblock %}
+{% block page_title %}Ferramentas: códigos de parceiro{% endblock %}
+
+{% block content %}
+<div class="adm-grid-2">
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-ticket" style="color:#2563eb;"></i> Novo código</div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--adm-muted);margin-bottom:16px;">
+      Cada parceiro (grupo, loja, curso, evento) ganha um código que libera o Pro sem pagamento e um link
+      <code>/p/código</code> que mostra quem indicou e mede as visitas. O limite de usos segura o prejuízo se o código
+      vazar. Quem ganha o Pro deixa de espalhar a marca d'água, então não exagere no limite.
+    </p>
+    <form method="POST" action="{{ url_for('admin.ferr_codigos') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="adm-form-group">
+        <label class="adm-label" for="fc-parceiro">Parceiro (aparece na página: "Indicado por …")</label>
+        <input type="text" id="fc-parceiro" name="parceiro" class="adm-input" required minlength="2" maxlength="80" placeholder="Ex.: Grupo Técnicos em Refrigeração">
+      </div>
+      <div class="adm-form-group">
+        <label class="adm-label" for="fc-codigo">Código (letras e números; vazio = gerar um)</label>
+        <input type="text" id="fc-codigo" name="codigo" class="adm-input" maxlength="24" placeholder="Ex.: REFRIG100" style="text-transform:uppercase;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="adm-form-group">
+          <label class="adm-label" for="fc-limite">Limite de usos</label>
+          <input type="number" id="fc-limite" name="limite" class="adm-input" value="100" min="1" max="1000">
+        </div>
+        <div class="adm-form-group">
+          <label class="adm-label" for="fc-dias">Validade em dias (0 = sem prazo)</label>
+          <input type="number" id="fc-dias" name="dias" class="adm-input" value="60" min="0" max="3650">
+        </div>
+      </div>
+      <button type="submit" class="adm-btn adm-btn-primary"><i class="fa-solid fa-plus"></i> Criar código</button>
+    </form>
+  </div>
+
+  <div class="adm-card">
+    <div class="adm-card-header">
+      <div class="adm-card-title"><i class="fa-solid fa-user-check" style="color:#059669;"></i> Últimos resgates</div>
+    </div>
+    <div class="adm-table-wrapper" style="max-height:380px;overflow-y:auto;">
+      <table class="adm-table">
+        <thead><tr><th>Quando</th><th>Código</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+        <tbody>
+          {% for uso, user, cod, quando in usos %}
+          <tr>
+            <td style="font-size:0.78rem;color:var(--adm-muted);white-space:nowrap;">{{ quando }}</td>
+            <td><code style="font-size:0.78rem;">{{ cod.codigo }}</code></td>
+            <td style="font-size:0.82rem;">{{ user.nome }}</td>
+            <td style="font-size:0.82rem;">{{ user.email }}</td>
+            <td style="font-size:0.82rem;white-space:nowrap;">
+              {% if uso.aceita_contato and uso.whatsapp %}
+                {{ uso.whatsapp }}
+                <form method="POST" action="{{ url_for('admin.ferr_uso_parar', uso_id=uso.id) }}" style="display:inline;margin:0;"
+                      onsubmit="return confirm('Marcar que esta pessoa pediu para parar? O WhatsApp dela será apagado do resgate.');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="adm-btn adm-btn-sm" style="font-size:0.7rem;padding:2px 6px;" title="Pediu para não receber mais">Parou</button>
+                </form>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhum resgate ainda.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.75rem;color:var(--adm-muted);margin-top:8px;">WhatsApp só aparece quando a pessoa marcou que aceita receber novidades (no máximo 1 mensagem por mês).</p>
+  </div>
+</div>
+
+<div class="adm-card" style="margin-top:24px;">
+  <div class="adm-card-header">
+    <div class="adm-card-title"><i class="fa-solid fa-handshake" style="color:#7c3aed;"></i> Códigos</div>
+  </div>
+  <div class="adm-table-wrapper">
+    <table class="adm-table">
+      <thead><tr><th>Código</th><th>Parceiro</th><th>Usos</th><th>Validade</th><th>Visitas pelo link</th><th>Artes / PDFs</th><th>Situação</th><th>Link e QR</th><th></th></tr></thead>
+      <tbody>
+        {% for c in codigos %}
+        {% set st = por_origem.get('p:' ~ c.slug, {}) %}
+        {% set motivo = c.situacao(hoje) %}
+        <tr>
+          <td><code style="font-size:0.85rem;font-weight:700;">{{ c.codigo }}</code></td>
+          <td style="font-size:0.85rem;">{{ c.parceiro }}</td>
+          <td style="font-size:0.85rem;">{{ c.usos }} / {{ c.limite_usos }}</td>
+          <td style="font-size:0.8rem;color:var(--adm-muted);">{{ c.valido_ate.strftime('%d/%m/%Y') if c.valido_ate else 'sem prazo' }}</td>
+          <td style="font-size:0.85rem;">{{ st.get('lp_view', 0) }}</td>
+          <td style="font-size:0.85rem;">{{ st.get('gerou_arte', 0) }} / {{ st.get('gerou_pdf', 0) }}</td>
+          <td>
+            {% if motivo is none %}<span class="adm-badge adm-badge-success">Ativo</span>
+            {% elif not c.ativo %}<span class="adm-badge adm-badge-warning">Encerrado</span>
+            {% else %}<span class="adm-badge adm-badge-warning" title="{{ motivo }}">{{ 'Vencido' if c.valido_ate and hoje > c.valido_ate else 'Esgotado' }}</span>{% endif %}
+          </td>
+          <td style="font-size:0.8rem;white-space:nowrap;">
+            <a href="{{ base_url }}/p/{{ c.slug }}" target="_blank" rel="noopener">/p/{{ c.slug }}</a>
+            · <a href="{{ url_for('admin.ferr_codigo_qr', codigo_id=c.id) }}" target="_blank" rel="noopener">QR</a>
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.ferr_codigo_ativo', codigo_id=c.id) }}" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="adm-btn adm-btn-sm" style="font-size:0.75rem;">{{ 'Encerrar' if c.ativo else 'Reativar' }}</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--adm-muted);">Nenhum código criado ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

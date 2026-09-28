@@ -32,6 +32,10 @@ class TrafficEvent(db.Model):
     # contexto extra livre por tipo de evento: URL clicada num click_afiliado/click_interno,
     # nome do produto de afiliado, etc. — não estruturado, só pra exibir no admin.
     detalhe = db.Column(db.String(300), nullable=True)
+    # de onde a visita veio, quando o link diz (?o=... ou /p/<parceiro>): "marca-arte",
+    # "pdf-orc", "ig-bio", "p:refrig100"... WhatsApp e apps não mandam referrer,
+    # então sem isso tudo cai em "direto". Coluna criada em _ensure_schema_upgrades.
+    origem = db.Column(db.String(60), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     @staticmethod
@@ -88,7 +92,7 @@ class TrafficEvent(db.Model):
         return "direto"
 
     @classmethod
-    def registrar(cls, event_type, request, order_id=None, produto="rd_os", slug=None, detalhe=None):
+    def registrar(cls, event_type, request, order_id=None, produto="rd_os", slug=None, detalhe=None, origem=None):
         gclid = request.args.get("gclid") or request.form.get("gclid")
         fbclid = request.args.get("fbclid") or request.form.get("fbclid")
         gad_campaignid = request.args.get("gad_campaignid")
@@ -121,6 +125,7 @@ class TrafficEvent(db.Model):
             order_id=order_id,
             slug=(slug or "")[:200] or None,
             detalhe=(detalhe or "")[:300] or None,
+            origem=(origem or "")[:60] or None,
         )
         db.session.add(ev)
         try:

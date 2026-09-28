@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, session
 from ..extensions import csrf, limiter
 from ..models.traffic_event import TrafficEvent
 
@@ -72,5 +72,8 @@ def evento():
 
     slug = (request.form.get("slug") or "").strip()
     detalhe = (request.form.get("detalhe") or "").strip()
-    TrafficEvent.registrar(tipo, request, produto=produto, slug=slug or None, detalhe=detalhe or None)
+    # as ferramentas rodam no mesmo domínio: a origem da visita (?o= do link que
+    # trouxe a pessoa) já está na sessão, gravada por routes/ferramentas._origem_atual
+    origem = session.get("ferr_origem") if produto == "ferramentas" else None
+    TrafficEvent.registrar(tipo, request, produto=produto, slug=slug or None, detalhe=detalhe or None, origem=origem)
     return "", 204
