@@ -69,7 +69,24 @@ ORIGENS_LINK = {
     "pdf-orc": "PDF de orçamento", "pdf-os": "PDF de ordem de serviço", "raiz": "Digitou o endereço",
 }
 REF_RE = re.compile(r"ref:([A-Za-z0-9.\-]+)")
+CHAVE_MARCO = "acessos_marco_zero"             # SiteConfig: "contar a partir de" (ISO, UTC); vazio = tudo
 INTERNO = "Dentro dos próprios sites"
+
+
+def marco_zero():
+    """Momento a partir do qual o painel conta (botão "Zerar a contagem"). Nada é
+    apagado: o que veio antes só deixa de entrar nos números."""
+    from ..models.site_config import SiteConfig
+    bruto = (SiteConfig.get(CHAVE_MARCO) or "").strip()
+    if not bruto:
+        return None
+    try:
+        dt = datetime.fromisoformat(bruto)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 def _para_brt(dt):
@@ -204,6 +221,14 @@ def resumo(periodo="7", agora=None):
         periodo = "7"
     agora_utc = agora or datetime.now(timezone.utc)
     inicio, fim, inicio_ant, fim_ant, por_hora = janela(periodo, agora_utc)
+    # marco zero: nada antes dele entra; se o período anterior começa antes do marco,
+    # não há base justa para comparar (mostra "sem base" em vez de uma variação falsa)
+    marco = marco_zero()
+    sem_comparacao = False
+    if marco and marco > inicio:
+        inicio = min(marco, fim)
+    if marco and inicio_ant < marco:
+        sem_comparacao = True
 
     from ..models.blog import BlogArticle
     from ..models.ferramentas import FerrCodigo, FerrPedidoPro
@@ -214,7 +239,10 @@ def resumo(periodo="7", agora=None):
 
     # ------------------------------------------------ contagens (no banco)
     cont, unicos = _contagens(inicio, fim)
-    cont_ant, unicos_ant = _contagens(inicio_ant, fim_ant, fim_inclusivo=False)
+    if sem_comparacao:
+        cont_ant, unicos_ant = {s["chave"]: Counter() for s in SITES}, {}
+    else:
+        cont_ant, unicos_ant = _contagens(inicio_ant, fim_ant, fim_inclusivo=False)
     robos = (TrafficEvent.query.filter(TrafficEvent.created_at >= _naive(inicio), TrafficEvent.created_at <= _naive(fim),
                                        TrafficEvent.is_bot == True).count())  # noqa: E712
 
@@ -302,6 +330,8 @@ def resumo(periodo="7", agora=None):
 
     # ------------------------------------------------ agora: últimos 30 minutos, independente do período
     corte = agora_utc - timedelta(minutes=30)
+    if marco and marco > corte:                  # o marco vale para o "agora"; a meia-noite, não
+        corte = marco
     recentes = [_evento(l) for l in _base(corte, agora_utc).with_entities(*COLUNAS).limit(5000)]
     agora_paginas = Counter((nomes[ev["site"]], pagina_da_visita(ev, titulos_blog))
                             for ev in recentes if ev["tipo"] in VISITAS)
@@ -313,7 +343,9 @@ def resumo(periodo="7", agora=None):
     total_disp = sum(dispositivos.values()) or 1
     return {
         "periodo": periodo, "periodo_nome": PERIODOS[periodo], "por_hora": por_hora,
-        "comparacao": "ontem até esta hora" if por_hora else f"{PERIODOS[periodo]} anteriores até a mesma hora",
+        "comparacao": ("sem comparação: o período anterior é de antes do marco zero" if sem_comparacao
+                       else "ontem até esta hora" if por_hora else f"{PERIODOS[periodo]} anteriores até a mesma hora"),
+        "marco_zero": marco.astimezone(BRT).strftime("%d/%m/%Y às %H:%M") if marco else None,
         "rotulos": rotulos, "cartoes": cartoes, "vendas": vendas, "ferramentas": ferramentas,
         "top_paginas": [{"site": nomes[s], "pagina": p, "visitas": n} for (s, p), n in paginas.most_common(20)],
         "top_origens": [{"origem": o, "visitas": n, "pct": round(n / total_origens * 100)} for o, n in origens.most_common(15)],

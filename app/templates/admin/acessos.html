@@ -41,6 +41,12 @@
   .ac-tabela th.n{text-align:right}
   .ac-vazio{text-align:center;padding:20px;color:var(--adm-muted);font-size:.85rem}
   .ac-nota{font-size:.75rem;color:var(--adm-muted);margin-top:14px}
+  .ac-marco{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.82rem;color:var(--adm-muted);margin:-8px 0 18px}
+  .ac-marco b{color:var(--adm-text)}
+  .ac-marco i{color:var(--adm-secondary)}
+  .ac-link{background:none;border:none;padding:0;color:var(--adm-primary);font-weight:600;cursor:pointer;font-size:.82rem;text-decoration:underline}
+  .ac-botao-marco{font-size:.8rem;padding:6px 12px;border-radius:8px;border:1px solid var(--adm-border);background:var(--adm-white);color:var(--adm-text);font-weight:600;cursor:pointer}
+  .ac-botao-marco:hover{border-color:var(--adm-primary);color:var(--adm-primary)}
 </style>
 
 <div class="ac-topo">
@@ -53,6 +59,25 @@
     <span class="ac-agora" title="Pessoas diferentes com alguma atividade nos últimos 30 minutos"><i aria-hidden="true"></i><span id="ac-agora">— agora</span></span>
     <span id="ac-atualizado">Carregando…</span>
   </div>
+</div>
+
+<div class="ac-marco">
+  {% if marco %}
+    <span><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> Contando desde <b>{{ marco }}</b>. O que veio antes continua guardado, só não entra nos números.</span>
+    <form method="POST" action="{{ url_for('admin.acessos_marco_zero') }}" style="display:inline;margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="acao" value="tudo"/>
+      <button type="submit" class="ac-link">Mostrar todo o histórico</button>
+    </form>
+  {% else %}
+    <span>Mostrando todo o histórico.</span>
+    <form method="POST" action="{{ url_for('admin.acessos_marco_zero') }}" style="display:inline;margin:0;"
+          onsubmit="return confirm('Zerar a contagem? O painel passa a contar só o que acontecer a partir de agora. Nada é apagado: dá para voltar a mostrar o histórico quando quiser.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="acao" value="zerar"/>
+      <button type="submit" class="ac-botao-marco"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> Zerar a contagem a partir de agora</button>
+    </form>
+  {% endif %}
 </div>
 
 <div class="ac-cartoes" id="ac-cartoes" aria-live="polite"></div>

@@ -1382,8 +1382,29 @@ def ferr_uso_parar(uso_id):
 @bp.route("/acessos")
 @admin_required
 def acessos():
-    from ..services.acessos import PERIODOS
-    return render_template("admin/acessos.html", periodos=PERIODOS)
+    from ..services.acessos import BRT as _BRT, PERIODOS, marco_zero
+    marco = marco_zero()
+    return render_template("admin/acessos.html", periodos=PERIODOS,
+                           marco=marco.astimezone(_BRT).strftime("%d/%m/%Y às %H:%M") if marco else None)
+
+
+@bp.route("/acessos/marco-zero", methods=["POST"])
+@admin_required
+def acessos_marco_zero():
+    """Zera a contagem do painel a partir de agora (ou volta a mostrar tudo).
+    Não apaga nada: só muda de quando o painel começa a contar."""
+    from ..services.acessos import CHAVE_MARCO
+    if request.form.get("acao") == "zerar":
+        agora = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        SiteConfig.set(CHAVE_MARCO, agora)
+        Log.registrar("acessos_marco_zero", f"contando a partir de {agora}", user_id=current_user.id)
+        flash("Contagem zerada. O painel passa a contar só o que acontecer a partir de agora; "
+              "o histórico continua guardado.", "success")
+    elif request.form.get("acao") == "tudo":
+        SiteConfig.set(CHAVE_MARCO, "")
+        Log.registrar("acessos_marco_zero", "voltou a mostrar todo o histórico", user_id=current_user.id)
+        flash("O painel voltou a mostrar todo o histórico.", "info")
+    return redirect(url_for("admin.acessos"))
 
 
 @bp.route("/acessos/dados")
