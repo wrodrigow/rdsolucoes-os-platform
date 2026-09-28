@@ -96,15 +96,9 @@ def lp():
     from ..models.traffic_event import TrafficEvent
     TrafficEvent.registrar("lp_view", request)
 
+    # Sem preço "De": nunca houve um preço anterior praticado (decisão do Rodrigo, 28/09/2026)
     preco = float(SiteConfig.get("produto_preco", "297.00"))
-    try:
-        preco_de = float(SiteConfig.get("produto_preco_de") or 0)
-    except ValueError:
-        preco_de = 0.0
-    if preco_de <= preco:
-        preco_de = 597.0
     parcela = preco * 1.2 / 12  # 12x com acréscimo embutido (~20%)
-    economia = preco_de - preco
 
     def _fmt(v):
         return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -114,9 +108,7 @@ def lp():
         "marketing/lp.html",
         preco=preco,
         preco_fmt=_fmt(preco),
-        preco_de_fmt=_fmt(preco_de),
         parcela_fmt=_fmt(parcela),
-        economia_fmt=_fmt(economia),
         keys_disponiveis=keys_disponiveis,
     )
 

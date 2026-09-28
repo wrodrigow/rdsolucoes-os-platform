@@ -444,7 +444,7 @@ def configuracoes():
             "gads_developer_token", "gads_client_id", "gads_client_secret", "gads_refresh_token",
             "gads_customer_id", "gads_login_customer_id", "gads_campaign_id",
             "produto_nome", "produto_preco",
-            "produto_preco_de", "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
+            "produto_versao", "mail_sender_name", "mail_footer", "mail_suporte",
         ]
         for chave in chaves_editaveis:
             valor = request.form.get(chave, "").strip()
