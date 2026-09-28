@@ -55,8 +55,30 @@ class TrafficEvent(db.Model):
             return False
         return len(gclid) >= 20 and not gclid.isdigit()
 
+    # Faixas publicadas pela Cloudflare (https://www.cloudflare.com/ips/, set/2026)
+    CLOUDFLARE = ("173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18",
+                  "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17",
+                  "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+                  "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32",
+                  "2a06:98c0::/29", "2c0f:f248::/32")
+    _cache_redes = None
+
     @staticmethod
-    def _ip_cliente(request):
+    def _ip_valido(ip):
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    @classmethod
+    def _redes_cloudflare(cls):
+        if cls._cache_redes is None:
+            cls._cache_redes = tuple(ipaddress.ip_network(r) for r in cls.CLOUDFLARE)
+        return cls._cache_redes
+
+    @classmethod
+    def _ip_cliente(cls, request):
         """IP real do visitante.
 
         Por que não usar request.remote_addr: a app já roda com
@@ -75,10 +97,15 @@ class TrafficEvent(db.Model):
         depois dele — o que não acontece, porque a borda acrescenta o verdadeiro.
         """
         def publico(ip):
+            """Endereço de gente: público e que não seja da Cloudflare. A Render fica
+            atrás da Cloudflare, que acrescenta o IP do próprio servidor de borda no
+            fim da cadeia; pegar esse IP gravava um endereço diferente a cada
+            requisição (e o mesmo para pessoas diferentes)."""
             try:
-                return not ipaddress.ip_address(ip).is_private
+                end = ipaddress.ip_address(ip)
             except ValueError:
                 return False
+            return not end.is_private and not any(end in rede for rede in cls._redes_cloudflare())
 
         xff = request.headers.get("X-Forwarded-For", "") or ""
         partes = [p.strip() for p in xff.split(",") if p.strip()]
@@ -89,6 +116,13 @@ class TrafficEvent(db.Model):
         real = (request.headers.get("X-Real-IP") or "").strip()
         if publico(real):
             return real[:45]
+        # A cadeia só tinha a borda da Cloudflare: vale o CF-Connecting-IP, que a própria
+        # Cloudflare preenche (só é aceito quando a requisição veio mesmo de uma borda dela).
+        veio_da_cloudflare = any(not publico(p) and not ipaddress.ip_address(p).is_private
+                                 for p in partes if cls._ip_valido(p))
+        cf = (request.headers.get("CF-Connecting-IP") or "").strip()
+        if veio_da_cloudflare and publico(cf):
+            return cf[:45]
         # nada público (ex.: acesso local/dev): guarda o que houver, só pra não perder o registro
         return ((partes[0] if partes else None) or real or request.remote_addr or "")[:45] or None
 
