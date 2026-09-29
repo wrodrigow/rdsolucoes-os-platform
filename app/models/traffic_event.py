@@ -12,7 +12,8 @@ class TrafficEvent(db.Model):
     # futuro é só acrescentar uma linha aqui (chave = valor salvo na coluna
     # `produto`, usado também para validar o endpoint público de tracking).
     PRODUTOS = {"rd_os": "RD OS", "rd_soldas": "RD Soldas", "blog": "Blog", "redes": "Certificação de Redes",
-                "ferramentas": "Ferramentas online", "serralheria": "Serralheria (Leonardo)"}
+                "ferramentas": "Ferramentas online", "serralheria": "Serralheria (Leonardo)",
+                "sites": "Criação de sites"}
 
     # Quem abre a página sem ser gente: prévia de link do WhatsApp e do Facebook, scripts e
     # navegadores automatizados. TelegramBot, Slackbot, Discordbot, LinkedInBot etc. já caem

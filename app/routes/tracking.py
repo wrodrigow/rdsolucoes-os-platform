@@ -32,6 +32,11 @@ EVENTOS_PERMITIDOS = {
         # Página da serralheria do Leonardo (rdsolucoes.eco.br/serralheria/), interior de SP.
         "lp_view", "whatsapp_click", "tel_click", "scroll_50", "scroll_100", "faq_view",
     },
+    "sites": {
+        # Venda de sites por R$ 500 sem mensalidade (rdsolucoes.eco.br/criacao-de-sites/).
+        # portfolio_click = abriu um dos exemplos de site feitos pela RD.
+        "lp_view", "whatsapp_click", "portfolio_click", "scroll_50", "scroll_100", "faq_view",
+    },
     "blog": {
         # lp_view = visualização de página (mesmo nome universal, pra reaproveitar
         # o gráfico/funil de 24h já pronto no admin sem duplicar lógica).
