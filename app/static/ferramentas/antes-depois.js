@@ -390,12 +390,18 @@
   }
 
   // ------------------------------------------------------------------ interface
+  function arteNaTelaPronta() { return !!(estado.fotos.antes && estado.fotos.depois) && !estado.exemplo; }
+
   function atualizarBotoes() {
-    var pronto = !!(estado.fotos.antes && estado.fotos.depois) && !estado.exemplo;
-    ['ad-baixar', 'ad-compartilhar', 'ad-video'].forEach(function (id) {
+    var pronto = arteNaTelaPronta();
+    ['ad-baixar', 'ad-compartilhar'].forEach(function (id) {
       var b = $(id);
-      if (b) b.disabled = !pronto || (id === 'ad-video' && gravando);
+      if (b) b.disabled = !pronto;
     });
+    // o vídeo também sai só com as artes guardadas, mesmo com a tela vazia
+    var bv = $('ad-video');
+    if (bv) bv.disabled = gravando || !(pronto || (PRO && guardadas.length));
+    atualizarSerie();
     var dica = $('ad-dica');
     if (dica) dica.hidden = !pronto;
     ['antes', 'depois'].forEach(function (lado) {
@@ -541,54 +547,164 @@
     return null;
   }
 
-  // 0–1,5 s antes · 1,5–2,6 s cortina revela o depois · 2,6–4 s depois · 4–7 s arte final
-  function quadroVideo(c, fmt, t, arteFinal) {
+  // Linha do tempo de cada arte no vídeo: antes parado · cortina revela o depois · depois parado · arte final.
+  // Com uma arte só, fica como sempre foi (7 s). Com várias, cada uma é mais curta, para o vídeo de até
+  // 10 artes caber no Status do WhatsApp (10 × 5,5 s = 55 s).
+  var LINHA_UMA = { antes: 1.5, cortina: 1.1, depois: 1.4, arte: 3, fade: 0.5 };
+  var LINHA_VARIAS = { antes: 1.2, cortina: 1.0, depois: 1.0, arte: 2.3, fade: 0.4 };
+  function duracaoLinha(L) { return L.antes + L.cortina + L.depois + L.arte; }
+
+  // Desenha o quadro do tempo t (em segundos) de uma arte do vídeo (seg). "anterior" é a arte que veio
+  // antes no mesmo vídeo: a arte final dela se dissolve no "antes" desta, nos primeiros instantes.
+  function quadroVideo(c, fmt, t, seg, L, anterior) {
     var W = fmt.w, H = fmt.h, e = W / 1080;
     var tela = { x: 0, y: 0, w: W, h: H };
+    var s = seg.snap;
+    var t1 = L.antes, t2 = L.antes + L.cortina, t3 = t2 + L.depois;
     c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
     var m = Math.round(40 * e);
-    if (t < 4) {
-      fotoCobrindo(c, estado.fotos.antes, tela, { z: 1, x: estado.ajuste.antes.x, y: estado.ajuste.antes.y });
-      var corte = t < 1.5 ? 0 : t > 2.6 ? W : W * easing((t - 1.5) / 1.1);
+    if (t < t3) {
+      fotoCobrindo(c, s.fotos.antes, tela, { z: 1, x: s.ajuste.antes.x, y: s.ajuste.antes.y });
+      var corte = t < t1 ? 0 : t > t2 ? W : W * easing((t - t1) / L.cortina);
       if (corte > 0) {
         c.save(); c.beginPath(); c.rect(0, 0, corte, H); c.clip();
-        fotoCobrindo(c, estado.fotos.depois, tela, { z: 1, x: estado.ajuste.depois.x, y: estado.ajuste.depois.y });
+        fotoCobrindo(c, s.fotos.depois, tela, { z: 1, x: s.ajuste.depois.x, y: s.ajuste.depois.y });
         c.restore();
-        if (corte < W) { c.fillStyle = estado.cores.destaque; c.fillRect(corte - 5 * e, 0, 10 * e, H); }
+        if (corte < W) { c.fillStyle = s.cores.destaque; c.fillRect(corte - 5 * e, 0, 10 * e, H); }
       }
-      pilula(c, m, m, t < 2.05 ? estado.rotulos.antes : estado.rotulos.depois, t < 2.05 ? VERMELHO : VERDE, e * 1.25);
+      var meio = t1 + L.cortina / 2;
+      pilula(c, m, m, t < meio ? s.rotulos.antes : s.rotulos.depois, t < meio ? VERMELHO : VERDE, e * 1.25);
+      if (anterior && t < L.fade) {
+        c.globalAlpha = 1 - t / L.fade;
+        c.drawImage(anterior.arte, 0, 0);
+        c.globalAlpha = 1;
+      }
     } else {
-      c.globalAlpha = Math.min(1, (t - 4) / 0.5);
-      c.drawImage(arteFinal, 0, 0);
+      c.globalAlpha = Math.min(1, (t - t3) / L.fade);
+      c.drawImage(seg.arte, 0, 0);
       c.globalAlpha = 1;
     }
   }
   function easing(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
 
+  function copiaAjuste(a) { return { z: a.z, x: a.x, y: a.y }; }
+
+  // Tudo o que define uma arte (menos o formato, que é o do vídeo, e a marca, que é a da conta).
+  function copiaDaTela() {
+    return {
+      fotos: { antes: estado.fotos.antes, depois: estado.fotos.depois },
+      ajuste: { antes: copiaAjuste(estado.ajuste.antes), depois: copiaAjuste(estado.ajuste.depois) },
+      titulo: estado.titulo,
+      subtitulo: estado.subtitulo,
+      rotulos: { antes: estado.rotulos.antes, depois: estado.rotulos.depois },
+      cores: { primaria: estado.cores.primaria, destaque: estado.cores.destaque },
+      rodapeMarca: estado.rodapeMarca
+    };
+  }
+
+  // Desenha uma arte guardada com as funções de sempre: põe os dados dela no lugar dos da tela durante
+  // a chamada (que é síncrona) e devolve tudo como estava.
+  var CHAVES_ARTE = ['fotos', 'ajuste', 'titulo', 'subtitulo', 'rotulos', 'cores', 'rodapeMarca'];
+  function comArte(snap, fn) {
+    var salvo = { exemplo: estado.exemplo };
+    CHAVES_ARTE.forEach(function (k) { salvo[k] = estado[k]; estado[k] = snap[k]; });
+    estado.exemplo = false;
+    try { return fn(); } finally {
+      CHAVES_ARTE.forEach(function (k) { estado[k] = salvo[k]; });
+      estado.exemplo = salvo.exemplo;
+    }
+  }
+
+  function imagemDoBlob(blob) {
+    var url = URL.createObjectURL(blob);
+    return carregarImagem(url).then(function (img) { URL.revokeObjectURL(url); return img; },
+                                    function (e) { URL.revokeObjectURL(url); throw e; });
+  }
+  function abrirFoto(blob) {
+    if (window.createImageBitmap) return createImageBitmap(blob).catch(function () { return imagemDoBlob(blob); });
+    return imagemDoBlob(blob);
+  }
+
+  // Deixa uma arte pronta para entrar no vídeo: abre as fotos (se for guardada) e desenha a arte final
+  // no formato do vídeo. Só a arte que está tocando, a anterior e a próxima ficam na memória.
+  function prepararSegmento(item, fmt) {
+    var fotos = item.snap ? Promise.resolve(null) : Promise.all([abrirFoto(item.antes), abrirFoto(item.depois)]);
+    return fotos.then(function (par) {
+      var snap = item.snap || {
+        fotos: { antes: par[0], depois: par[1] }, ajuste: item.ajuste, titulo: item.titulo, subtitulo: item.subtitulo,
+        rotulos: item.rotulos, cores: item.cores, rodapeMarca: item.rodapeMarca
+      };
+      var c = document.createElement('canvas').getContext('2d');
+      comArte(snap, function () { desenhar(c, fmt); });
+      return { snap: snap, arte: c.canvas, abertas: !item.snap };
+    });
+  }
+  function liberarSegmento(seg) {
+    if (!seg || seg.liberado) return;
+    seg.liberado = true;
+    if (seg.abertas) {
+      ['antes', 'depois'].forEach(function (l) { var f = seg.snap.fotos[l]; if (f && f.close) f.close(); });
+    }
+    seg.arte.width = 0; seg.arte.height = 0;
+  }
+
+  // O vídeo junta, nesta ordem, as artes guardadas e a que está na tela (se tiver as duas fotos e
+  // ainda couber no limite: com {MAX_ARTES} guardadas, a da tela fica de fora e a página avisa).
+  function artesDoVideo() {
+    var lista = guardadas.slice();
+    if (arteNaTelaPronta() && lista.length < MAX_ARTES) lista.push({ snap: copiaDaTela() });
+    return lista;
+  }
+
   function gerarVideo(botao) {
     var tipo = melhorFormatoVideo();
     if (!tipo || !canvas.captureStream) { avisar(T.semVideo || 'Este navegador não grava vídeo. Tente no Chrome.'); return; }
+    if (gravando) return;
+    var lista = artesDoVideo();
+    if (!lista.length) return;
+    if (lista.length > MAX_ARTES) {
+      avisar(texto(T.limiteVideo || 'O vídeo junta até {max} artes. Tire alguma da lista.', { max: MAX_ARTES }));
+      return;
+    }
     var fmt = FORMATOS[estado.formato];
-    var arte = document.createElement('canvas').getContext('2d');
-    desenhar(arte, fmt);
+    var L = lista.length > 1 ? LINHA_VARIAS : LINHA_UMA;
+    var rotulo = $('ad-video-rotulo') || botao;
+    gravando = true;
+    videoPronto = null;
+    var cxAntiga = $('ad-video-pronto'); if (cxAntiga) cxAntiga.hidden = true;
+    atualizarBotoes();
+    rotulo.textContent = T.gravando || 'Gravando…';
+    prepararSegmento(lista[0], fmt).then(function (primeiro) {
+      gravar(lista, fmt, L, primeiro, tipo, rotulo);
+    }).catch(function () {
+      gravando = false;
+      atualizarBotoes();
+      avisar(T.erroVideo || 'Não consegui montar o vídeo. Tente de novo.');
+    });
+  }
+
+  function gravar(lista, fmt, L, primeiro, tipo, rotulo) {
+    var duracao = duracaoLinha(L);
     var c = document.createElement('canvas');
     c.width = fmt.w; c.height = fmt.h;
     // o Safari só grava canvas que está na página: fica anexado, invisível, durante a gravação
     c.style.cssText = 'position:fixed;left:-99999px;top:0;width:10px;height:10px;opacity:0;pointer-events:none';
     document.body.appendChild(c);
     var cx = c.getContext('2d');
-    quadroVideo(cx, fmt, 0, arte.canvas);
+    var atual = primeiro, anterior = null, proximo = null, indice = 0, falhou = false;
+    function prepararProximo() {
+      proximo = null;
+      if (indice + 1 >= lista.length) return;
+      var alvo = indice + 1;
+      prepararSegmento(lista[alvo], fmt).then(function (s) {
+        if (alvo === indice + 1 && gravando) proximo = s; else liberarSegmento(s);
+      }).catch(function () { falhou = true; });
+    }
+    quadroVideo(cx, fmt, 0, atual, L, null);
     var stream = c.captureStream(30);
     var gravador = new MediaRecorder(stream, { mimeType: tipo, videoBitsPerSecond: 6000000 });
     var pedacos = [];
     gravador.ondataavailable = function (ev) { if (ev.data && ev.data.size) pedacos.push(ev.data); };
-    var versaoInicio = versaoArte;
-    videoPronto = null;
-    var cxAntiga = $('ad-video-pronto'); if (cxAntiga) cxAntiga.hidden = true;
-    var rotulo = $('ad-video-rotulo') || botao;
-    var textoOriginal = rotulo.textContent;
-    botao.disabled = true;
-    rotulo.textContent = T.gravando || 'Gravando…';
     var abortado = false;
     function aoSairDaTela() {
       // em segundo plano o navegador para de desenhar e o vídeo sairia cortado
@@ -598,28 +714,52 @@
     gravador.onstop = function () {
       gravando = false;
       c.remove();
+      stream.getTracks().forEach(function (tr) { tr.stop(); });
       document.removeEventListener('visibilitychange', aoSairDaTela);
-      botao.disabled = false;
-      rotulo.textContent = textoOriginal;
+      liberarSegmento(anterior); liberarSegmento(atual); liberarSegmento(proximo);
+      atualizarBotoes();                    // devolve o rótulo e libera os botões
       if (abortado) { avisoAoVoltar(T.videoInterrompido || 'A gravação parou porque a página saiu da tela. Grave de novo com ela aberta.'); return; }
-      if (versaoArte !== versaoInicio) { avisar(T.videoArteMudou || 'A arte mudou durante a gravação. Grave o vídeo de novo.'); return; }
+      if (falhou) { avisar(T.erroVideo || 'Não consegui montar o vídeo. Tente de novo.'); return; }
       var blob = new Blob(pedacos, { type: tipo.split(';')[0] });
       var ext = tipo.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
-      rastrear('gerou_video', estado.formato + ':' + ext);
+      rastrear('gerou_video', estado.formato + ':' + ext + ':' + lista.length);
       mostrarVideoPronto(blob, nomeArquivo(ext));
     };
-    gravando = true;
-    var inicio = null, duracao = 7;
+    var inicio = null;
     function passo(ts) {
       if (gravador.state !== 'recording') return;   // gravação interrompida
       if (inicio === null) inicio = ts;
-      var t = (ts - inicio) / 1000;
-      quadroVideo(cx, fmt, Math.min(t, duracao), arte.canvas);
-      if (t < duracao) requestAnimationFrame(passo);
-      else gravador.stop();
+      var t = Math.max(0, (ts - inicio) / 1000);
+      if (t >= duracao) {
+        if (indice >= lista.length - 1 || falhou) {
+          quadroVideo(cx, fmt, duracao, atual, L, anterior);
+          gravador.stop();
+          return;
+        }
+        if (proximo) {                       // passa para a próxima arte
+          liberarSegmento(anterior);
+          anterior = atual; atual = proximo; indice++;
+          inicio = ts; t = 0;
+          prepararProximo();
+        } else {
+          t = duracao;                       // a próxima ainda está abrindo: segura a arte final
+        }
+      }
+      quadroVideo(cx, fmt, t, atual, L, anterior);
+      proximoQuadro(passo);
     }
     gravador.start(250);
-    requestAnimationFrame(passo);
+    prepararProximo();
+    proximoQuadro(passo);
+  }
+
+  // Próximo quadro do vídeo: requestAnimationFrame quando a tela está desenhando; se ele não vier
+  // (janela coberta por outra, por exemplo), o temporizador garante que a gravação ande e termine.
+  function proximoQuadro(fn) {
+    var feito = false;
+    function uma() { if (feito) return; feito = true; fn(performance.now()); }
+    requestAnimationFrame(uma);
+    setTimeout(uma, 33);              // ~30 quadros por segundo, o mesmo do captureStream
   }
 
   // O vídeo leva 7 s para gravar: depois disso o toque original já "venceu" e o
@@ -636,6 +776,286 @@
     if (btShare) btShare.hidden = !pode;
     caixa.hidden = false;
     avisar(T.videoPronto || 'Vídeo pronto!');
+  }
+
+  // ------------------------------------------------------------------ várias artes num vídeo (Pro)
+  // A pessoa guarda cada antes e depois do mesmo cliente e grava um vídeo só com todos. As artes guardadas
+  // ficam no próprio aparelho (IndexedDB), não vão para o servidor: sobrevivem a recarregar a página (no
+  // celular, abrir a câmera às vezes recarrega a aba) até a pessoa tirar ou começar outro cliente.
+  var MAX_ARTES = 10;
+  var guardadas = [];        // [{ id, antes: Blob, depois: Blob, mini: Blob, miniUrl, ajuste, titulo, subtitulo, rotulos, cores, rodapeMarca }]
+  var banco = null;          // IndexedDB; sem ele (aba anônima de alguns navegadores) a lista vive só na memória
+  var idMemoria = -1;        // ids negativos = artes que não foram para o banco
+  var guardando = false;
+  var geracao = 0;           // muda a cada "começar outro cliente": um guardar atrasado não entra na lista nova
+  var BANCO = 'rdos-antes-depois', LOJA = 'artes';
+
+  function texto(modelo, valores) {
+    return String(modelo || '').replace(/\{(\w+)\}/g, function (m, k) { return valores[k] != null ? valores[k] : m; });
+  }
+
+  function abrirBanco() {
+    return new Promise(function (ok) {
+      if (!window.indexedDB) { ok(null); return; }
+      var req;
+      try { req = indexedDB.open(BANCO, 1); } catch (e) { ok(null); return; }
+      req.onupgradeneeded = function () { req.result.createObjectStore(LOJA, { keyPath: 'id', autoIncrement: true }); };
+      req.onsuccess = function () { ok(req.result); };
+      req.onerror = function () { ok(null); };
+      req.onblocked = function () { ok(null); };
+    });
+  }
+
+  // Blob vira ArrayBuffer antes de ir ao banco: versões antigas do Safari falham ao guardar Blob.
+  function lerBuffer(blob) {
+    if (blob.arrayBuffer) return blob.arrayBuffer();
+    return new Promise(function (ok, erro) {
+      var r = new FileReader();
+      r.onload = function () { ok(r.result); };
+      r.onerror = function () { erro(r.error); };
+      r.readAsArrayBuffer(blob);
+    });
+  }
+
+  function gravarNoBanco(item) {
+    if (!banco) return Promise.resolve(idMemoria--);
+    function tentar(b) {
+      return new Promise(function (ok, erro) {
+        var t, req;
+        try {
+          t = banco.transaction(LOJA, 'readwrite');
+          req = t.objectStore(LOJA).add({
+            antes: b[0], depois: b[1], mini: b[2], tipo: 'image/jpeg', ajuste: item.ajuste, titulo: item.titulo,
+            subtitulo: item.subtitulo, rotulos: item.rotulos, cores: item.cores, rodapeMarca: item.rodapeMarca, criado: item.criado
+          });
+        } catch (e) { erro(e); return; }
+        t.oncomplete = function () { ok(req.result); };
+        t.onerror = t.onabort = function () { erro(t.error); };
+      });
+    }
+    return Promise.all([lerBuffer(item.antes), lerBuffer(item.depois), lerBuffer(item.mini)]).then(function (b) {
+      return tentar(b).catch(function () {
+        // no iPhone a conexão com o banco cai quando a página vai para o fundo: reabre e tenta mais uma vez
+        return abrirBanco().then(function (novo) {
+          if (!novo) throw new Error('sem banco');
+          banco = novo;
+          return tentar(b);
+        });
+      });
+    }).catch(function () { return idMemoria--; });   // banco cheio ou recusado: fica só na memória (e a página avisa)
+  }
+
+  function apagarDoBanco(id) {
+    if (!banco || id < 0) return;
+    try { banco.transaction(LOJA, 'readwrite').objectStore(LOJA)['delete'](id); } catch (e) {}
+  }
+
+  function carregarGuardadas() {
+    return abrirBanco().then(function (b) {
+      banco = b;
+      if (!b) return [];
+      return new Promise(function (ok) {
+        var regs = [];
+        try {
+          var req = b.transaction(LOJA, 'readonly').objectStore(LOJA).openCursor();
+          req.onsuccess = function () {
+            var cur = req.result;
+            if (cur) { regs.push(cur.value); cur['continue'](); } else ok(regs);
+          };
+          req.onerror = function () { ok(regs); };
+        } catch (e) { ok(regs); }
+      });
+    }).then(function (regs) {
+      regs.forEach(function (r) {
+        if (!r || !r.antes || !r.depois || !r.ajuste) return;
+        var tipo = r.tipo || 'image/jpeg';
+        var item = {
+          id: r.id, antes: new Blob([r.antes], { type: tipo }), depois: new Blob([r.depois], { type: tipo }),
+          mini: new Blob([r.mini || r.depois], { type: tipo }), ajuste: r.ajuste, titulo: r.titulo || '',
+          subtitulo: r.subtitulo || '', rotulos: r.rotulos || { antes: T.antes || 'ANTES', depois: T.depois || 'DEPOIS' },
+          cores: r.cores || { primaria: estado.cores.primaria, destaque: estado.cores.destaque },
+          rodapeMarca: r.rodapeMarca !== false
+        };
+        item.miniUrl = URL.createObjectURL(item.mini);
+        guardadas.push(item);
+      });
+    }).catch(function () {}).then(desenharLista);
+  }
+
+  function canvasParaBlob(c, qualidade) {
+    return new Promise(function (ok, erro) {
+      c.toBlob(function (b) { if (b) ok(b); else erro(new Error('toBlob')); }, 'image/jpeg', qualidade);
+    });
+  }
+
+  // a foto guardada é reduzida a 1920 px: basta para o vídeo e não pesa no aparelho
+  function fotoParaBlob(img) {
+    var w = largura(img), h = altura(img), s = Math.min(1, 1920 / Math.max(w, h));
+    var c = document.createElement('canvas');
+    c.width = Math.round(w * s); c.height = Math.round(h * s);
+    var cx = c.getContext('2d');
+    if (!cx) throw new Error('canvas');     // memória de canvas esgotada (iPhone): cai no aviso de erro
+    cx.drawImage(img, 0, 0, c.width, c.height);
+    function soltar() { c.width = 0; c.height = 0; }   // devolve a memória do canvas na hora
+    return canvasParaBlob(c, 0.9).then(function (b) { soltar(); return b; }, function (e) { soltar(); throw e; });
+  }
+
+  function miniatura(snap) {
+    var a = document.createElement('canvas').getContext('2d');
+    if (!a) throw new Error('canvas');
+    comArte(snap, function () { desenhar(a, FORMATOS[estado.formato]); });
+    var m = document.createElement('canvas');
+    m.width = 200; m.height = Math.round(a.canvas.height * 200 / a.canvas.width);
+    var mx = m.getContext('2d');
+    if (!mx) { a.canvas.width = 0; throw new Error('canvas'); }
+    mx.drawImage(a.canvas, 0, 0, m.width, m.height);
+    a.canvas.width = 0;
+    return canvasParaBlob(m, 0.8);
+  }
+
+  function limparArteDaTela() {
+    estado.fotos = { antes: null, depois: null };
+    estado.ajuste = { antes: { z: 1, x: 0, y: 0 }, depois: { z: 1, x: 0, y: 0 } };
+    sincronizarSliders();
+    ['antes', 'depois'].forEach(function (lado) {
+      var mini = $('ad-mini-' + lado);
+      if (mini) { mini.style.backgroundImage = ''; mini.classList.remove('tem'); }
+    });
+    renderizar();
+  }
+
+  function guardarArte() {
+    if (guardando || gravando || !arteNaTelaPronta()) return;
+    if (guardadas.length >= MAX_ARTES) {
+      avisar(texto(T.serieCheia || 'O vídeo junta até {max} artes.', { max: MAX_ARTES }));
+      return;
+    }
+    guardando = true;
+    var minhaGeracao = geracao;
+    atualizarBotoes();
+    var snap = copiaDaTela();
+    // dentro de uma promessa: um erro já no desenho (memória de canvas no iPhone) também cai no catch
+    Promise.resolve().then(function () {
+      return Promise.all([fotoParaBlob(snap.fotos.antes), fotoParaBlob(snap.fotos.depois), miniatura(snap)]);
+    }).then(function (r) {
+      var item = {
+        antes: r[0], depois: r[1], mini: r[2], ajuste: snap.ajuste, titulo: snap.titulo, subtitulo: snap.subtitulo,
+        rotulos: snap.rotulos, cores: snap.cores, rodapeMarca: snap.rodapeMarca, criado: Date.now()
+      };
+      return gravarNoBanco(item).then(function (id) { item.id = id; return item; });
+    }).then(function (item) {
+      guardando = false;
+      if (minhaGeracao !== geracao) {        // a pessoa começou outro cliente no meio do guardar
+        apagarDoBanco(item.id);
+        atualizarBotoes();
+        return;
+      }
+      item.miniUrl = URL.createObjectURL(item.mini);
+      guardadas.push(item);
+      rastrear('guardou_arte', String(guardadas.length));
+      limparArteDaTela();                    // a tela fica livre para o próximo antes e depois
+      desenharLista();
+      var n = guardadas.length, msg;
+      if (item.id < 0) msg = T.arteSoNaMemoria || 'Arte {n} guardada só enquanto esta página estiver aberta. Gere o vídeo antes de fechar ou recarregar a página.';
+      else if (n >= MAX_ARTES) msg = T.arteGuardadaUltima || 'Arte {n} guardada. O vídeo chegou ao máximo de {max} artes: agora é só gerar.';
+      else msg = T.arteGuardada || 'Arte {n} guardada. Escolha as fotos do próximo antes e depois.';
+      avisar(texto(msg, { n: n, max: MAX_ARTES }));
+    }).catch(function () {
+      guardando = false;
+      atualizarBotoes();
+      avisar(T.erroGuardar || 'Não consegui guardar esta arte. Tente de novo.');
+    });
+  }
+
+  function tirarArte(id) {
+    if (gravando || guardando) return;
+    for (var i = 0; i < guardadas.length; i++) {
+      if (guardadas[i].id !== id) continue;
+      if (!window.confirm(texto(T.confirmaTirar || 'Tirar a arte {n} do vídeo?', { n: i + 1 }))) return;
+      URL.revokeObjectURL(guardadas[i].miniUrl);
+      guardadas.splice(i, 1);
+      apagarDoBanco(id);
+      desenharLista();
+      return;
+    }
+  }
+
+  function comecarOutroCliente() {
+    if (gravando || guardando || !guardadas.length) return;
+    if (!window.confirm(T.confirmaLimpar || 'Apagar as artes guardadas e começar outro cliente?')) return;
+    geracao++;
+    guardadas.forEach(function (it) { URL.revokeObjectURL(it.miniUrl); });
+    guardadas = [];
+    if (banco) { try { banco.transaction(LOJA, 'readwrite').objectStore(LOJA).clear(); } catch (e) {} }
+    desenharLista();
+  }
+
+  function desenharLista() {
+    var ol = $('ad-serie-lista');
+    if (ol) {
+      ol.textContent = '';
+      guardadas.forEach(function (item, i) {
+        var li = document.createElement('li');
+        var img = document.createElement('img');
+        img.src = item.miniUrl;
+        img.alt = texto(T.arteN || 'Arte {n}', { n: i + 1 });
+        var num = document.createElement('span');
+        num.className = 'ordem';
+        num.textContent = String(i + 1);
+        num.setAttribute('aria-hidden', 'true');
+        var bt = document.createElement('button');
+        bt.type = 'button';
+        bt.className = 'tirar';
+        bt.textContent = '×';
+        bt.setAttribute('aria-label', texto(T.tirarArte || 'Tirar a arte {n} do vídeo', { n: i + 1 }));
+        bt.addEventListener('click', function () { tirarArte(item.id); });
+        li.appendChild(img); li.appendChild(num); li.appendChild(bt);
+        ol.appendChild(li);
+      });
+      ol.hidden = !guardadas.length;
+    }
+    atualizarBotoes();
+  }
+
+  // estado dos botões e do texto da caixa "várias artes" (chamado por atualizarBotoes)
+  var rotuloVideoPadrao = ($('ad-video-rotulo') || {}).textContent || '';
+  function atualizarSerie() {
+    var pronto = arteNaTelaPronta();
+    var n = guardadas.length;
+    var cheia = n >= MAX_ARTES;
+    var total = n + (pronto && !cheia ? 1 : 0);   // igual a artesDoVideo()
+    var rotulo = $('ad-video-rotulo');
+    if (rotulo && !gravando) {
+      rotulo.textContent = PRO && total > 1 ? texto(T.videoVarias || 'Gerar vídeo com {n} artes', { n: total }) : rotuloVideoPadrao;
+    }
+    if (!$('ad-serie')) return;
+    var bg = $('ad-guardar');
+    if (bg) bg.disabled = guardando || gravando || !pronto || cheia;
+    var bl = $('ad-serie-limpar');
+    if (bl) { bl.hidden = !n; bl.disabled = gravando || guardando; }
+    var ol = $('ad-serie-lista');
+    if (ol) ol.querySelectorAll('.tirar').forEach(function (b) { b.disabled = gravando || guardando; });
+    var info = $('ad-serie-info');
+    if (info) {
+      if (!n) info.textContent = T.serieVazia || info.textContent;
+      else {
+        var partes = [];
+        if (n === 1) {
+          partes.push(T.serieUma || '1 arte guardada.');
+          partes.push(pronto ? (T.serieComTelaUma || 'O vídeo junta esta e a que está na tela, nesta ordem.')
+                             : (T.serieSemTelaUma || 'O vídeo sai só com ela.'));
+        } else {
+          partes.push(texto(T.serieVarias || '{n} artes guardadas.', { n: n }));
+          partes.push(pronto && !cheia ? (T.serieComTela || 'O vídeo junta estas e a que está na tela, nesta ordem.')
+                                       : (T.serieSemTela || 'O vídeo junta estas, nesta ordem.'));
+        }
+        if (cheia) {
+          partes.push(texto(pronto ? (T.serieCheiaTela || 'A arte da tela fica de fora: o vídeo junta até {max} artes.')
+                                   : (T.serieCheia || 'O vídeo junta até {max} artes.'), { max: MAX_ARTES }));
+        }
+        info.textContent = partes.join(' ');
+      }
+    }
   }
 
   // ------------------------------------------------------------------ ligações
@@ -705,6 +1125,10 @@
     if (!PRO) { rastrear('clicou_pro', 'video'); window.location.href = CFG.urlPro; return; }
     gerarVideo(ev.currentTarget);
   });
+  if (PRO) {
+    ligar('ad-guardar', 'click', guardarArte);
+    ligar('ad-serie-limpar', 'click', comecarOutroCliente);
+  }
   document.querySelectorAll('.js-pro').forEach(function (el) {
     el.addEventListener('click', function () { rastrear('clicou_pro', el.getAttribute('data-origem') || ''); });
   });
@@ -742,6 +1166,7 @@
     esperas.push(document.fonts.load('700 40px Poppins').catch(function () {}));
     esperas.push(document.fonts.load('600 30px Inter').catch(function () {}));
   }
+  if (PRO && $('ad-serie')) esperas.push(carregarGuardadas());
   renderizar();
   Promise.all(esperas).then(renderizar);
 })();

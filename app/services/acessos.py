@@ -60,7 +60,7 @@ EVENTOS_LABEL = {
     "tel_click": "Clique para ligar", "portfolio_click": "Abriu um exemplo",
     "scroll_50": "Rolou metade", "scroll_100": "Rolou até o fim", "click_afiliado": "Clique em afiliado",
     "click_interno": "Clique para o site", "gerou_arte": "Gerou arte", "gerou_pdf": "Gerou PDF",
-    "baixou": "Baixou a arte", "compartilhou": "Compartilhou a arte", "gerou_video": "Gerou vídeo",
+    "baixou": "Baixou a arte", "compartilhou": "Compartilhou a arte", "gerou_video": "Gerou vídeo", "guardou_arte": "Guardou arte p/ vídeo",
     "baixou_pdf": "Baixou o PDF", "compartilhou_pdf": "Compartilhou o PDF", "clicou_pro": "Clicou no Pro",
     "checkout_start": "Abriu o pagamento", "checkout_success": "Pagamento aprovado", "checkout_fail": "Pagamento falhou",
     "resgatou_codigo": "Resgatou código", "pediu_codigo": "Pediu código", "lista_espera": "Lista de espera",

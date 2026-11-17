@@ -258,6 +258,29 @@ h1, h2, h3 { font-family: var(--fonte-tit); line-height: 1.2; text-wrap: balance
 .botao .selo { font-size: 11px; font-weight: 800; letter-spacing: .5px; padding: 3px 7px; border-radius: 999px; background: var(--laranja); color: #1a0d03; }
 .video-pronto { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .video-pronto .botao[hidden] + .botao { grid-column: 1 / -1; }
+
+/* vídeo com várias artes do mesmo cliente (Pro) */
+.serie { display: grid; gap: 10px; }
+.serie-titulo { margin: 0; font: 700 16px/1.3 var(--fonte-tit); text-wrap: balance; }
+.serie-info { margin: 0; font-size: 14px; color: var(--texto); }
+.serie-nota { margin: 0; font-size: 13px; color: var(--suave); }
+.serie-lista { list-style: none; margin: 0; padding: 2px 0 6px; display: flex; gap: 8px; overflow-x: auto; }
+.serie-lista[hidden] { display: none; }
+.serie-lista li { position: relative; flex: none; }
+.serie-lista img { display: block; height: 96px; width: auto; max-width: 160px; object-fit: cover; border-radius: 8px; border: 1px solid var(--linha); background: var(--cartao-2); }
+.serie-lista .ordem {
+  position: absolute; left: 6px; bottom: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  display: grid; place-items: center; background: var(--tinta); color: #fff; font: 700 12px/1 var(--fonte-txt);
+}
+.serie-lista .tirar {
+  position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0;
+  display: grid; place-items: center; background: rgba(12, 35, 64, .82); color: #fff; font: 700 20px/1 var(--fonte-txt); cursor: pointer;
+}
+.serie-lista .tirar:hover { background: var(--antes); }
+.serie-lista .tirar:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.serie-lista .tirar:disabled { opacity: .45; cursor: not-allowed; }
+.serie-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.serie-acoes .botao { flex: 1 1 260px; }
 .aviso-ferramenta { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--alerta-bg); color: var(--alerta-txt); font-size: 14px; }
 .privacidade { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 13px; color: var(--suave); }
 .privacidade svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }

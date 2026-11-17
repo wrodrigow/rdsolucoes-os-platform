@@ -142,6 +142,20 @@
       <button type="button" class="botao principal" id="ad-video-compartilhar">{{ t.video_compartilhar }}</button>
       <button type="button" class="botao secundario" id="ad-video-baixar">{{ t.video_baixar }}</button>
     </div>
+    {% if pro %}
+    <section class="bloco serie" id="ad-serie" aria-labelledby="ad-serie-titulo">
+      <h2 class="serie-titulo" id="ad-serie-titulo">{{ t.serie_titulo }}</h2>
+      <p class="serie-info" id="ad-serie-info" aria-live="polite">{{ t.js.serieVazia }}</p>
+      <ol class="serie-lista" id="ad-serie-lista" hidden></ol>
+      <div class="serie-acoes">
+        <button type="button" class="botao secundario" id="ad-guardar" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{ t.serie_guardar }}
+        </button>
+        <button type="button" class="botao-texto" id="ad-serie-limpar" hidden>{{ t.serie_limpar }}</button>
+      </div>
+      <p class="serie-nota">{{ t.serie_nota }}</p>
+    </section>
+    {% endif %}
     <p id="ad-aviso" class="aviso-ferramenta" role="status" hidden></p>
     <p class="privacidade">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
